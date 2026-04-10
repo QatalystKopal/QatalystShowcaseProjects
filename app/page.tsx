@@ -181,7 +181,7 @@ export default function HomePage() {
                   style={{
                     background: "#0d9488",
                     opacity: isActive ? 1 : 0,
-                    transform: isActive ? "scaleX(1)" : "scaleX(0.6)",
+                    transform: isActive ? "scaleX(1)" : "scaleX(0)",
                     transformOrigin: "left",
                   }}
                 />
@@ -197,69 +197,65 @@ export default function HomePage() {
           aria-labelledby={`tab-${activeTab.replace(/\s+/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase()}`}
           tabIndex={0}
         >
-          {/* Stats bar */}
-          <div className="mb-5 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0" style={{ borderColor: "#e5e7eb" }}>
-              {[
-                { label: "Projects",            value: String(animProjects),                   live: true },
-                { label: "Qatalyst Allocation", value: `${(animAllocInt / 10).toFixed(1)}M`,   sub: "tCO₂e" },
-                { label: "Annual Avg. ERs",     value: `${(animERsInt / 10).toFixed(1)}M`,     sub: "tCO₂e/yr" },
-                { label: "Countries",           value: String(animCountries) },
-              ].map(({ label, value, sub, live }) => (
-                <div key={label} className="px-4 py-3">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {live && <span className="w-1.5 h-1.5 rounded-full shrink-0 motion-safe:animate-pulse mb-0.5" style={{ background: "#0d9488" }} />}
-                    <span className="text-xl font-bold tabular-nums leading-none" style={{ color: "#111827" }}>{value}</span>
-                    {sub && <span className="text-[12px] whitespace-nowrap" style={{ color: "#4b5563" }}>{sub}</span>}
-                  </div>
-                  <div className="text-[11px] mt-1 uppercase tracking-widest font-semibold" style={{ color: "#64748b" }}>{label}</div>
+          <>
+            {/* Stats bar */}
+              <div className="mb-5 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0" style={{ borderColor: "#e5e7eb" }}>
+                  {[
+                    { label: "Projects",            value: String(animProjects),                   live: true },
+                    { label: "Qatalyst Allocation", value: `${(animAllocInt / 10).toFixed(1)}M`,   sub: "tCO₂e" },
+                    { label: "Annual Avg. ERs",     value: `${(animERsInt / 10).toFixed(1)}M`,     sub: "tCO₂e/yr" },
+                    { label: "Countries",           value: String(animCountries) },
+                  ].map(({ label, value, sub, live }) => (
+                    <div key={label} className="px-4 py-3">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        {live && <span className="w-1.5 h-1.5 rounded-full shrink-0 motion-safe:animate-pulse mb-0.5" style={{ background: "#0d9488" }} />}
+                        <span className="text-xl font-bold tabular-nums leading-none" style={{ color: "#111827" }}>{value}</span>
+                        {sub && <span className="text-[12px] whitespace-nowrap" style={{ color: "#4b5563" }}>{sub}</span>}
+                      </div>
+                      <div className="text-[10px] mt-1 uppercase tracking-widest font-semibold" style={{ color: "#64748b" }}>{label}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
-                style={{ background: "rgba(13,148,136,0.08)" }}
-              >
-                <Search className="w-5 h-5" style={{ color: "#0d9488" }} />
               </div>
-              <p className="font-semibold text-sm" style={{ color: "#374151" }}>No projects match your criteria</p>
-              <p className="text-xs mt-1.5 max-w-xs" style={{ color: "#4b5563" }}>
-                Try adjusting your search or selecting a different project type above
-              </p>
-            </div>
-          ) : (
-            <div
-              key={activeTab + "—" + query}
-              className={`grid gap-4 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                  : "grid-cols-1 max-w-2xl"
-              }`}
-            >
-              {filtered.map((project, i) => (
-                <div
-                  key={project.id}
-                  className="card-stagger"
-                  style={{ "--i": i } as React.CSSProperties}
-                >
-                  <ProjectCard
-                    project={project}
-                    onClick={(p) => router.push(`/projects/${p.id}`)}
-                    allocationPct={project.qatalystTotalAllocation / maxAlloc}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
 
-          <p className="mt-8 text-center text-xs" style={{ color: "#4b5563" }}>
-            All projects independently verified · Prices indicative{" "}
-            <span className="cursor-pointer hover:underline" style={{ color: "#0d9488" }}>Methodology →</span>
-          </p>
+              {filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
+                       style={{ background: "rgba(13,148,136,0.08)" }}>
+                    <Search className="w-5 h-5" style={{ color: "#0d9488" }} />
+                  </div>
+                  <p className="font-semibold text-sm" style={{ color: "#374151" }}>No projects match your criteria</p>
+                  <p className="text-xs mt-1.5 max-w-xs" style={{ color: "#4b5563" }}>
+                    Try adjusting your search or selecting a different project type above
+                  </p>
+                </div>
+              ) : (
+                <div
+                  key={activeTab + "—" + query}
+                  className={`grid gap-4 ${
+                    viewMode === "grid"
+                      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                      : "grid-cols-1 max-w-2xl"
+                  }`}
+                >
+                  {filtered.map((project, i) => (
+                    <div key={project.id} className="card-stagger" style={{ "--i": i } as React.CSSProperties}>
+                      <ProjectCard
+                        project={project}
+                        onClick={(p) => router.push(`/projects/${p.id}`)}
+                        allocationPct={project.qatalystTotalAllocation / maxAlloc}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            <p className="mt-8 text-center text-xs" style={{ color: "#4b5563" }}>
+              All projects independently verified · Prices indicative{" "}
+              <span className="cursor-pointer hover:underline" style={{ color: "#0d9488" }}>Methodology →</span>
+            </p>
+          </>
         </main>
       </div>
     </div>

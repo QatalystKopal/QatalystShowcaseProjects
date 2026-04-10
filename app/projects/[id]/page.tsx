@@ -263,7 +263,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <StatusIcon className="w-3.5 h-3.5 shrink-0" style={{ color: status.color }} />
               <span className="text-sm font-bold" style={{ color: status.color }}>{project.status}</span>
             </div>
-            <div className="text-[11px] mt-1.5 font-mono truncate" style={{ color: "#4b5563" }}>{project.vcsId} · {project.registry}</div>
+            <div className="text-[11px] mt-1.5 truncate tabular-nums" style={{ color: "#4b5563" }}>{project.vcsId} · {project.registry}</div>
           </div>
 
           {/* Crediting Period */}
@@ -681,7 +681,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Text block */}
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-sm leading-snug" style={{ color: "#111827" }}>
+              <h1 className="font-bold text-[15px] leading-snug" style={{ color: "#111827" }}>
                 {project.name}
               </h1>
 

@@ -4,10 +4,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutGrid, Glasses, BarChart2, Users, CloudSun,
+  LayoutGrid, Glasses, BarChart2, Users, Newspaper,
   ClipboardList, FileText, BadgeCheck, Globe2, SlidersHorizontal,
   Star, FileBarChart2, Monitor, Network, HelpCircle, Headphones,
-  ChevronUp, ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface NavItem {
@@ -32,7 +32,6 @@ const navSections: NavSection[] = [
       { icon: Glasses,         label: "My Insights",    href: "/insights" },
       { icon: BarChart2,       label: "My Dashboard",   href: "/dashboard" },
       { icon: Users,           label: "My User Group",  href: "/user-group" },
-      { icon: CloudSun,        label: "Climate News",   href: "/climate-news", badge: "COMING SOON" },
     ],
   },
   {
@@ -243,10 +242,13 @@ export function Sidebar() {
       {/* ── Context-aware nav ── */}
       <nav className="flex-1 pb-2" style={{ padding: collapsed ? "0 4px 8px" : "0 10px 8px" }}>
 
-        {/* ── My Workspace — always visible ── */}
-        <ul className={navMode === "workspace" ? "" : "mb-1"}>
+        {/* ── My Workspace + Climate News — always visible ── */}
+        <ul className={navMode === "workspace" ? "" : "mb-1"} role="list">
           <li>
             <NavLink icon={LayoutGrid} label="My Workspace" href="/" />
+          </li>
+          <li>
+            <NavLink icon={Newspaper} label="Climate News" href="/climate-news" />
           </li>
         </ul>
 

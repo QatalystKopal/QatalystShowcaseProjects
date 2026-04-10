@@ -92,6 +92,17 @@ export function ProjectCard({ project, onClick, allocationPct = 1 }: ProjectCard
                 <Star className="w-2 h-2 fill-current" />CCB Gold
               </span>
             )}
+            {rating && (() => {
+              const rc = ratingBadgeColors(rating.rating);
+              return (
+                <span
+                  className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                  style={{ background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}
+                >
+                  {rating.rater} [{rating.rating}]
+                </span>
+              );
+            })()}
             {project.a62Eligible && (
               <span
                 className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
@@ -109,8 +120,8 @@ export function ProjectCard({ project, onClick, allocationPct = 1 }: ProjectCard
         className="shrink-0 px-3 flex items-center overflow-hidden"
         style={{ height: 28, borderBottom: "1px solid #f3f4f6", background: "#fff" }}
       >
-        <span className="text-[12px] truncate" style={{ color: "#4b5563" }}>
-          <span style={{ color: "#4b5563" }}>Proponent</span>{" "}{project.developer}
+        <span className="text-[12px] truncate" style={{ color: "#374151" }}>
+          <span style={{ color: "#9ca3af", marginRight: 4 }}>Proponent</span>{project.developer}
         </span>
       </div>
 
@@ -120,12 +131,12 @@ export function ProjectCard({ project, onClick, allocationPct = 1 }: ProjectCard
         style={{ height: 82, background: "#f3f4f6" }}
       >
         {[
-          { label: "Qatalyst Alloc.", value: `${(project.qatalystTotalAllocation / 1000).toFixed(0)}K`, unit: "tCO₂e" },
-          { label: "Annual Avg. ERs", value: `${(project.annualAverageERs / 1000).toFixed(0)}K`,        unit: "tCO₂e/yr" },
-          { label: "Area",            value: `${(project.areaHa / 1000).toFixed(0)}K`,                  unit: "ha" },
+          { label: "Qatalyst Alloc.", value: project.qatalystTotalAllocation.toLocaleString(), unit: "tCO₂e" },
+          { label: "Annual Avg. ERs", value: project.annualAverageERs.toLocaleString(),       unit: "tCO₂e/yr" },
+          { label: "Area",            value: project.areaHa.toLocaleString(),                 unit: "ha" },
         ].map(({ label, value, unit }) => (
           <div key={label} className="flex flex-col justify-center px-2.5" style={{ background: "#fff" }}>
-            <div className="font-bold text-[19px] tabular-nums leading-none" style={{ color: "#111827" }}>
+            <div className="font-bold text-[15px] tabular-nums leading-none" style={{ color: "#111827" }}>
               {value}
             </div>
             <div className="text-[11px] mt-0.5 tabular-nums" style={{ color: "#4b5563" }}>{unit}</div>
@@ -155,21 +166,6 @@ export function ProjectCard({ project, onClick, allocationPct = 1 }: ProjectCard
         className="shrink-0 flex items-center gap-1.5 px-3 overflow-hidden"
         style={{ height: 38, background: "#fff" }}
       >
-        {rating && (() => {
-          const rc = ratingBadgeColors(rating.rating);
-          return (
-            <>
-              <span
-                className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
-                style={{ background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}
-              >
-                {rating.rater} [{rating.rating}]
-              </span>
-              <div className="w-px h-3 shrink-0" style={{ background: "#e5e7eb" }} />
-            </>
-          );
-        })()}
-
         <Leaf className="w-2.5 h-2.5 shrink-0" style={{ color: "#4b5563" }} />
 
         <div className="flex items-center gap-1 overflow-hidden">
