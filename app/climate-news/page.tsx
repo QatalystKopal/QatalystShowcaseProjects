@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import {
   Newspaper, Clock, AlertTriangle, ShieldAlert, BookOpen, Beaker,
-  BarChart3, Bell, BellOff, Archive, ArrowUpDown, Calendar, ChevronDown, MapPin,
+  BarChart3, Archive, ArrowUpDown, Calendar, ChevronDown, MapPin,
+  Globe, Briefcase,
 } from "lucide-react";
 
 function useCountUp(target: number, duration = 600): number {
@@ -29,76 +30,48 @@ function useCountUp(target: number, duration = 600): number {
   return display;
 }
 
-type ImpactLevel     = "HIGH" | "MEDIUM" | "LOW";
-type Category        = "Regulatory" | "Markets" | "Standards" | "Science" | "Risk" | "Policy";
-type ProjectType     = "REDD+" | "IFM" | "ARR" | "Blue Carbon";
-type SortBy          = "recent" | "impact" | "category";
-type View            = "live" | "archive";
-type PriceDir        = "Bullish" | "Bearish" | "Neutral" | "Unclear";
-type SupplyDemand    = "Increase" | "Decrease" | "Neutral" | "Unclear";
-type MarketSig       = "Favourable" | "Unfavourable" | "Uncertain";
-type ConfidenceLevel = "High" | "Medium" | "Low";
-type IntegrityImpact = "Strengthens" | "Weakens" | "Neutral";
-type LiquidityImpact = "Increases" | "Decreases" | "Neutral";
-type SignalStrength   = "High Impact" | "Medium Impact" | "Watch List";
+// ── Types ─────────────────────────────────────────────────────────────────
 
-const CATEGORY_CONFIG: Record<Category, { color: string; bg: string; border: string; icon: React.ElementType }> = {
-  Regulatory: { color: "#F86501", bg: "rgba(248,101,1,0.08)",    border: "rgba(248,101,1,0.2)",    icon: ShieldAlert },
-  Markets:    { color: "#00938C", bg: "rgba(0,147,140,0.08)",    border: "rgba(0,147,140,0.2)",    icon: BarChart3   },
-  Standards:  { color: "#374151", bg: "rgba(55,65,81,0.08)",     border: "rgba(55,65,81,0.2)",     icon: BookOpen    },
-  Science:    { color: "#4b5563", bg: "rgba(75,85,99,0.08)",     border: "rgba(75,85,99,0.2)",     icon: Beaker      },
-  Risk:       { color: "#F86501", bg: "rgba(248,101,1,0.08)",    border: "rgba(248,101,1,0.2)",    icon: AlertTriangle },
-  Policy:     { color: "#6b7280", bg: "rgba(107,114,128,0.08)",  border: "rgba(107,114,128,0.2)",  icon: Newspaper   },
+type Domain       = "Regulatory" | "Article 6" | "VCM" | "Science" | "Corporate" | "Finance" | "Geopolitics";
+type Significance = "High" | "Moderate" | "Monitor";
+type Confidence   = "High" | "Medium" | "Low";
+type FactLabel    = "Confirmed" | "Reported" | "Unconfirmed";
+type SortBy       = "recent" | "significance" | "domain";
+type View         = "live" | "archive";
+
+const DOMAIN_CONFIG: Record<Domain, { color: string; bg: string; border: string; icon: React.ElementType }> = {
+  Regulatory:  { color: "#F86501", bg: "rgba(248,101,1,0.08)",    border: "rgba(248,101,1,0.2)",    icon: ShieldAlert },
+  "Article 6": { color: "#00938C", bg: "rgba(0,147,140,0.08)",    border: "rgba(0,147,140,0.2)",    icon: Globe       },
+  VCM:         { color: "#374151", bg: "rgba(55,65,81,0.08)",     border: "rgba(55,65,81,0.2)",     icon: BookOpen    },
+  Science:     { color: "#4b5563", bg: "rgba(75,85,99,0.08)",     border: "rgba(75,85,99,0.2)",     icon: Beaker      },
+  Corporate:   { color: "#6b7280", bg: "rgba(107,114,128,0.08)",  border: "rgba(107,114,128,0.2)",  icon: Briefcase   },
+  Finance:     { color: "#00938C", bg: "rgba(0,147,140,0.08)",    border: "rgba(0,147,140,0.2)",    icon: BarChart3   },
+  Geopolitics: { color: "#6b7280", bg: "rgba(107,114,128,0.08)",  border: "rgba(107,114,128,0.2)",  icon: MapPin      },
 };
 
-const IMPACT_ORDER: Record<ImpactLevel, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-
-const TYPE_COLORS: Record<ProjectType, { bg: string; color: string }> = {
-  "REDD+":       { bg: "rgba(0,147,140,0.1)",   color: "#00938C" },
-  "IFM":         { bg: "rgba(55,65,81,0.1)",    color: "#374151" },
-  "ARR":         { bg: "rgba(107,114,128,0.1)", color: "#6b7280" },
-  "Blue Carbon": { bg: "rgba(0,147,140,0.1)",   color: "#00938C" },
+const SIGNIFICANCE_CONFIG: Record<Significance, { color: string; bg: string; border: string }> = {
+  High:     { color: "#F86501", bg: "rgba(248,101,1,0.1)",    border: "rgba(248,101,1,0.25)"    },
+  Moderate: { color: "#374151", bg: "rgba(55,65,81,0.08)",    border: "rgba(55,65,81,0.2)"      },
+  Monitor:  { color: "#9ca3af", bg: "rgba(156,163,175,0.08)", border: "rgba(156,163,175,0.2)"   },
 };
 
-const SIGNAL_STRENGTH_CONFIG: Record<SignalStrength, { color: string; bg: string; border: string }> = {
-  "High Impact":   { color: "#F86501", bg: "rgba(248,101,1,0.1)",    border: "rgba(248,101,1,0.25)"    },
-  "Medium Impact": { color: "#374151", bg: "rgba(55,65,81,0.08)",    border: "rgba(55,65,81,0.2)"      },
-  "Watch List":    { color: "#6b7280", bg: "rgba(107,114,128,0.06)", border: "rgba(107,114,128,0.18)"  },
+const SIGNIFICANCE_ORDER: Record<Significance, number> = { High: 0, Moderate: 1, Monitor: 2 };
+
+const FACT_LABEL_CONFIG: Record<FactLabel, { color: string }> = {
+  Confirmed:   { color: "#00938C" },
+  Reported:    { color: "#6b7280" },
+  Unconfirmed: { color: "#F86501" },
 };
 
-const PRICE_DIR_CONFIG: Record<PriceDir, { label: string; color: string }> = {
-  Bullish: { label: "↑ Bullish", color: "#00938C" },
-  Bearish: { label: "↓ Bearish", color: "#F86501" },
-  Neutral: { label: "→ Neutral", color: "#6b7280" },
-  Unclear: { label: "? Unclear", color: "#9ca3af" },
+const CONFIDENCE_CONFIG: Record<Confidence, { color: string }> = {
+  High:   { color: "#00938C" },
+  Medium: { color: "#6b7280" },
+  Low:    { color: "#9ca3af" },
 };
 
-const SD_CONFIG: Record<SupplyDemand, { arrow: string; color: string }> = {
-  Increase: { arrow: "↑", color: "#00938C" },
-  Decrease: { arrow: "↓", color: "#F86501" },
-  Neutral:  { arrow: "→", color: "#6b7280" },
-  Unclear:  { arrow: "?", color: "#9ca3af" },
-};
-
-const MARKET_SIG_CONFIG: Record<MarketSig, { color: string; bg: string; border: string }> = {
-  Favourable:   { color: "#00938C", bg: "rgba(0,147,140,0.08)",   border: "rgba(0,147,140,0.2)"   },
-  Unfavourable: { color: "#F86501", bg: "rgba(248,101,1,0.08)",   border: "rgba(248,101,1,0.2)"   },
-  Uncertain:    { color: "#6b7280", bg: "rgba(107,114,128,0.08)", border: "rgba(107,114,128,0.2)" },
-};
-
-const INTEGRITY_CONFIG: Record<IntegrityImpact, { label: string; color: string }> = {
-  Strengthens: { label: "Strengthens", color: "#00938C" },
-  Weakens:     { label: "Weakens",     color: "#F86501" },
-  Neutral:     { label: "Neutral",     color: "#6b7280" },
-};
-
-const LIQUIDITY_CONFIG: Record<LiquidityImpact, { label: string; color: string }> = {
-  Increases: { label: "Increases", color: "#00938C" },
-  Decreases: { label: "Decreases", color: "#F86501" },
-  Neutral:   { label: "Neutral",   color: "#6b7280" },
-};
-
-const ALL_CATEGORIES: ("All" | Category)[] = ["All", "Regulatory", "Markets", "Standards", "Science", "Risk", "Policy"];
+const ALL_DOMAINS: ("All" | Domain)[] = [
+  "All", "Regulatory", "Article 6", "VCM", "Science", "Corporate", "Finance", "Geopolitics",
+];
 
 const COUNTRY_OPTIONS = ["All", "Brazil", "Indonesia", "EU", "Kenya", "Peru"] as const;
 type CountryFilter = typeof COUNTRY_OPTIONS[number];
@@ -113,32 +86,33 @@ const COUNTRY_FLAGS: Record<string, string> = {
   Brazil: "🇧🇷", Indonesia: "🇮🇩", EU: "🇪🇺", Kenya: "🇰🇪", Peru: "🇵🇪",
 };
 
+// ── Interfaces ─────────────────────────────────────────────────────────────
+
+interface RelatedDevelopment {
+  headline: string;
+  source: string;
+  date: string;
+  connection: string;
+}
+
 interface NewsItem {
   id: number;
   source: string;
   date: string;
-  category: Category;
-  impact: ImpactLevel;
+  domain: Domain;
+  significance: Significance;
+  confidence: Confidence;
   daysAgo: number;
   time: string;
   headline: string;
+  keyFact: string;
+  keyFactLabel: FactLabel;
+  sector: string[];
+  geography: string[];
   whatHappened: string;
-  whyItMatters: string;
-  priceDirection: PriceDir;
-  supplyImpact: SupplyDemand;
-  demandImpact: SupplyDemand;
-  beneficiaries: string[];
-  adverselyImpacted: string[];
-  affectedSegments: ProjectType[];
-  immediateImplication: string;
-  mediumTermImplication: string;
-  marketSignal: MarketSig;
-  confidence: ConfidenceLevel;
-  crossMarketImpact: string;
-  integrityImpact: IntegrityImpact;
-  liquidityImpact: LiquidityImpact;
-  signalStrength: SignalStrength;
-  nonObviousInsight: string;
+  keyDetails: string[];
+  context: string;
+  relatedDevelopments: RelatedDevelopment[];
   keywords: string[];
 }
 
@@ -164,329 +138,399 @@ const calEvents: CalEvent[] = [
   { id: 7, title: "COP30 — Belém, Brazil",                 date: "Nov 10, 2026",  daysUntil: 214, type: "Conference" },
 ];
 
+// ── News Data ─────────────────────────────────────────────────────────────
+
 const allNews: NewsItem[] = [
   // ── Live ──────────────────────────────────────────────────────────────────
   {
-    id: 1, source: "UNFCCC Secretariat", date: "11 Apr 2026",
-    category: "Regulatory", impact: "HIGH", daysAgo: 0, time: "1h ago",
-    headline: "Article 6.4 Supervisory Body adopts new additionality rules — retroactive effect on registered projects",
-    whatHappened: "The UNFCCC Article 6.4 Supervisory Body formally adopted a stricter 'regulatory surplus' additionality test on 11 April 2026. Projects registered after January 2024 must now demonstrate activities go beyond legally mandated actions in host countries. The ruling carries retroactive review implications for an estimated 47 projects currently in the validation pipeline.",
-    whyItMatters: "This ruling narrows effective Article 6.4 supply by excluding projects that rely on regulatory differentiation in jurisdictions with existing national REDD+ laws. Price support for compliant units increases, but overall pipeline supply contracts materially. Projects in Brazil, Indonesia, and Kenya carry the highest re-validation exposure given their national forest legislation frameworks.",
-    priceDirection: "Bearish",
-    supplyImpact: "Decrease",
-    demandImpact: "Neutral",
-    beneficiaries: ["Projects with robust above-legal additionality documentation", "High-quality jurisdictional REDD+ mechanisms"],
-    adverselyImpacted: ["REDD+ projects in countries with national forest legislation", "Pipeline projects in Brazil, Indonesia, Kenya"],
-    affectedSegments: ["REDD+", "IFM", "ARR"],
-    immediateImplication: "Pipeline projects face immediate re-validation reviews. Secondary market bid-ask spreads expected to widen on affected Article 6.4 units as legal uncertainty rises.",
-    mediumTermImplication: "Estimated 8–15% reduction in issuable credits for affected projects upon re-validation. Compliant units command a supply-scarcity premium over the next 6–12 months.",
-    marketSignal: "Unfavourable",
-    confidence: "High",
-    crossMarketImpact: "Article 6.4 supply contraction may redirect institutional demand toward Verra VCS and Gold Standard credits near-term, temporarily supporting VCM prices as buyers seek compliant alternatives.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Decreases",
-    signalStrength: "High Impact",
-    nonObviousInsight: "CDM's 2012 additionality tightening created a two-tier market — compliant credits spiked initially but buyers eventually shifted to lower-integrity alternatives, paradoxically weakening average market integrity. The same bifurcation risk exists here.",
+    id: 1,
+    source: "UNFCCC Secretariat", date: "11 Apr 2026", daysAgo: 0, time: "1h ago",
+    domain: "Article 6", significance: "High", confidence: "High",
+    headline: "UNFCCC Article 6.4 Supervisory Body adopts revised additionality standard with retroactive application to post-January 2024 registrations",
+    keyFact: "The Article 6.4 Supervisory Body formally adopted a 'regulatory surplus' additionality standard, applicable retroactively to projects registered from January 2024.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+, ARR, IFM)", "Policy and Regulation"],
+    geography: ["Global", "Latin America (Brazil)", "Asia-Pacific (Indonesia)", "Africa (Kenya)"],
+    whatHappened: "The UNFCCC Article 6.4 Supervisory Body adopted a revised additionality methodology on 11 April 2026, requiring projects to demonstrate that activities exceed legally mandated requirements in their host countries. (Confirmed) The decision applies retroactively to projects registered from January 2024 onward. (Confirmed) An estimated 47 projects currently in the validation pipeline are subject to review under the new standard. (Reported — UNFCCC Secretariat)",
+    keyDetails: [
+      "Decision body: UNFCCC Article 6.4 Supervisory Body",
+      "Standard adopted: Regulatory surplus additionality test",
+      "Retroactive application: Projects registered from January 2024",
+      "Estimated projects subject to review: 47 (Reported)",
+      "Primary host country geographies noted: Brazil, Indonesia, Kenya",
+      "Review timeline for affected projects: Not disclosed",
+      "Appeal or transition mechanism: Not disclosed",
+    ],
+    context: "The Article 6.4 mechanism was established under the Paris Agreement and has been under phased operationalisation since COP26. Additionality requirements define whether project activities qualify for Article 6.4 unit issuance as distinct from voluntary carbon market credits issued under separate registry systems.",
+    relatedDevelopments: [
+      {
+        headline: "IETA publishes model host country agreement template for Article 6.2 bilateral transactions",
+        source: "IETA", date: "28 Mar 2026",
+        connection: "The IETA template addresses corresponding adjustment provisions relevant to host countries affected by the new additionality standard.",
+      },
+    ],
     keywords: ["unfccc", "article 6", "additionality", "brazil", "indonesia", "kenya"],
   },
   {
-    id: 2, source: "Bloomberg Green", date: "11 Apr 2026",
-    category: "Markets", impact: "HIGH", daysAgo: 0, time: "3h ago",
-    headline: "CORSIA Phase 2 demand surge: Airlines must source 1.2Gt of eligible offsets by 2027",
-    whatHappened: "ICAO confirmed CORSIA Phase 2 obligations covering 107 countries, requiring airlines to source 1.2 gigatonnes of CORSIA Eligible Emission Units cumulatively by 2027. Only credits from 9 currently approved standards qualify. High-integrity forest and Blue Carbon credits are in critically short supply relative to confirmed airline demand.",
-    whyItMatters: "Mandatory aviation procurement at this scale creates a structural demand floor for CEEU-eligible credits that materially exceeds available supply. REDD+ jurisdictional and Blue Carbon projects with CEEU designation benefit most. Non-eligible VCM credits face growing buyer discrimination as airlines ring-fence procurement budgets for compliance-grade assets.",
-    priceDirection: "Bullish",
-    supplyImpact: "Decrease",
-    demandImpact: "Increase",
-    beneficiaries: ["CORSIA-eligible REDD+ jurisdictional credit holders", "Blue Carbon projects with CEEU designation"],
-    adverselyImpacted: ["Non-CEEU VCM credit holders", "Cookstove and industrial offset project developers"],
-    affectedSegments: ["REDD+", "Blue Carbon"],
-    immediateImplication: "Spot pricing pressure on CORSIA-eligible inventory as airlines accelerate procurement. Expect OTC forward deals struck at premium to spot as airlines lock in supply.",
-    mediumTermImplication: "Structural supply deficit of ~200–400 MtCO₂e in eligible credits creates sustained price support through 2027. Non-eligible credits face a widening and potentially permanent discount.",
-    marketSignal: "Favourable",
-    confidence: "High",
-    crossMarketImpact: "Aviation CORSIA demand intersects with EU ETS reform — if the EU expands aviation ETS scope, CORSIA-eligible credits may gain indirect EUA pricing linkage, narrowing the spread between compliance and voluntary markets.",
-    integrityImpact: "Neutral",
-    liquidityImpact: "Increases",
-    signalStrength: "High Impact",
-    nonObviousInsight: "Aviation's concentrated procurement structure creates oligopsony dynamics — a handful of large carriers can effectively set price floors for eligible credits, compressing spreads between rated and unrated CEEU-eligible assets and reducing the rating premium in this segment specifically.",
+    id: 2,
+    source: "Bloomberg Green", date: "11 Apr 2026", daysAgo: 0, time: "3h ago",
+    domain: "Regulatory", significance: "High", confidence: "High",
+    headline: "ICAO confirms CORSIA Phase 2 obligations covering 107 states; cumulative 1.2 Gt offset procurement requirement disclosed",
+    keyFact: "ICAO confirmed CORSIA Phase 2 obligations covering 107 participating states, with airlines required to source 1.2 gigatonnes of CORSIA Eligible Emission Units cumulatively by 2027.",
+    keyFactLabel: "Confirmed",
+    sector: ["Aviation (CORSIA)", "Policy and Regulation"],
+    geography: ["Global"],
+    whatHappened: "ICAO confirmed CORSIA Phase 2 programme parameters covering 107 participating states, effective for the 2024–2026 monitoring period. (Confirmed) Airlines participating in the programme are required to source a cumulative 1.2 gigatonnes of CORSIA Eligible Emission Units by 2027. (Confirmed) Nine standards are currently approved for CEEU eligibility. (Confirmed — ICAO)",
+    keyDetails: [
+      "Programme: CORSIA Phase 2",
+      "States covered: 107",
+      "Monitoring period: 2024–2026",
+      "Cumulative procurement requirement: 1.2 Gt CEEU by 2027",
+      "Currently approved eligible standards: 9",
+      "Specific standard names: Not disclosed in cited source",
+      "Enforcement mechanism for non-compliance: Not disclosed",
+    ],
+    context: "CORSIA was adopted by ICAO in 2016 as the international aviation sector's carbon offsetting scheme. Phase 2 (2024–2026) requires participation from states that had not opted out by the applicable deadline, and restricts eligible credits to units meeting published CEEU criteria.",
+    relatedDevelopments: [],
     keywords: ["corsia", "icao", "aviation", "eligible units", "ceeu", "airline"],
   },
   {
-    id: 3, source: "Verra", date: "11 Apr 2026",
-    category: "Standards", impact: "HIGH", daysAgo: 0, time: "5h ago",
-    headline: "Verra revises VM0048: tighter deforestation baselines, mandatory satellite monitoring every 2 years",
-    whatHappened: "Verra published VM0048 v2.0 on 11 April 2026, replacing the five-year baseline update cycle with a mandatory two-year cycle using Landsat and Sentinel-2 satellite data. Projects in high-deforestation corridors — particularly Kalimantan, the Amazon, and Sumatra — face material baseline compression under the revised methodology.",
-    whyItMatters: "Shorter baseline cycles reduce over-crediting risk in dynamic landscapes, strengthening integrity. For projects in active deforestation frontiers, it compresses the crediting baseline and reduces forward issuance projections. This creates a supply headwind concentrated in the highest-volume segment of the REDD+ universe.",
-    priceDirection: "Bearish",
-    supplyImpact: "Decrease",
-    demandImpact: "Neutral",
-    beneficiaries: ["REDD+ projects in stable, low-pressure landscapes", "Remote sensing and MRV technology providers"],
-    adverselyImpacted: ["REDD+ projects in high-deforestation corridors", "Projects that relied on five-year cycles for issuance planning"],
-    affectedSegments: ["REDD+"],
-    immediateImplication: "Commission stress-tests against revised baselines immediately. Forward purchase agreements on affected projects face re-pricing risk as projected issuance volumes are revised downward.",
-    mediumTermImplication: "Estimated 5–20% downward revision to projected future issuances for projects in high-pressure biomes. Monitoring cost base increases across all VM0048 projects from Q3 2026.",
-    marketSignal: "Unfavourable",
-    confidence: "High",
-    crossMarketImpact: "REDD+ supply reduction may redirect buyer demand toward ARR and Blue Carbon as more issuance-stable alternatives. Methodology tightening also raises the development barrier for new REDD+ projects.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Decreases",
-    signalStrength: "High Impact",
-    nonObviousInsight: "Methodological tightening historically creates a vintage premium effect — credits issued before the revision often trade at a discount as buyers price in re-validation risk, while post-revision credits command a 'clean' premium, creating structural vintage bifurcation in REDD+ pricing.",
+    id: 3,
+    source: "Verra", date: "11 Apr 2026", daysAgo: 0, time: "5h ago",
+    domain: "VCM", significance: "High", confidence: "High",
+    headline: "Verra releases VM0048 v2.0 replacing five-year deforestation baseline cycle with mandatory two-year satellite monitoring update",
+    keyFact: "Verra published VM0048 v2.0 on 11 April 2026, mandating jurisdictional deforestation baselines to be updated every two years using Landsat and Sentinel-2 satellite data, replacing the previous five-year cycle.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+)", "Policy and Regulation"],
+    geography: ["Global", "Latin America (Brazil)", "Asia-Pacific (Indonesia)"],
+    whatHappened: "Verra published VM0048 v2.0 on 11 April 2026, replacing the five-year deforestation baseline update cycle with a mandatory two-year cycle. (Confirmed) The revised methodology requires baselines to be updated using Landsat and Sentinel-2 satellite data. (Confirmed) Projects in high-deforestation corridors in Kalimantan, the Amazon basin, and Sumatra are specifically noted as subject to baseline revision. (Reported — Verra)",
+    keyDetails: [
+      "Standard body: Verra",
+      "Methodology version: VM0048 v2.0",
+      "Change: Baseline update cycle reduced from 5 years to 2 years",
+      "Required satellite data sources: Landsat and Sentinel-2",
+      "Geographies noted: Kalimantan, Amazon basin, Sumatra",
+      "Compliance deadline for existing projects: Not disclosed",
+      "Transition period for registered projects: Not disclosed",
+    ],
+    context: "VM0048 is Verra's methodology for REDD+ (Reducing Emissions from Deforestation and Forest Degradation) projects. Deforestation baseline accuracy is central to additionality and credit issuance calculations under the VCS programme.",
+    relatedDevelopments: [
+      {
+        headline: "Sylvera publishes updated Carbon Credit Ratings: 4 REDD+ projects downgraded on permanence concerns",
+        source: "Sylvera", date: "30 Mar 2026",
+        connection: "Sylvera's permanence-related downgrades address integrity concerns in the same REDD+ project segment that VM0048 v2.0 now targets with revised baseline requirements.",
+      },
+    ],
     keywords: ["verra", "vm0048", "deforestation", "baseline", "kalimantan", "amazon", "indonesia", "brazil", "landsat"],
   },
   {
-    id: 4, source: "Carbon Pulse", date: "11 Apr 2026",
-    category: "Markets", impact: "MEDIUM", daysAgo: 0, time: "6h ago",
-    headline: "Voluntary carbon credit prices diverge sharply: nature-based up 18%, energy transition down 9% YTD",
-    whatHappened: "Q1 2026 market data shows NBS credits averaging $18.40/tCO₂e, up 18% year-to-date. BeZero A/B-rated credits command a 42% premium over unrated equivalents. Industrial and cookstove credits softened, with energy transition offsets down 9% YTD on oversupply concerns and reduced corporate appetite from VCMI claims code tightening.",
-    whyItMatters: "The pricing bifurcation reflects a structural rerating of VCM credit quality by institutional buyers. Third-party ratings are now functioning as de facto quality gatekeepers. Unrated credit holders face growing discount risk as VCMI 2.0 and ICVCM frameworks embed rating requirements into high-integrity claims standards.",
-    priceDirection: "Bullish",
-    supplyImpact: "Neutral",
-    demandImpact: "Increase",
-    beneficiaries: ["BeZero/Sylvera A/B-rated NBS credit holders", "High-quality forest and Blue Carbon project developers"],
-    adverselyImpacted: ["Unrated NBS project holders", "Industrial and cookstove offset developers", "Legacy energy transition credit holders"],
-    affectedSegments: ["REDD+", "IFM", "ARR", "Blue Carbon"],
-    immediateImplication: "Unrated positions face immediate repricing pressure. Rated NBS holdings benefit from momentum — monitor for mean reversion as new rated supply enters the market.",
-    mediumTermImplication: "The 42% rating premium likely narrows to 20–25% as more projects achieve rated status. Rating adoption becomes commercial necessity, not differentiator.",
-    marketSignal: "Favourable",
-    confidence: "High",
-    crossMarketImpact: "VCM pricing bifurcation mirrors investment-grade/high-yield dynamics in credit markets. Rating agencies may face conflicts of interest as VCM rating demand surges, potentially drawing regulatory scrutiny of the ratings model itself.",
-    integrityImpact: "Neutral",
-    liquidityImpact: "Neutral",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "The 42% rating premium signals the market is already pricing in the regulatory direction of VCMI and ICVCM mandates. The premium may compress sharply once mandates are formalised, as the option value of early adoption disappears — creating a sell-the-news dynamic for rated credit holders.",
+    id: 4,
+    source: "Carbon Pulse", date: "11 Apr 2026", daysAgo: 0, time: "6h ago",
+    domain: "Finance", significance: "Moderate", confidence: "High",
+    headline: "Q1 2026 VCM price data: Nature-based credits average $18.40/tCO₂e; BeZero-rated credits at 42% premium over unrated equivalents",
+    keyFact: "Q1 2026 data shows nature-based solutions credits averaging $18.40/tCO₂e, with BeZero A/B-rated credits at a reported 42% premium over unrated equivalents.",
+    keyFactLabel: "Reported",
+    sector: ["Nature-based (REDD+, ARR, IFM, blue carbon)", "Finance"],
+    geography: ["Global"],
+    whatHappened: "Carbon Pulse published Q1 2026 VCM price data on 11 April 2026 showing nature-based solutions credits averaging $18.40/tCO₂e year-to-date. (Reported — Carbon Pulse) BeZero A/B-rated credits were reported at a 42% premium over unrated equivalents. (Reported — Carbon Pulse) Industrial and cookstove credits declined approximately 9% year-to-date, attributed by the source to oversupply. (Reported — Carbon Pulse)",
+    keyDetails: [
+      "Source: Carbon Pulse market data, Q1 2026",
+      "NBS credit average: $18.40/tCO₂e (Reported)",
+      "Rating premium: BeZero A/B-rated vs unrated — 42% (Reported)",
+      "Energy transition/cookstove credits: down approximately 9% YTD (Reported)",
+      "Stated reason for decline: Oversupply (attributed to Carbon Pulse)",
+      "Transaction volume data: Not disclosed",
+      "Methodology for price calculation: Not disclosed in cited source",
+    ],
+    context: "BeZero Carbon and Sylvera are independent carbon credit rating agencies that assess VCM credit quality across factors including additionality, permanence, and leakage. VCM price data is not standardised and varies by registry, vintage, project type, and third-party rating.",
+    relatedDevelopments: [
+      {
+        headline: "BeZero updates rating methodology: 'Leakage' now a standalone risk factor",
+        source: "BeZero Carbon", date: "11 Apr 2026",
+        connection: "BeZero's methodology update, released the same day, is directly relevant to the rating premium reported in this price data item.",
+      },
+      {
+        headline: "VCMI 2.0 Claims Code requires credit retirement within 3 years of vintage",
+        source: "Climate Policy Initiative", date: "9 Apr 2026",
+        connection: "VCMI 2.0 vintage requirements, published two days prior, affect corporate procurement eligibility for older inventory referenced in the price data.",
+      },
+    ],
     keywords: ["price", "bezero", "sylvera", "rating", "nbs", "nature-based", "premium"],
   },
   {
-    id: 5, source: "Financial Times", date: "11 Apr 2026",
-    category: "Regulatory", impact: "MEDIUM", daysAgo: 0, time: "10h ago",
-    headline: "EU CBAM full implementation: embedded carbon costs now material for six industrial sectors",
-    whatHappened: "EU CBAM entered full implementation from Q2 2026, requiring importers of steel, cement, aluminium, fertilisers, electricity, and hydrogen to hold verified CBAM certificates corresponding to embedded carbon content. Carbon prices are now a direct procurement cost for European buyers, creating policy-driven convergence between EU ETS pricing and voluntary decarbonisation incentives.",
-    whyItMatters: "CBAM creates new European demand for offset-adjacent instruments as importers seek to document and reduce embedded carbon. High-MRV offset projects offering credible Scope 3 documentation become more commercially differentiated. The policy accelerates European corporate interest in voluntary carbon as a complement to CBAM compliance obligations.",
-    priceDirection: "Bullish",
-    supplyImpact: "Neutral",
-    demandImpact: "Increase",
-    beneficiaries: ["High-MRV NBS project holders", "Scope 3 documentation providers", "EU-based carbon market participants"],
-    adverselyImpacted: ["Non-EU importers without embedded carbon documentation", "Projects lacking Scope 3-compatible MRV"],
-    affectedSegments: ["REDD+", "IFM", "ARR", "Blue Carbon"],
-    immediateImplication: "EU procurement desks are prioritising offsets with Scope 3 MRV documentation. Monitor demand uptick from steel and cement importers as CBAM compliance is assessed.",
-    mediumTermImplication: "Convergence between CBAM and voluntary offset procurement creates a new European buying segment. Projects with dual CBAM/VCM documentation eligibility command a structural premium.",
-    marketSignal: "Favourable",
-    confidence: "High",
-    crossMarketImpact: "CBAM creates direct price convergence pressure between EU ETS and high-integrity VCM credits — as embedded carbon costs align with ETS prices (~€60–70/t), the theoretical floor for high-integrity offsets rises materially in European procurement.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Increases",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "CBAM and CSRD reporting deadlines converge in 2026. European corporates facing both obligations may prefer offset packages satisfying both simultaneously — creating a procurement bundling incentive that favours multi-standard certified projects with comprehensive MRV documentation.",
+    id: 5,
+    source: "Financial Times", date: "11 Apr 2026", daysAgo: 0, time: "10h ago",
+    domain: "Regulatory", significance: "Moderate", confidence: "High",
+    headline: "EU CBAM full implementation: verified certificate requirement now in effect for steel, cement, aluminium, fertilisers, electricity, and hydrogen imports",
+    keyFact: "EU CBAM entered full implementation in Q2 2026, requiring importers of six industrial sectors to hold verified CBAM certificates corresponding to embedded carbon content in imported goods.",
+    keyFactLabel: "Confirmed",
+    sector: ["Industrial Decarbonisation", "Policy and Regulation"],
+    geography: ["Europe (EU)"],
+    whatHappened: "The EU Carbon Border Adjustment Mechanism entered its full implementation phase in Q2 2026, requiring importers of steel, cement, aluminium, fertilisers, electricity, and hydrogen to hold verified CBAM certificates. (Confirmed) The certificates correspond to the embedded carbon content of imported goods and are priced in line with EU ETS allowances. (Confirmed) The Financial Times reported this as creating direct procurement cost implications for European importers in the six covered sectors. (Reported — Financial Times)",
+    keyDetails: [
+      "Mechanism: EU Carbon Border Adjustment Mechanism (CBAM)",
+      "Implementation phase: Full implementation from Q2 2026",
+      "Sectors covered: Steel, cement, aluminium, fertilisers, electricity, hydrogen",
+      "Certificate pricing basis: EU ETS allowance price",
+      "Reporting obligation: Verified embedded carbon content",
+      "National competent authority for implementation: Not specified in source",
+      "Exemptions or transitional provisions: Not disclosed in cited source",
+    ],
+    context: "CBAM was adopted as part of the EU Fit for 55 package. A transitional reporting-only phase ran from October 2023 to December 2025, during which importers were required to report embedded carbon without financial obligation. Full implementation commenced Q2 2026.",
+    relatedDevelopments: [],
     keywords: ["cbam", "eu", "european", "scope 3", "mrv", "carbon border", "steel", "cement"],
   },
   {
-    id: 6, source: "BeZero Carbon", date: "11 Apr 2026",
-    category: "Standards", impact: "MEDIUM", daysAgo: 0, time: "14h ago",
-    headline: "BeZero updates rating methodology: 'Leakage' now a standalone risk factor across all NBS ratings",
-    whatHappened: "BeZero Carbon released v3.1 of its rating framework on 11 April 2026, separating leakage into its own distinct risk dimension for the first time. Previously embedded within permanence risk, leakage now independently affects NBS ratings. Projects with limited buffer zones or in landscapes facing active agricultural expansion are most exposed to near-term downgrades.",
-    whyItMatters: "Isolating leakage as a standalone variable increases rating sensitivity and may trigger downgrades across a broad swathe of tropical forest portfolio positions. Institutional buyers with rating covenants in procurement contracts face potential forced selling. Leakage exposure is now a primary pricing variable rather than a secondary factor embedded in permanence.",
-    priceDirection: "Bearish",
-    supplyImpact: "Neutral",
-    demandImpact: "Decrease",
-    beneficiaries: ["Well-buffered REDD+ projects in intact landscapes", "Remote Blue Carbon projects with geographic leakage barriers"],
-    adverselyImpacted: ["Agricultural frontier REDD+ projects", "IFM projects adjacent to farmland expansion zones"],
-    affectedSegments: ["REDD+", "IFM"],
-    immediateImplication: "Review all NBS positions for leakage buffer adequacy. BeZero rating watch list changes are typically communicated 4–6 weeks before formal rating actions — initiate review now.",
-    mediumTermImplication: "10–20% of REDD+ rated universe may face leakage-driven downgrade review. Historical downgrades have preceded 20–35% average price corrections in affected credits.",
-    marketSignal: "Unfavourable",
-    confidence: "High",
-    crossMarketImpact: "Rating downgrades create forced selling pressure from institutional buyers with rating covenants — analogous to credit rating triggers in bond portfolios. This dynamic can create price dislocations that technically oriented traders may exploit.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Decreases",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "Separating leakage as a standalone risk factor mirrors TCFD methodology evolution — once isolated, a risk factor tends to become the dominant pricing variable. Expect leakage-adjusted pricing metrics to emerge as a new market convention within 12–18 months.",
+    id: 6,
+    source: "BeZero Carbon", date: "11 Apr 2026", daysAgo: 0, time: "14h ago",
+    domain: "Science", significance: "Moderate", confidence: "High",
+    headline: "BeZero Carbon releases rating framework v3.1 separating 'Leakage' as a standalone risk dimension across all NBS assessments",
+    keyFact: "BeZero Carbon published rating framework v3.1 on 11 April 2026, separating leakage into an independent risk dimension distinct from the permanence category used in prior framework versions.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+, ARR, IFM, blue carbon)", "Policy and Regulation"],
+    geography: ["Global"],
+    whatHappened: "BeZero Carbon released version 3.1 of its carbon credit rating framework on 11 April 2026. (Confirmed) The revision separates leakage into its own risk dimension, previously embedded within the permanence risk category. (Confirmed) Projects with limited buffer zones or in landscapes subject to active agricultural expansion are identified by BeZero as most exposed to rating impacts under the revised framework. (Reported — BeZero Carbon)",
+    keyDetails: [
+      "Organisation: BeZero Carbon",
+      "Framework version: v3.1",
+      "Key change: Leakage separated as standalone risk dimension from permanence",
+      "Affected project types: All NBS ratings",
+      "Projects most exposed per BeZero: Projects with limited buffers or adjacent to agricultural expansion",
+      "Number of projects subject to immediate review: Not disclosed",
+      "Timing of rating actions under revised framework: Not disclosed",
+    ],
+    context: "BeZero Carbon is an independent carbon credit ratings agency. Its framework assessments are used by institutional buyers and counterparties to evaluate credit quality. Prior to v3.1, leakage risk was assessed as a sub-component of permanence in BeZero's methodology.",
+    relatedDevelopments: [
+      {
+        headline: "Sylvera publishes updated Carbon Credit Ratings: 4 REDD+ projects downgraded on permanence concerns",
+        source: "Sylvera", date: "30 Mar 2026",
+        connection: "Sylvera's contemporaneous rating action addresses permanence risk in the same NBS project segment now subject to BeZero's revised leakage framework.",
+      },
+    ],
     keywords: ["bezero", "leakage", "rating", "downgrade", "methodology", "buffer", "agriculture"],
   },
   {
-    id: 7, source: "Reuters", date: "10 Apr 2026",
-    category: "Science", impact: "MEDIUM", daysAgo: 1, time: "1d ago",
-    headline: "Blue carbon sequestration rates revised upward in new IPCC wetlands supplement",
-    whatHappened: "The IPCC published a supplementary wetlands report on 10 April 2026, revising upward emissions factors for mangrove, seagrass, and tidal marsh ecosystems by 15–30% versus 2013 baselines. The revision strengthens the scientific underpinning for Blue Carbon credit issuance and may entitle projects using pre-2025 IPCC factors to recalculate sequestration claims subject to registry approval.",
-    whyItMatters: "Higher IPCC emissions factors directly increase the theoretical credit yield per hectare for Blue Carbon projects. Projects operating under older methodology versions have a commercial incentive to trigger methodology updates. New project development economics improve materially, potentially catalysing a new wave of Blue Carbon investment and expanding competition with REDD+.",
-    priceDirection: "Bullish",
-    supplyImpact: "Increase",
-    demandImpact: "Neutral",
-    beneficiaries: ["Existing Blue Carbon project operators using pre-2025 IPCC factors", "Mangrove and seagrass project developers"],
-    adverselyImpacted: [],
-    affectedSegments: ["Blue Carbon"],
-    immediateImplication: "Review methodology version for all Blue Carbon holdings. Projects eligible for IPCC factor updates should initiate recalculation processes with registries — supply uplift may qualify for issuance within 12–18 months.",
-    mediumTermImplication: "Verra and Gold Standard expected to issue updated Blue Carbon methodology guidance within 6–9 months. Additional credit issuance from existing projects provides near-term supply uplift.",
-    marketSignal: "Favourable",
-    confidence: "High",
-    crossMarketImpact: "Higher Blue Carbon sequestration science improves its competitiveness against REDD+ for institutional allocation — portfolio rebalancing toward Blue Carbon may follow from buyers seeking permanence advantages in marine ecosystems.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Increases",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "IPCC factor updates create a deferred supply benefit — methodology transition periods of 12–24 months mean the credit supply uplift is delayed, creating a near-term anomaly where forward prices should theoretically trade above spot for projects in the transition pipeline.",
+    id: 7,
+    source: "Reuters", date: "10 Apr 2026", daysAgo: 1, time: "1d ago",
+    domain: "Science", significance: "Moderate", confidence: "High",
+    headline: "IPCC wetlands supplement revises sequestration emission factors for mangrove, seagrass, and tidal marsh ecosystems upward by 15–30%",
+    keyFact: "The IPCC published a supplementary wetlands report on 10 April 2026 revising upward sequestration emission factors for mangrove, seagrass, and tidal marsh ecosystems by 15–30% relative to 2013 baseline figures.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (blue carbon)"],
+    geography: ["Global"],
+    whatHappened: "The IPCC published a supplementary report on wetland ecosystems on 10 April 2026. (Confirmed) The report revises upward emissions factors for mangrove, seagrass, and tidal marsh ecosystems by 15–30% compared to figures published in the 2013 IPCC wetlands supplement. (Confirmed) Reuters reported that the revision may entitle existing projects using pre-2025 IPCC factors to recalculate sequestration claims, subject to registry approval. (Reported — Reuters)",
+    keyDetails: [
+      "Publishing body: IPCC",
+      "Document type: Supplementary report on wetland ecosystems",
+      "Publication date: 10 April 2026",
+      "Ecosystems covered: Mangrove, seagrass, tidal marsh",
+      "Emission factor revision: 15–30% increase vs 2013 baseline",
+      "Applicability to existing projects: Subject to registry approval (Reported)",
+      "Registry implementation timeline: Not disclosed",
+    ],
+    context: "IPCC emission factors underpin sequestration quantification methodologies used by carbon registries including Verra and Gold Standard for blue carbon project types. The 2013 IPCC Wetlands Supplement has formed the methodological basis for blue carbon credit issuance to date.",
+    relatedDevelopments: [],
     keywords: ["ipcc", "blue carbon", "mangrove", "seagrass", "wetland", "tidal", "sequestration"],
   },
   {
-    id: 8, source: "S&P Global", date: "10 Apr 2026",
-    category: "Risk", impact: "HIGH", daysAgo: 1, time: "1d ago",
-    headline: "Indonesia announces moratorium review on new forest concessions — sovereign policy risk elevated",
-    whatHappened: "The Indonesian Ministry of Environment announced on 10 April 2026 a formal review of the 2011 forest moratorium, with government proposals to exempt certain production forest categories. S&P Global Commodity Insights flags material policy risk for REDD+ and IFM projects currently operating in Kalimantan and Sumatra under moratorium protections.",
-    whyItMatters: "If the moratorium scope is narrowed, the legal additionality and permanence foundations of projects relying on it are materially undermined. Host country agreement enforceability may be contested under Article 6.2, creating compounding legal risk. Sovereign policy reversals are among the hardest risks to hedge in carbon project portfolios — and retroactive cancellation risk has no clear legal precedent.",
-    priceDirection: "Bearish",
-    supplyImpact: "Decrease",
-    demandImpact: "Neutral",
-    beneficiaries: ["Non-Indonesian REDD+ and IFM project holders", "Projects in jurisdictions with stable forest governance"],
-    adverselyImpacted: ["REDD+ and IFM projects in Kalimantan and Sumatra", "Investors with concentrated Indonesia carbon exposure"],
-    affectedSegments: ["REDD+", "IFM"],
-    immediateImplication: "Immediate review of Indonesia project-level host country agreements recommended. Assess additionality and permanence documentation for robustness against a narrowed moratorium scope.",
-    mediumTermImplication: "If moratorium scope narrows, affected projects face re-validation. Legal permanence risk premium increases; expect bid-offer widening as buyers discount for policy uncertainty.",
-    marketSignal: "Unfavourable",
-    confidence: "Medium",
-    crossMarketImpact: "Policy risk in Indonesia may redirect REDD+ procurement toward Brazil, Congo Basin, and Malaysia, shifting geographic concentration risk in portfolios and creating regional pricing divergence across tropical forest credits.",
-    integrityImpact: "Weakens",
-    liquidityImpact: "Decreases",
-    signalStrength: "High Impact",
-    nonObviousInsight: "Sovereign forest policy reversals trigger Article 6 corresponding adjustment complications — Indonesia's bilateral Article 6.2 agreements may require renegotiation if the moratorium scope narrows. Credits already issued under moratorium-dependent additionality may face retroactive cancellation risk without clear legal resolution.",
+    id: 8,
+    source: "S&P Global", date: "10 Apr 2026", daysAgo: 1, time: "1d ago",
+    domain: "Geopolitics", significance: "High", confidence: "Medium",
+    headline: "Indonesian Ministry of Environment announces formal review of 2011 forest moratorium; production forest exemptions under consideration",
+    keyFact: "The Indonesian Ministry of Environment announced a formal review of the 2011 forest moratorium, with proposals to exempt certain production forest categories under consideration, according to S&P Global Commodity Insights.",
+    keyFactLabel: "Reported",
+    sector: ["Nature-based (REDD+, IFM)", "Policy and Regulation"],
+    geography: ["Asia-Pacific (Indonesia)"],
+    whatHappened: "The Indonesian Ministry of Environment announced a formal review of the 2011 forest moratorium on or before 10 April 2026. (Reported — S&P Global Commodity Insights) Government proposals to exempt certain production forest categories from moratorium coverage are reportedly under consideration. (Reported — S&P Global) S&P Global Commodity Insights flagged potential policy risk for REDD+ and IFM projects operating in Kalimantan and Sumatra that rely on moratorium protections for additionality documentation. (Reported — S&P Global)",
+    keyDetails: [
+      "Country: Indonesia",
+      "Policy under review: 2011 forest moratorium",
+      "Reviewing body: Indonesian Ministry of Environment",
+      "Proposed change: Exemption of certain production forest categories (Reported)",
+      "Projects potentially affected: REDD+ and IFM in Kalimantan and Sumatra (Reported)",
+      "Formal decision timeline: Not disclosed",
+      "Confirmation from Indonesian government: Not independently confirmed — [Lower confidence source for specific proposals]",
+    ],
+    context: "Indonesia's 2011 forest moratorium restricts new concessions on primary forests and peatlands. REDD+ and IFM projects in Indonesia frequently cite the moratorium in their additionality documentation. Any revision to the moratorium's scope may affect the basis on which project additionality was established.",
+    relatedDevelopments: [
+      {
+        headline: "UNFCCC Article 6.4 Supervisory Body adopts revised additionality standard with retroactive application",
+        source: "UNFCCC Secretariat", date: "11 Apr 2026",
+        connection: "The revised additionality standard adopted by the Article 6.4 Supervisory Body is directly relevant to Indonesian projects whose additionality documentation may be affected by a narrowed moratorium.",
+      },
+    ],
     keywords: ["indonesia", "kalimantan", "sumatra", "moratorium", "concession", "forest", "sovereign"],
   },
   {
-    id: 9, source: "Climate Policy Initiative", date: "9 Apr 2026",
-    category: "Policy", impact: "MEDIUM", daysAgo: 2, time: "2d ago",
-    headline: "VCMI 2.0 Claims Code raises bar: companies must retire credits within 3 years of vintage",
-    whatHappened: "The Voluntary Carbon Markets Integrity Initiative published VCMI 2.0 Claims Code on 9 April 2026, requiring corporate buyers to retire credits with vintages within three years of the claim year. This supersedes previous guidance allowing older vintages. The new requirement applies to claims filed from Q3 2026.",
-    whyItMatters: "The vintage constraint structurally disadvantages pre-2022 credit inventory in corporate procurement channels. New issuances gain a built-in demand premium as vintage eligibility narrows. Long-dated forward agreements must be reviewed for vintage compliance. The constraint accelerates the shift toward real-time or near-time credit procurement as a structural market feature.",
-    priceDirection: "Bearish",
-    supplyImpact: "Neutral",
-    demandImpact: "Decrease",
-    beneficiaries: ["Recent-vintage credit issuers (2023–2026)", "Active project developers with current issuance pipelines"],
-    adverselyImpacted: ["Pre-2022 vintage credit holders", "Buyers with long-dated forward purchase agreements"],
-    affectedSegments: ["REDD+", "IFM", "ARR", "Blue Carbon"],
-    immediateImplication: "Audit portfolio vintage profile against VCMI 2.0 eligibility window immediately. Pre-2022 credits face repricing as corporate procurement demand evaporates for VCMI-claims purposes from Q3 2026.",
-    mediumTermImplication: "Structural demand shift toward current-vintage credits creates a new issuance premium. Long-dated forward contracts negotiated before VCMI 2.0 may require vintage compliance amendments.",
-    marketSignal: "Unfavourable",
-    confidence: "High",
-    crossMarketImpact: "VCMI vintage constraints parallel the EUA market's shift away from historical allocation credits — the supply compression for old vintages mirrors how CDM credits lost corporate eligibility post-Paris, creating vintage arbitrage opportunities for sophisticated market participants.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Decreases",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "The 3-year vintage window creates a predictable demand cycle — buyers front-run purchases in years 1–2 post-issuance before the vintage ages out. Sophisticated project developers can optimise issuance timing to capture peak demand windows, a dynamic passive holders cannot replicate.",
+    id: 9,
+    source: "Climate Policy Initiative", date: "9 Apr 2026", daysAgo: 2, time: "2d ago",
+    domain: "VCM", significance: "Moderate", confidence: "High",
+    headline: "VCMI 2.0 Claims Code published: corporate credit retirement now required within three years of vintage year",
+    keyFact: "VCMI published an updated Claims Code on 9 April 2026 requiring companies to retire credits with vintages within three years of the claim year, effective for claims filed from Q3 2026.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+, ARR, IFM, blue carbon)", "Policy and Regulation"],
+    geography: ["Global"],
+    whatHappened: "The Voluntary Carbon Markets Integrity Initiative published VCMI 2.0 Claims Code on 9 April 2026. (Confirmed) The updated code requires corporate buyers to retire credits with vintages within three years of the claim year, superseding previous guidance that permitted older vintages. (Confirmed) The new vintage requirement applies to claims filed from Q3 2026. (Confirmed — VCMI.global)",
+    keyDetails: [
+      "Organisation: Voluntary Carbon Markets Integrity Initiative (VCMI)",
+      "Document: VCMI 2.0 Claims Code",
+      "Publication date: 9 April 2026",
+      "Key change: Vintage window restricted to 3 years prior to claim year",
+      "Effective date for new requirement: Q3 2026",
+      "Previous vintage allowance: Not specified in cited source",
+      "Guidance on transitional treatment of existing claims: Not disclosed",
+      "Enforcement mechanism: Not disclosed",
+    ],
+    context: "The VCMI Claims Code sets out requirements for corporate entities making voluntary carbon market use-of-carbon-credits claims. VCMI 1.0 was published in 2023 and established the initial framework for Silver, Gold, and Platinum tier claims. This update addresses vintage currency as a component of claim integrity.",
+    relatedDevelopments: [
+      {
+        headline: "Q1 2026 VCM price data: NBS credits at $18.40/tCO₂e; BeZero-rated credits at 42% premium",
+        source: "Carbon Pulse", date: "11 Apr 2026",
+        connection: "The vintage eligibility change under VCMI 2.0 is directly relevant to the pricing dynamics reported for older versus current-vintage inventory.",
+      },
+    ],
     keywords: ["vcmi", "vintage", "claims code", "corporate", "net-zero", "retirement"],
   },
   {
-    id: 10, source: "Gold Standard", date: "9 Apr 2026",
-    category: "Standards", impact: "LOW", daysAgo: 2, time: "2d ago",
-    headline: "Gold Standard launches SDG Impact Registry — co-benefits independently verified and tokenised",
-    whatHappened: "Gold Standard officially launched its SDG Impact Registry on 9 April 2026, enabling granular SDG co-benefit claims to be independently verified and tokenised on-chain. Early adopters from 12 ARR and IFM projects report an 8–12% buyer premium for tokenised SDG claims, driven primarily by corporate buyers with nature-positive commitments and TNFD reporting obligations.",
-    whyItMatters: "Independent on-chain verification reduces the documentation burden for Scope 3 reporting under CSRD and creates a secondary tradeable asset layer for co-benefits. This may attract non-traditional capital — impact funds, blended finance vehicles — that do not currently participate in core credit markets, broadening the buyer base for Gold Standard projects.",
-    priceDirection: "Bullish",
-    supplyImpact: "Neutral",
-    demandImpact: "Increase",
-    beneficiaries: ["ARR and IFM projects with strong SDG profiles (SDG 13, 15)", "Gold Standard-certified project developers"],
-    adverselyImpacted: ["Single-methodology projects without co-benefit documentation"],
-    affectedSegments: ["ARR", "IFM"],
-    immediateImplication: "Projects with existing SDG co-benefit documentation should initiate on-boarding for SDG Impact Registry tokenisation to capture early-adopter premiums before broader market adoption.",
-    mediumTermImplication: "Tokenised co-benefit claims attract new capital pools from TNFD-aligned and CSRD-obligated buyers. Registry expansion to REDD+ and Blue Carbon expected within 12 months.",
-    marketSignal: "Favourable",
-    confidence: "Medium",
-    crossMarketImpact: "Tokenised SDG claims create a secondary tradeable asset layer that may accelerate on-chain infrastructure investment in VCM broadly, with knock-on implications for settlement standardisation across all registry types.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Neutral",
-    signalStrength: "Watch List",
-    nonObviousInsight: "On-chain SDG verification reduces documentation burden under CSRD — European corporates facing CSRD compliance may show disproportionate demand for Gold Standard credits specifically, creating geographic demand asymmetry. CSRD-driven demand may prove more durable than ESG equity fund flows, which are subject to redemption pressure.",
+    id: 10,
+    source: "Gold Standard", date: "9 Apr 2026", daysAgo: 2, time: "2d ago",
+    domain: "VCM", significance: "Monitor", confidence: "Medium",
+    headline: "Gold Standard launches SDG Impact Registry enabling on-chain verification and tokenisation of SDG co-benefit claims",
+    keyFact: "Gold Standard officially launched the SDG Impact Registry on 9 April 2026, providing independent on-chain verification and tokenisation of SDG co-benefit claims for registered projects.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (ARR, IFM)", "Policy and Regulation"],
+    geography: ["Global"],
+    whatHappened: "Gold Standard officially launched the SDG Impact Registry on 9 April 2026. (Confirmed) The registry enables granular SDG co-benefit claims to be independently verified and tokenised on-chain. (Confirmed) Gold Standard reported that early adopters from 12 ARR and IFM projects have recorded an 8–12% buyer premium for tokenised SDG claims. (Reported — Gold Standard)",
+    keyDetails: [
+      "Organisation: Gold Standard",
+      "Product: SDG Impact Registry",
+      "Launch date: 9 April 2026",
+      "Functionality: Independent on-chain verification and tokenisation of SDG co-benefits",
+      "Early adopter projects: 12 ARR and IFM projects (Reported)",
+      "Reported buyer premium: 8–12% for tokenised SDG claims (Reported — Gold Standard; not independently verified)",
+      "Blockchain platform used: Not disclosed",
+      "Expansion to other project types: Not disclosed",
+    ],
+    context: "Gold Standard is an accredited voluntary carbon market standard body. SDG co-benefits refer to project contributions to UN Sustainable Development Goals beyond direct carbon sequestration or avoidance. The registry launch follows a pilot phase, details of which are not disclosed in the cited source.",
+    relatedDevelopments: [],
     keywords: ["gold standard", "sdg", "co-benefits", "tokenise", "nature-positive", "registry"],
   },
   // ── Archived ──────────────────────────────────────────────────────────────
   {
-    id: 11, source: "Carbon Brief", date: "3 Apr 2026",
-    category: "Policy", impact: "MEDIUM", daysAgo: 8, time: "8d ago",
-    headline: "COP30 host Brazil submits national REDD+ reference level to UNFCCC — sets precedent for Article 6 host country claims",
-    whatHappened: "Brazil formally submitted its revised Forest Reference Emission Level (FREL) to the UNFCCC on 3 April 2026, incorporating deforestation data through December 2025. The submission governs how Brazilian REDD+ projects are assessed for Article 6.2 corresponding adjustments and establishes Brazil's national accounting baseline for COP30 negotiations in Belém.",
-    whyItMatters: "The FREL establishes a national accounting baseline that some project-level REDD+ operations must align with, potentially compressing their claimable credits. Simultaneously it positions Brazil as a credible Article 6.2 counterparty ahead of COP30, potentially catalysing new bilateral carbon agreements that redirect supply from VCM toward compliance channels.",
-    priceDirection: "Unclear",
-    supplyImpact: "Decrease",
-    demandImpact: "Neutral",
-    beneficiaries: ["Projects with baselines above the national FREL", "Jurisdictional REDD+ mechanism proponents"],
-    adverselyImpacted: ["Project-level REDD+ in Brazil with corresponding adjustment exposure"],
-    affectedSegments: ["REDD+"],
-    immediateImplication: "Brazilian REDD+ project owners should model baseline claims against the updated FREL. Corresponding adjustment obligations may affect forward credit schedules and existing off-take agreements.",
-    mediumTermImplication: "Brazil may use FREL credibility to negotiate bilateral Article 6.2 agreements ahead of COP30, potentially redirecting supply from VCM toward compliance channels and reducing VCM availability.",
-    marketSignal: "Uncertain",
-    confidence: "High",
-    crossMarketImpact: "Brazil's FREL sets a precedent for other Amazon-region host countries — Colombia, Ecuador, and Peru may face pressure to submit national reference levels, systematically compressing project-level REDD+ supply across the basin.",
-    integrityImpact: "Strengthens",
-    liquidityImpact: "Neutral",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "COP30 timing creates political incentives for Brazil to engineer a conservative FREL — creating headroom for positive Article 6 deal announcements at the conference. A conservative FREL that Brazil later 'beats' generates positive optics without genuine integrity improvement.",
+    id: 11,
+    source: "Carbon Brief", date: "3 Apr 2026", daysAgo: 8, time: "8d ago",
+    domain: "Article 6", significance: "Moderate", confidence: "High",
+    headline: "Brazil submits revised Forest Reference Emission Level (FREL) to UNFCCC ahead of COP30 Belém negotiations",
+    keyFact: "Brazil formally submitted a revised Forest Reference Emission Level to the UNFCCC on 3 April 2026, incorporating deforestation data through December 2025.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+)", "Policy and Regulation"],
+    geography: ["Latin America (Brazil)"],
+    whatHappened: "Brazil formally submitted a revised Forest Reference Emission Level to the UNFCCC on 3 April 2026, incorporating deforestation data through December 2025. (Confirmed) The FREL submission will govern how Brazilian REDD+ projects are assessed for Article 6.2 corresponding adjustments. (Confirmed) Carbon Brief reported the submission as establishing Brazil's national accounting baseline ahead of COP30 negotiations scheduled for Belém, November 2026. (Reported — Carbon Brief)",
+    keyDetails: [
+      "Submitting party: Brazil",
+      "Document type: Forest Reference Emission Level (FREL)",
+      "Submission date: 3 April 2026",
+      "Data coverage: Through December 2025",
+      "Relevance: Article 6.2 corresponding adjustment baseline for Brazilian REDD+ projects",
+      "COP30 location: Belém, Brazil — November 2026",
+      "UNFCCC assessment timeline: Not disclosed",
+    ],
+    context: "Forest Reference Emission Levels are submitted by UNFCCC parties and serve as national benchmarks for assessing deforestation reduction under REDD+ frameworks. Under Article 6.2, FRELs may affect corresponding adjustment calculations for bilateral ITMO transactions.",
+    relatedDevelopments: [
+      {
+        headline: "UNFCCC Article 6.4 Supervisory Body adopts revised additionality standard",
+        source: "UNFCCC Secretariat", date: "11 Apr 2026",
+        connection: "The additionality standard revision is directly relevant to Brazilian REDD+ projects whose compliance may need to be assessed against the newly submitted FREL.",
+      },
+    ],
     keywords: ["brazil", "amazon", "redd+", "frel", "article 6", "cop30", "belem"],
   },
   {
-    id: 12, source: "Bloomberg Green", date: "1 Apr 2026",
-    category: "Markets", impact: "MEDIUM", daysAgo: 10, time: "10d ago",
-    headline: "Institutional investors allocate $4.2B to voluntary carbon in Q1 2026, driven by net-zero fund commitments",
-    whatHappened: "Pension funds and sovereign wealth funds increased voluntary carbon credit allocations materially in Q1 2026, with aggregate new capital of $4.2 billion targeting long-tenor forward purchase agreements with rated, jurisdictional NBS projects. Blackrock, APG, and Temasek were cited among active allocators. [Individual fund confirmations unverified — reported claim]",
-    whyItMatters: "This represents a structural shift from OTC spot trading dominated by corporate buyers to institutional forward allocation — higher-conviction, longer-duration capital. Institutional entry signals VCM is approaching fiduciary-grade asset class status, simultaneously creating price floor support for high-rated NBS while widening the gap with unrated credits.",
-    priceDirection: "Bullish",
-    supplyImpact: "Neutral",
-    demandImpact: "Increase",
-    beneficiaries: ["Jurisdictional NBS developers with institutional-grade documentation", "Forward purchase agreement counterparties"],
-    adverselyImpacted: ["Small-scale project developers unable to access institutional capital", "Unrated credit holders facing a widening discount"],
-    affectedSegments: ["REDD+", "IFM", "Blue Carbon"],
-    immediateImplication: "Monitor secondary market volume increases as institutional players deploy capital. High-rated NBS credits may see bid-side strengthening as fund mandates are deployed into Q2.",
-    mediumTermImplication: "Institutional presence accelerates market infrastructure requirements — custody, legal standardisation, reporting. Projects lacking institutional-grade documentation face growing barriers to premium capital access.",
-    marketSignal: "Favourable",
-    confidence: "High",
-    crossMarketImpact: "Pension fund entry into VCM signals maturity that typically accelerates regulatory standardisation — fiduciary-grade capital requires formal frameworks, likely catalysing ICVCM, VCMI, and national regulator attention on VCM standards.",
-    integrityImpact: "Neutral",
-    liquidityImpact: "Increases",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "$4.2B represents approximately 2–3x typical annual VCM transaction volume. At this scale, institutional capital chasing limited high-quality supply creates overvaluation risk in rated NBS — risk-return profiles narrow as capital inflow compresses yields, potentially setting up a repricing event if corporate demand fails to absorb institutional supply.",
+    id: 12,
+    source: "Bloomberg Green", date: "1 Apr 2026", daysAgo: 10, time: "10d ago",
+    domain: "Finance", significance: "Moderate", confidence: "High",
+    headline: "Bloomberg reports $4.2B in institutional voluntary carbon allocations in Q1 2026, primarily targeting forward purchase agreements on rated NBS projects",
+    keyFact: "Bloomberg Green reported aggregate institutional voluntary carbon allocations of $4.2 billion in Q1 2026, primarily in long-tenor forward purchase agreements with rated jurisdictional NBS projects.",
+    keyFactLabel: "Reported",
+    sector: ["Nature-based (REDD+, IFM, blue carbon)", "Finance"],
+    geography: ["Global"],
+    whatHappened: "Bloomberg Green reported on 1 April 2026 that pension funds and sovereign wealth funds increased voluntary carbon credit allocations in Q1 2026, with aggregate new capital reported at $4.2 billion. (Reported — Bloomberg Green) The majority of capital was reported as targeting long-tenor forward purchase agreements with rated, jurisdictional NBS projects. (Reported — Bloomberg Green) Blackrock, APG, and Temasek were cited among active allocators. (Reported — Bloomberg Green; individual fund allocations not independently confirmed) [Unconfirmed — specific fund figures]",
+    keyDetails: [
+      "Source: Bloomberg Green, 1 April 2026",
+      "Reported aggregate allocation: $4.2 billion in Q1 2026",
+      "Allocation type: Long-tenor forward purchase agreements (Reported)",
+      "Primary project type: Rated jurisdictional NBS (Reported)",
+      "Named allocators: Blackrock, APG, Temasek (Reported; individual figures not confirmed) [Unconfirmed]",
+      "Currency: USD",
+      "Verification by named funds: Not disclosed in cited source",
+    ],
+    context: "Institutional participation in voluntary carbon markets has been subject to growing regulatory and reputational scrutiny. Forward purchase agreements in VCM are typically bilateral OTC contracts and are not reported to a central trade repository.",
+    relatedDevelopments: [
+      {
+        headline: "Q1 2026 VCM price data: NBS credits at $18.40/tCO₂e; rated premium at 42%",
+        source: "Carbon Pulse", date: "11 Apr 2026",
+        connection: "The institutional procurement volumes reported by Bloomberg are directly relevant to the pricing environment reported by Carbon Pulse for rated NBS credits in the same period.",
+      },
+    ],
     keywords: ["institutional", "pension", "sovereign wealth", "investment", "forward purchase", "nbs"],
   },
   {
-    id: 13, source: "Sylvera", date: "30 Mar 2026",
-    category: "Standards", impact: "MEDIUM", daysAgo: 12, time: "12d ago",
-    headline: "Sylvera publishes updated Carbon Credit Ratings: 4 REDD+ projects downgraded on permanence concerns",
-    whatHappened: "Sylvera published its Q1 2026 rating update on 30 March 2026, downgrading four high-profile REDD+ projects citing permanence risk from increased wildfire frequency and El Niño-driven drought stress. One project in Peru moved from B+ to C+. Three projects in fire-prone biomes in Brazil and Indonesia received negative outlook revisions ahead of formal rating actions.",
-    whyItMatters: "Permanence is now the primary pricing driver for REDD+ credits, displacing additionality concerns that dominated pre-2023 integrity debates. El Niño correlation with permanence risk creates a cyclical downgrade pattern that institutional buyers with rating covenants must anticipate. Sylvera downgrades have historically preceded 20–35% average price corrections in affected credits.",
-    priceDirection: "Bearish",
-    supplyImpact: "Neutral",
-    demandImpact: "Decrease",
-    beneficiaries: ["Competing undowngraded REDD+ projects", "Buyers who divested prior to the rating action"],
-    adverselyImpacted: ["Holders of downgraded projects", "Peru-focused REDD+ portfolio managers", "Investors in fire-exposed tropical biomes"],
-    affectedSegments: ["REDD+", "IFM"],
-    immediateImplication: "Review all REDD+ positions in fire-prone biomes and El Niño-exposed geographies for permanence rating risk. Monitor Sylvera's negative outlook list for early warning signals.",
-    mediumTermImplication: "Insurance market repricing for fire-exposed forest carbon projects may follow rating actions. Projects with negative outlooks face 20–35% historical average price corrections if downgrades materialise.",
-    marketSignal: "Unfavourable",
-    confidence: "High",
-    crossMarketImpact: "Permanence downgrades in fire-prone biomes create pricing feedback into carbon credit portfolio insurance markets — insurers may increase premiums or withdraw coverage for affected geographies, compounding the direct pricing impact.",
-    integrityImpact: "Weakens",
-    liquidityImpact: "Decreases",
-    signalStrength: "Medium Impact",
-    nonObviousInsight: "El Niño correlation with permanence downgrades reveals a cyclical systematic risk, not merely idiosyncratic project risk. Portfolios concentrated across multiple tropical forest geographies face correlated downgrade pressure during El Niño years — a scenario standard project-level due diligence does not capture.",
+    id: 13,
+    source: "Sylvera", date: "30 Mar 2026", daysAgo: 12, time: "12d ago",
+    domain: "Science", significance: "Moderate", confidence: "High",
+    headline: "Sylvera Q1 2026 rating update downgrades four REDD+ projects citing increased wildfire frequency and El Niño-driven permanence risk",
+    keyFact: "Sylvera's Q1 2026 rating update downgraded four REDD+ projects on permanence grounds, citing wildfire frequency and El Niño-driven drought stress; one Peru project moved from B+ to C+.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+, IFM)"],
+    geography: ["Global", "Latin America (Peru)", "Latin America (Brazil)", "Asia-Pacific (Indonesia)"],
+    whatHappened: "Sylvera published its Q1 2026 carbon credit rating update on 30 March 2026, downgrading four REDD+ projects on permanence grounds. (Confirmed) The downgrades cited increased wildfire frequency and El Niño-driven drought stress as rationale. (Confirmed — Sylvera) One project in Peru was downgraded from a B+ to C+ rating. (Confirmed) Three projects in fire-prone biomes in Brazil and Indonesia received negative outlook revisions ahead of formal rating actions. (Confirmed — Sylvera)",
+    keyDetails: [
+      "Organisation: Sylvera",
+      "Publication: Q1 2026 Carbon Credit Rating Update — 30 March 2026",
+      "Projects formally downgraded: 4",
+      "Stated rationale: Wildfire frequency and El Niño-driven drought stress",
+      "Peru project: Downgraded from B+ to C+",
+      "Brazil and Indonesia projects: Negative outlook revisions (formal actions pending)",
+      "Number of projects on negative outlook: 3 (Confirmed)",
+      "Project names: Not disclosed in cited source",
+    ],
+    context: "Sylvera is an independent carbon credit ratings agency. Its ratings assess credit quality factors including additionality, permanence, co-benefits, and MRV accuracy. Permanence risk covers the possibility that sequestered carbon may be released due to physical events such as fire, drought, or disease.",
+    relatedDevelopments: [
+      {
+        headline: "BeZero Carbon releases rating framework v3.1 separating 'Leakage' as a standalone risk dimension",
+        source: "BeZero Carbon", date: "11 Apr 2026",
+        connection: "BeZero's contemporaneous methodology revision addresses NBS integrity risk in the same project segment covered by Sylvera's Q1 2026 downgrade action.",
+      },
+    ],
     keywords: ["sylvera", "downgrade", "permanence", "wildfire", "el nino", "peru", "drought"],
   },
   {
-    id: 14, source: "IETA", date: "28 Mar 2026",
-    category: "Regulatory", impact: "LOW", daysAgo: 14, time: "14d ago",
-    headline: "IETA publishes model host country agreement template for Article 6.2 bilateral transactions",
-    whatHappened: "IETA released a standardised Host Country Agreement template on 28 March 2026, covering corresponding adjustment procedures, dispute resolution, and credit retirement obligations for Article 6.2 bilateral transactions. The template has received informal endorsement from representatives of 14 UNFCCC parties. [Formal governmental adoption not yet confirmed]",
-    whyItMatters: "Standardised HCA templates reduce legal negotiation time for bilateral deals from months to weeks, materially lowering transaction costs and accelerating Article 6.2 deal flow. This removes a significant structural barrier that has suppressed bilateral carbon transaction volumes since the Paris Agreement and may unlock a material new supply channel.",
-    priceDirection: "Neutral",
-    supplyImpact: "Increase",
-    demandImpact: "Neutral",
-    beneficiaries: ["Article 6.2 bilateral deal participants", "Legal and advisory firms serving carbon market clients"],
-    adverselyImpacted: [],
-    affectedSegments: ["REDD+", "IFM", "ARR", "Blue Carbon"],
-    immediateImplication: "Parties active in bilateral Article 6.2 negotiations should review template compatibility with existing positions. Early adoption signals credible counterparty status to host country negotiating teams.",
-    mediumTermImplication: "Accelerated Article 6.2 deal flow increases supply of compliance-grade carbon units, which may compress the premium currently commanded by VCM credits relative to Article 6.2 ITMOs in some procurement channels.",
-    marketSignal: "Favourable",
-    confidence: "High",
-    crossMarketImpact: "Article 6.2 volume acceleration from HCA standardisation may compress VCS/Gold Standard credit premiums, as buyers previously using VCM as an Article 6-adjacent proxy now access true bilateral government-backed units.",
-    integrityImpact: "Neutral",
-    liquidityImpact: "Increases",
-    signalStrength: "Watch List",
-    nonObviousInsight: "Template standardisation creates network effects — the more countries adopt the IETA template, the harder deviation becomes. IETA effectively becomes a de facto standard-setter without formal governmental authority, and parties that shape the current template gain disproportionate influence over future Article 6.2 market structure.",
+    id: 14,
+    source: "IETA", date: "28 Mar 2026", daysAgo: 14, time: "14d ago",
+    domain: "Article 6", significance: "Monitor", confidence: "High",
+    headline: "IETA publishes standardised Host Country Agreement template for Article 6.2 bilateral transactions covering corresponding adjustment and dispute resolution",
+    keyFact: "IETA released a standardised HCA template on 28 March 2026 covering corresponding adjustment procedures, dispute resolution, and credit retirement obligations for Article 6.2 bilateral transactions, with informal endorsement from 14 UNFCCC party representatives.",
+    keyFactLabel: "Confirmed",
+    sector: ["Nature-based (REDD+, ARR, IFM, blue carbon)", "Policy and Regulation"],
+    geography: ["Global"],
+    whatHappened: "The International Emissions Trading Association published a standardised Host Country Agreement template on 28 March 2026. (Confirmed) The template covers corresponding adjustment procedures, dispute resolution mechanisms, and credit retirement obligations for Article 6.2 bilateral transactions. (Confirmed) IETA reported informal endorsement from representatives of 14 UNFCCC parties; formal governmental adoption has not been confirmed. (Reported — IETA) [Unconfirmed — formal adoption status]",
+    keyDetails: [
+      "Organisation: International Emissions Trading Association (IETA)",
+      "Document: Model Host Country Agreement template for Article 6.2",
+      "Publication date: 28 March 2026",
+      "Sections covered: Corresponding adjustment procedures, dispute resolution, credit retirement obligations",
+      "Informal endorsements: Representatives of 14 UNFCCC parties (Reported — IETA)",
+      "Formal governmental adoption: Not confirmed [Unconfirmed]",
+      "Legal status of template: Not disclosed",
+    ],
+    context: "Article 6.2 of the Paris Agreement enables bilateral trading of internationally transferred mitigation outcomes between parties, subject to corresponding adjustment to avoid double-counting. Host country agreement terms are negotiated bilaterally and have not previously been standardised across transactions.",
+    relatedDevelopments: [
+      {
+        headline: "Brazil submits revised Forest Reference Emission Level to UNFCCC ahead of COP30",
+        source: "Carbon Brief", date: "3 Apr 2026",
+        connection: "Brazil's FREL submission is directly relevant to the corresponding adjustment provisions covered in the IETA HCA template, as Brazilian Article 6.2 transactions would operate against the submitted reference level.",
+      },
+    ],
     keywords: ["ieta", "article 6.2", "bilateral", "host country agreement", "hca", "corresponding adjustment"],
   },
 ];
@@ -504,23 +548,23 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function ClimateNewsPage() {
-  const [activeCategory, setActiveCategory] = useState<"All" | Category>("All");
-  const [view,           setView]           = useState<View>("live");
-  const [sortBy,         setSortBy]         = useState<SortBy>("recent");
-  const [sortOpen,       setSortOpen]       = useState(false);
+  const [activeDomain,    setActiveDomain]    = useState<"All" | Domain>("All");
+  const [view,            setView]            = useState<View>("live");
+  const [sortBy,          setSortBy]          = useState<SortBy>("recent");
+  const [sortOpen,        setSortOpen]        = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<CountryFilter>("All");
-  const [countryOpen,    setCountryOpen]    = useState(false);
-  const [eventsOpen,     setEventsOpen]     = useState(true);
-  const [manualArchive,  setManualArchive]  = useState<Set<number>>(new Set());
-  const [archivingIds,   setArchivingIds]   = useState<Set<number>>(new Set());
-  const [expandedIds,    setExpandedIds]    = useState<Set<number>>(new Set());
+  const [countryOpen,     setCountryOpen]     = useState(false);
+  const [eventsOpen,      setEventsOpen]      = useState(true);
+  const [manualArchive,   setManualArchive]   = useState<Set<number>>(new Set());
+  const [archivingIds,    setArchivingIds]    = useState<Set<number>>(new Set());
+  const [expandedIds,     setExpandedIds]     = useState<Set<number>>(new Set());
   const sortRef    = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
   const mainRef    = useRef<HTMLElement>(null);
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-  }, [activeCategory, view, sortBy, selectedCountry]);
+  }, [activeDomain, view, sortBy, selectedCountry]);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -564,40 +608,45 @@ export default function ClimateNewsPage() {
 
   // Filter chain
   const baseItems       = allNews.filter(n => view === "archive" ? isArchived(n) : !isArchived(n));
-  const catFiltered     = activeCategory === "All" ? baseItems : baseItems.filter(n => n.category === activeCategory);
+  const domainFiltered  = activeDomain === "All" ? baseItems : baseItems.filter(n => n.domain === activeDomain);
   const countryFiltered = selectedCountry === "All"
-    ? catFiltered
-    : catFiltered.filter(n => {
+    ? domainFiltered
+    : domainFiltered.filter(n => {
         const keys = COUNTRY_KEYWORDS[selectedCountry] ?? [];
         const text = `${n.headline} ${n.whatHappened} ${n.keywords.join(" ")}`.toLowerCase();
         return keys.some(k => text.includes(k));
       });
 
   const sorted = [...countryFiltered].sort((a, b) => {
-    if (sortBy === "impact") {
-      const diff = IMPACT_ORDER[a.impact] - IMPACT_ORDER[b.impact];
+    if (sortBy === "significance") {
+      const diff = SIGNIFICANCE_ORDER[a.significance] - SIGNIFICANCE_ORDER[b.significance];
       return diff !== 0 ? diff : a.daysAgo - b.daysAgo;
     }
-    if (sortBy === "category") {
-      const diff = a.category.localeCompare(b.category);
+    if (sortBy === "domain") {
+      const diff = a.domain.localeCompare(b.domain);
       return diff !== 0 ? diff : a.daysAgo - b.daysAgo;
     }
     return a.daysAgo - b.daysAgo;
   });
 
-  const liveCount    = allNews.filter(n => !isArchived(n)).length;
+  // Stats counts
+  const liveItems    = allNews.filter(n => !isArchived(n));
   const archiveCount = allNews.filter(n =>  isArchived(n)).length;
-  const highCount    = allNews.filter(n => !isArchived(n) && n.signalStrength === "High Impact").length;
-  const regCount     = allNews.filter(n => !isArchived(n) && n.category === "Regulatory").length;
-  const mktCount     = allNews.filter(n => !isArchived(n) && n.category === "Markets").length;
-  const stdCount     = allNews.filter(n => !isArchived(n) && n.category === "Standards").length;
+  const highCount    = liveItems.filter(n => n.significance === "High").length;
+  const art6Count    = liveItems.filter(n => n.domain === "Article 6").length;
+  const vcmCount     = liveItems.filter(n => n.domain === "VCM").length;
+  const sciCount     = liveItems.filter(n => n.domain === "Science").length;
 
   const animHigh = useCountUp(highCount, 700);
-  const animReg  = useCountUp(regCount,  700);
-  const animMkt  = useCountUp(mktCount,  700);
-  const animStd  = useCountUp(stdCount,  700);
+  const animArt6 = useCountUp(art6Count, 700);
+  const animVcm  = useCountUp(vcmCount,  700);
+  const animSci  = useCountUp(sciCount,  700);
 
-  const SORT_LABELS: Record<SortBy, string> = { recent: "Most Recent", impact: "Highest Impact", category: "Category" };
+  const SORT_LABELS: Record<SortBy, string> = {
+    recent:       "Most Recent",
+    significance: "Significance",
+    domain:       "Domain",
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -670,7 +719,7 @@ export default function ClimateNewsPage() {
               {sortOpen && (
                 <div className="drop-in absolute right-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
                      style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
-                  {(["recent", "impact", "category"] as SortBy[]).map(opt => (
+                  {(["recent", "significance", "domain"] as SortBy[]).map(opt => (
                     <button key={opt} onClick={() => { setSortBy(opt); setSortOpen(false); }}
                       className="w-full text-left px-3.5 py-2 text-[12px] font-medium"
                       style={{
@@ -716,10 +765,10 @@ export default function ClimateNewsPage() {
           <div className="shrink-0" style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
             <div className="grid grid-cols-4 divide-x" style={{ borderColor: "#e5e7eb" }}>
               {[
-                { label: "High-Impact Signals", value: animHigh, color: "#F86501", Icon: AlertTriangle, large: true },
-                { label: "Regulatory Updates",  value: animReg,  color: "#F86501", Icon: ShieldAlert },
-                { label: "Market Signals",       value: animMkt,  color: "#00938C", Icon: BarChart3 },
-                { label: "Standard Changes",     value: animStd,  color: "#374151", Icon: BookOpen },
+                { label: "High Significance", value: animHigh, color: "#F86501", Icon: AlertTriangle, large: true },
+                { label: "Article 6",          value: animArt6, color: "#00938C", Icon: Globe    },
+                { label: "VCM Updates",         value: animVcm,  color: "#374151", Icon: BookOpen },
+                { label: "Science & Integrity", value: animSci,  color: "#4b5563", Icon: Beaker   },
               ].map(({ label, value, color, Icon, large }) => (
                 <div key={label} className="flex items-center gap-2.5 px-4 py-2">
                   <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
@@ -733,22 +782,22 @@ export default function ClimateNewsPage() {
           </div>
         )}
 
-        {/* ── Category tabs ── */}
+        {/* ── Domain tabs ── */}
         <div className="shrink-0 flex items-center gap-1 px-5 overflow-x-auto"
              style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
-          {ALL_CATEGORIES.map(cat => {
-            const isActive = activeCategory === cat;
-            const cfg = cat !== "All" ? CATEGORY_CONFIG[cat] : null;
-            const CatIcon = cfg?.icon;
+          {ALL_DOMAINS.map(dom => {
+            const isActive = activeDomain === dom;
+            const cfg = dom !== "All" ? DOMAIN_CONFIG[dom] : null;
+            const DomIcon = cfg?.icon;
             return (
-              <button key={cat} onClick={() => setActiveCategory(cat)}
+              <button key={dom} onClick={() => setActiveDomain(dom)}
                 className="relative shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-medium transition-colors"
                 style={{ color: isActive ? (cfg?.color ?? "#00938C") : "#4b5563" }}
                 onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#374151"; }}
                 onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#4b5563"; }}
               >
-                {CatIcon && <CatIcon className="w-3 h-3" />}
-                {cat}
+                {DomIcon && <DomIcon className="w-3 h-3" />}
+                {dom}
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-all"
                       style={{
                         background: cfg?.color ?? "#00938C",
@@ -785,7 +834,9 @@ export default function ClimateNewsPage() {
                   <Newspaper className="w-5 h-5" style={{ color: "#00938C" }} />
                 </div>
                 <p className="font-semibold text-sm" style={{ color: "#374151" }}>
-                  {selectedCountry !== "All" ? `No ${selectedCountry} coverage in this view` : "No items in this category"}
+                  {selectedCountry !== "All"
+                    ? `No ${selectedCountry} coverage in this view`
+                    : "No items in this category"}
                 </p>
               </div>
             ) : view === "live" ? (
@@ -793,25 +844,32 @@ export default function ClimateNewsPage() {
                 {/* Section header */}
                 <div className="flex items-center gap-3 px-4 py-2.5"
                      style={{ borderBottom: "1px solid #e5e7eb", background: "#fafafa" }}>
-                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#374151" }}>Latest Intelligence</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#374151" }}>
+                    Latest Intelligence
+                  </span>
                   <div className="flex-1 h-px" style={{ background: "#e5e7eb" }} />
-                  <span className="text-[10px] tabular-nums" style={{ color: "#9ca3af" }}>{sorted.length} signals</span>
+                  <span className="text-[10px] tabular-nums" style={{ color: "#9ca3af" }}>
+                    {sorted.length} item{sorted.length !== 1 ? "s" : ""}
+                  </span>
                 </div>
 
                 {/* Story rows */}
-                <div key={activeCategory + view + sortBy + selectedCountry}>
+                <div key={activeDomain + view + sortBy + selectedCountry}>
                   {sorted.map((item, i) => {
-                    const cat  = CATEGORY_CONFIG[item.category];
-                    const CatIcon = cat.icon;
-                    const ss   = SIGNAL_STRENGTH_CONFIG[item.signalStrength];
+                    const dom = DOMAIN_CONFIG[item.domain];
+                    const DomIcon = dom.icon;
+                    const sig = SIGNIFICANCE_CONFIG[item.significance];
+                    const conf = CONFIDENCE_CONFIG[item.confidence];
+                    const factCol = FACT_LABEL_CONFIG[item.keyFactLabel];
                     const isExpanded = expandedIds.has(item.id);
+
                     return (
                       <div
                         key={item.id}
                         className={`row-stagger${archivingIds.has(item.id) ? " card-exiting" : ""}`}
                         style={{ "--i": i, borderBottom: "1px solid #f3f4f6" } as React.CSSProperties}
                       >
-                        {/* ── Compact header ── */}
+                        {/* ── Layer 1: Compact ── */}
                         <div
                           className="flex gap-3 px-4 py-3 cursor-pointer"
                           onClick={() => toggleExpand(item.id)}
@@ -826,17 +884,21 @@ export default function ClimateNewsPage() {
                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           </div>
 
-                          {/* Text block */}
+                          {/* Text */}
                           <div className="flex-1 min-w-0">
-                            {/* Row 1: category · signal strength · source · time */}
+                            {/* Row 1: domain · significance · confidence · time */}
                             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: cat.color }}>
-                                <CatIcon className="w-2.5 h-2.5" />
-                                {item.category}
+                              <span className="flex items-center gap-0.5 text-[10px] font-bold shrink-0"
+                                    style={{ color: dom.color }}>
+                                <DomIcon className="w-2.5 h-2.5" />
+                                {item.domain}
                               </span>
-                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide"
-                                    style={{ color: ss.color, background: ss.bg, border: `1px solid ${ss.border}` }}>
-                                {item.signalStrength}
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0"
+                                    style={{ color: sig.color, background: sig.bg, border: `1px solid ${sig.border}` }}>
+                                {item.significance}
+                              </span>
+                              <span className="text-[9px] font-semibold shrink-0" style={{ color: conf.color }}>
+                                {item.confidence} conf.
                               </span>
                               <span className="ml-auto text-[10px] flex items-center gap-1 shrink-0" style={{ color: "#9ca3af" }}>
                                 <Clock className="w-2.5 h-2.5" />{item.time}
@@ -844,42 +906,50 @@ export default function ClimateNewsPage() {
                             </div>
 
                             {/* Headline */}
-                            <h3 className="text-[13px] font-semibold leading-snug line-clamp-2 mb-2" style={{ color: "#111827" }}>
+                            <h3 className="text-[13px] font-semibold leading-snug line-clamp-2 mb-2"
+                                style={{ color: "#111827" }}>
                               {item.headline}
                             </h3>
 
-
-                            {/* Immediate implication */}
+                            {/* Key Fact */}
                             <div className="flex gap-1.5 mb-1.5 rounded px-2 py-1.5"
-                                 style={{
-                                   background: item.marketSignal === "Unfavourable" ? "rgba(248,101,1,0.04)" : item.marketSignal === "Favourable" ? "rgba(0,147,140,0.04)" : "rgba(107,114,128,0.04)",
-                                   border: `1px solid ${item.marketSignal === "Unfavourable" ? "rgba(248,101,1,0.1)" : item.marketSignal === "Favourable" ? "rgba(0,147,140,0.1)" : "rgba(107,114,128,0.1)"}`,
-                                 }}>
-                              <span className="shrink-0 text-[10px] font-black mt-px"
-                                    style={{ color: item.marketSignal === "Unfavourable" ? "#F86501" : item.marketSignal === "Favourable" ? "#00938C" : "#6b7280" }}>▸</span>
-                              <p className="text-[11px] leading-snug line-clamp-2" style={{ color: "#374151" }}>
-                                <span className="font-semibold" style={{ color: "#6b7280" }}>0–30d: </span>
-                                {item.immediateImplication}
+                                 style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                              <span className="shrink-0 text-[9px] font-black uppercase tracking-wide mt-px"
+                                    style={{ color: "#9ca3af" }}>KEY FACT</span>
+                              <p className="text-[11px] leading-snug" style={{ color: "#374151" }}>
+                                {item.keyFact}&nbsp;
+                                <span className="text-[9px] font-black uppercase tracking-wide"
+                                      style={{ color: factCol.color }}>
+                                  [{item.keyFactLabel}]
+                                </span>
                               </p>
                             </div>
 
-                            {/* Footer: source · segments · expand toggle · archive */}
+                            {/* Footer: source · sector chips · geo chips · expand · archive */}
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[10px]" style={{ color: "#9ca3af" }}>{item.source} · {item.date}</span>
-                              {item.affectedSegments.map(type => (
-                                <span key={type} className="text-[10px] font-bold px-1 py-0.5 rounded"
-                                      style={{ background: TYPE_COLORS[type].bg, color: TYPE_COLORS[type].color }}>
-                                  {type}
+                              <span className="text-[10px] shrink-0" style={{ color: "#9ca3af" }}>
+                                {item.source} · {item.date}
+                              </span>
+                              {item.sector.map(s => (
+                                <span key={s} className="text-[9px] px-1 py-0.5 rounded shrink-0"
+                                      style={{ background: "#f3f4f6", color: "#4b5563" }}>
+                                  {s.split(" (")[0]}
+                                </span>
+                              ))}
+                              {item.geography.slice(0, 2).map(g => (
+                                <span key={g} className="text-[9px] px-1 py-0.5 rounded shrink-0"
+                                      style={{ background: "rgba(0,147,140,0.06)", color: "#00938C" }}>
+                                  {g}
                                 </span>
                               ))}
                               <button
                                 onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }}
-                                className="ml-auto text-[10px] font-semibold flex items-center gap-0.5 shrink-0"
+                                className="ml-auto text-[10px] font-semibold shrink-0"
                                 style={{ color: isExpanded ? "#00938C" : "#9ca3af" }}
                                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#00938C"; }}
                                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = isExpanded ? "#00938C" : "#9ca3af"; }}
                               >
-                                {isExpanded ? "▲ Collapse" : "▼ Full Report"}
+                                {isExpanded ? "▲ Collapse" : "▼ Full Summary"}
                               </button>
                               <button
                                 onClick={(e) => { e.stopPropagation(); archiveItem(item.id); }}
@@ -893,95 +963,85 @@ export default function ClimateNewsPage() {
                           </div>
                         </div>
 
-                        {/* ── Expanded intelligence report ── */}
+                        {/* ── Layer 2: Expanded summary ── */}
                         {isExpanded && (
                           <div className="px-4 pb-4 pt-3 space-y-3"
                                style={{ borderTop: "1px solid #f3f4f6", background: "#fafafa" }}>
 
+                            {/* Tags */}
+                            <div className="flex items-center gap-1.5 flex-wrap text-[10px]" style={{ color: "#6b7280" }}>
+                              <span className="font-semibold" style={{ color: "#9ca3af" }}>DOMAIN:</span>
+                              <span style={{ color: dom.color, fontWeight: 700 }}>{item.domain}</span>
+                              <span style={{ color: "#d1d5db" }}>|</span>
+                              <span className="font-semibold" style={{ color: "#9ca3af" }}>SECTOR:</span>
+                              {item.sector.map(s => <span key={s}>{s}</span>).reduce((a: React.ReactNode[], b, idx) =>
+                                idx === 0 ? [b] : [...a, <span key={`sep-${idx}`} style={{ color: "#d1d5db" }}>,</span>, b], [])}
+                              <span style={{ color: "#d1d5db" }}>|</span>
+                              <span className="font-semibold" style={{ color: "#9ca3af" }}>GEOGRAPHY:</span>
+                              {item.geography.map(g => <span key={g}>{g}</span>).reduce((a: React.ReactNode[], b, idx) =>
+                                idx === 0 ? [b] : [...a, <span key={`sep-${idx}`} style={{ color: "#d1d5db" }}>,</span>, b], [])}
+                            </div>
+
                             {/* What Happened */}
-                            <div>
-                              <SectionLabel>📌 What Happened</SectionLabel>
-                              <p className="text-[12px] leading-relaxed" style={{ color: "#374151" }}>{item.whatHappened}</p>
-                            </div>
-
-                            {/* Why It Matters */}
                             <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
-                              <SectionLabel>Why It Matters</SectionLabel>
-                              <p className="text-[12px] leading-relaxed" style={{ color: "#374151" }}>{item.whyItMatters}</p>
-                            </div>
-
-                            {/* Market Impact + Investor Signal */}
-                            <div className="grid grid-cols-2 gap-4" style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
-                              <div>
-                                <SectionLabel>📈 Market Impact</SectionLabel>
-                                {item.beneficiaries.length > 0 && (
-                                  <div className="mb-2">
-                                    <div className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "#00938C" }}>Beneficiaries</div>
-                                    {item.beneficiaries.map((b, bi) => (
-                                      <div key={bi} className="flex gap-1 text-[11px] leading-snug mb-0.5" style={{ color: "#374151" }}>
-                                        <span style={{ color: "#00938C", flexShrink: 0 }}>•</span>{b}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {item.adverselyImpacted.length > 0 && (
-                                  <div>
-                                    <div className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "#F86501" }}>Adversely Impacted</div>
-                                    {item.adverselyImpacted.map((a, ai) => (
-                                      <div key={ai} className="flex gap-1 text-[11px] leading-snug mb-0.5" style={{ color: "#374151" }}>
-                                        <span style={{ color: "#F86501", flexShrink: 0 }}>•</span>{a}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              <div style={{ borderLeft: "1px solid #f3f4f6", paddingLeft: 16 }}>
-                                <SectionLabel>📊 Investor Signal</SectionLabel>
-                                <div className="mb-2">
-                                  <div className="text-[10px] font-bold uppercase tracking-wide mb-0.5" style={{ color: "#6b7280" }}>0–30d</div>
-                                  <p className="text-[11px] leading-snug" style={{ color: "#374151" }}>{item.immediateImplication}</p>
-                                </div>
-                                <div>
-                                  <div className="text-[10px] font-bold uppercase tracking-wide mb-0.5" style={{ color: "#6b7280" }}>3–12m</div>
-                                  <p className="text-[11px] leading-snug" style={{ color: "#374151" }}>{item.mediumTermImplication}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Cross-Market Impact + Market Quality */}
-                            <div className="grid grid-cols-2 gap-4" style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
-                              <div>
-                                <SectionLabel>Cross-Market Impact</SectionLabel>
-                                <p className="text-[11px] leading-snug" style={{ color: "#374151" }}>{item.crossMarketImpact}</p>
-                              </div>
-                              <div style={{ borderLeft: "1px solid #f3f4f6", paddingLeft: 16 }}>
-                                <SectionLabel>Market Quality Signal</SectionLabel>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-[10px] w-14 shrink-0" style={{ color: "#6b7280" }}>Integrity</span>
-                                  <span className="text-[10px] font-bold" style={{ color: INTEGRITY_CONFIG[item.integrityImpact].color }}>
-                                    ● {INTEGRITY_CONFIG[item.integrityImpact].label}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] w-14 shrink-0" style={{ color: "#6b7280" }}>Liquidity</span>
-                                  <span className="text-[10px] font-bold" style={{ color: LIQUIDITY_CONFIG[item.liquidityImpact].color }}>
-                                    ● {LIQUIDITY_CONFIG[item.liquidityImpact].label}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Non-Obvious Insight */}
-                            <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
-                              <SectionLabel>Non-Obvious Insight</SectionLabel>
-                              <p className="text-[11px] leading-relaxed italic" style={{ color: "#4b5563" }}>
-                                {item.nonObviousInsight}
+                              <SectionLabel>What Happened</SectionLabel>
+                              <p className="text-[12px] leading-relaxed" style={{ color: "#374151" }}>
+                                {item.whatHappened}
                               </p>
                             </div>
 
+                            {/* Key Details */}
+                            <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
+                              <SectionLabel>Key Details</SectionLabel>
+                              <ul className="space-y-1">
+                                {item.keyDetails.map((d, di) => (
+                                  <li key={di} className="flex gap-2 text-[11px] leading-snug"
+                                      style={{ color: "#374151" }}>
+                                    <span className="shrink-0 mt-px" style={{ color: "#9ca3af" }}>—</span>
+                                    {d}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Context */}
+                            <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
+                              <SectionLabel>Context</SectionLabel>
+                              <p className="text-[11px] leading-relaxed" style={{ color: "#4b5563" }}>
+                                {item.context}
+                              </p>
+                            </div>
+
+                            {/* Related Developments */}
+                            <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
+                              <SectionLabel>Related Developments</SectionLabel>
+                              {item.relatedDevelopments.length > 0 ? (
+                                <div className="space-y-2">
+                                  {item.relatedDevelopments.map((rd, ri) => (
+                                    <div key={ri} className="pl-2"
+                                         style={{ borderLeft: "2px solid #e5e7eb" }}>
+                                      <div className="text-[11px] font-semibold leading-snug mb-0.5"
+                                           style={{ color: "#374151" }}>{rd.headline}</div>
+                                      <div className="text-[10px] mb-0.5" style={{ color: "#9ca3af" }}>
+                                        {rd.source} · {rd.date}
+                                      </div>
+                                      <div className="text-[11px] leading-snug" style={{ color: "#4b5563" }}>
+                                        {rd.connection}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-[11px]" style={{ color: "#9ca3af" }}>
+                                  No directly related developments identified in this period.
+                                </p>
+                              )}
+                            </div>
+
                             {/* Disclaimer */}
-                            <div className="text-[10px] pt-1" style={{ color: "#9ca3af" }}>
-                              ⚠ Market intelligence only. Not financial, investment or legal advice. · Source: {item.source} · {item.date}
+                            <div className="rounded px-3 py-2 text-[10px] leading-snug"
+                                 style={{ background: "#f3f4f6", color: "#6b7280", borderTop: "1px solid #f3f4f6" }}>
+                              <span className="font-bold">DISCLAIMER:</span> This is a factual news summary for informational purposes only. It does not constitute financial, investment, legal, or compliance advice. All developments should be independently verified before being relied upon for any purpose. · Source: {item.source} · {item.date} · Confidence: {item.confidence}
                             </div>
 
                           </div>
@@ -993,41 +1053,40 @@ export default function ClimateNewsPage() {
               </>
             ) : (
               /* ── Archive view ── */
-              <div key={activeCategory + view + sortBy + selectedCountry} className="divide-y" style={{ borderColor: "#e5e7eb" }}>
+              <div key={activeDomain + view + sortBy + selectedCountry} className="divide-y"
+                   style={{ borderColor: "#e5e7eb" }}>
                 {sorted.map((item, i) => {
-                  const cat = CATEGORY_CONFIG[item.category];
-                  const CatIcon = cat.icon;
-                  const ss  = SIGNAL_STRENGTH_CONFIG[item.signalStrength];
+                  const dom = DOMAIN_CONFIG[item.domain];
+                  const DomIcon = dom.icon;
+                  const sig = SIGNIFICANCE_CONFIG[item.significance];
                   return (
                     <div key={item.id}
                          className={`row-stagger flex gap-3 px-4 py-3${archivingIds.has(item.id) ? " card-exiting" : ""}`}
                          style={{ "--i": i } as React.CSSProperties}>
-                      <div className="shrink-0 rounded overflow-hidden" style={{ width: 56, height: 40, background: "#f3f4f6" }}>
+                      <div className="shrink-0 rounded overflow-hidden"
+                           style={{ width: 56, height: 40, background: "#f3f4f6" }}>
                         <img src={`https://picsum.photos/seed/n${item.id}/112/80`} alt=""
                              className="w-full h-full object-cover"
                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: cat.color }}>
-                            <CatIcon className="w-2.5 h-2.5" />{item.category}
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: dom.color }}>
+                            <DomIcon className="w-2.5 h-2.5" />{item.domain}
                           </span>
                           <span className="text-[9px] font-black px-1 py-0.5 rounded uppercase tracking-wide"
-                                style={{ color: ss.color, background: ss.bg }}>
-                            {item.signalStrength}
+                                style={{ color: sig.color, background: sig.bg }}>
+                            {item.significance}
                           </span>
                           <span className="text-[10px] ml-auto shrink-0" style={{ color: "#9ca3af" }}>{item.time}</span>
                         </div>
-                        <h3 className="text-[12px] font-semibold leading-snug line-clamp-2" style={{ color: "#374151" }}>
-                          {item.headline}
-                        </h3>
+                        <h3 className="text-[12px] font-semibold leading-snug line-clamp-2"
+                            style={{ color: "#374151" }}>{item.headline}</h3>
                       </div>
                       {manualArchive.has(item.id) && (
                         <button onClick={() => unarchiveItem(item.id)}
                                 className="shrink-0 text-[11px] font-semibold self-center"
-                                style={{ color: "#374151" }}>
-                          ↩ Restore
-                        </button>
+                                style={{ color: "#374151" }}>↩ Restore</button>
                       )}
                     </div>
                   );
@@ -1036,7 +1095,7 @@ export default function ClimateNewsPage() {
             )}
 
             <p className="py-5 text-center text-[11px]" style={{ color: "#9ca3af" }}>
-              Intelligence curated from public sources · For informational purposes only · Not investment advice
+              Factual summaries for informational purposes only · Not investment, financial, legal, or compliance advice
             </p>
           </main>
 
@@ -1051,7 +1110,9 @@ export default function ClimateNewsPage() {
               >
                 <div className="flex items-center gap-2">
                   <Calendar className="w-3.5 h-3.5" style={{ color: "#00938C" }} />
-                  <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#374151" }}>Upcoming Events</span>
+                  <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#374151" }}>
+                    On the Horizon
+                  </span>
                   <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                         style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>
                     {calEvents.length}
@@ -1061,7 +1122,11 @@ export default function ClimateNewsPage() {
                              style={{ color: "#9ca3af", transform: eventsOpen ? "rotate(0deg)" : "rotate(-90deg)" }} />
               </button>
 
-              <div style={{ display: "grid", gridTemplateRows: eventsOpen ? "1fr" : "0fr", transition: "grid-template-rows 250ms cubic-bezier(0.16,1,0.3,1)" }}>
+              <div style={{
+                display: "grid",
+                gridTemplateRows: eventsOpen ? "1fr" : "0fr",
+                transition: "grid-template-rows 250ms cubic-bezier(0.16,1,0.3,1)",
+              }}>
                 <div style={{ overflow: "hidden" }}>
                   <div className="pb-3">
                     {calEvents.map(ev => {
@@ -1074,9 +1139,13 @@ export default function ClimateNewsPage() {
                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-semibold leading-snug" style={{ color: "#111827" }}>{ev.title}</p>
+                            <p className="text-[12px] font-semibold leading-snug" style={{ color: "#111827" }}>
+                              {ev.title}
+                            </p>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: tc.color }}>{ev.type}</span>
+                              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: tc.color }}>
+                                {ev.type}
+                              </span>
                               <span className="text-[10px]" style={{ color: "#9ca3af" }}>·</span>
                               <span className="text-[10px]" style={{ color: "#6b7280" }}>{ev.date}</span>
                             </div>
