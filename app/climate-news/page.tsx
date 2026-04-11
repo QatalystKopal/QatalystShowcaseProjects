@@ -804,10 +804,6 @@ export default function ClimateNewsPage() {
                     const cat  = CATEGORY_CONFIG[item.category];
                     const CatIcon = cat.icon;
                     const ss   = SIGNAL_STRENGTH_CONFIG[item.signalStrength];
-                    const pd   = PRICE_DIR_CONFIG[item.priceDirection];
-                    const sds  = SD_CONFIG[item.supplyImpact];
-                    const sdd  = SD_CONFIG[item.demandImpact];
-                    const ms   = MARKET_SIG_CONFIG[item.marketSignal];
                     const isExpanded = expandedIds.has(item.id);
                     return (
                       <div
@@ -838,7 +834,7 @@ export default function ClimateNewsPage() {
                                 <CatIcon className="w-2.5 h-2.5" />
                                 {item.category}
                               </span>
-                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide${item.signalStrength === "High Impact" ? " impact-pulse" : ""}`}
+                              <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide"
                                     style={{ color: ss.color, background: ss.bg, border: `1px solid ${ss.border}` }}>
                                 {item.signalStrength}
                               </span>
@@ -852,29 +848,6 @@ export default function ClimateNewsPage() {
                               {item.headline}
                             </h3>
 
-                            {/* Market signal chips row */}
-                            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                    style={{ color: pd.color, background: pd.color + "18" }}>
-                                {pd.label}
-                              </span>
-                              <span className="text-[10px]" style={{ color: "#9ca3af" }}>·</span>
-                              <span className="text-[10px] font-medium" style={{ color: "#6b7280" }}>
-                                Supply&nbsp;<span style={{ color: sds.color, fontWeight: 700 }}>{sds.arrow}</span>
-                              </span>
-                              <span className="text-[10px]" style={{ color: "#9ca3af" }}>·</span>
-                              <span className="text-[10px] font-medium" style={{ color: "#6b7280" }}>
-                                Demand&nbsp;<span style={{ color: sdd.color, fontWeight: 700 }}>{sdd.arrow}</span>
-                              </span>
-                              <span className="text-[10px]" style={{ color: "#9ca3af" }}>·</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                    style={{ color: ms.color, background: ms.bg, border: `1px solid ${ms.border}` }}>
-                                {item.marketSignal}
-                              </span>
-                              <span className="text-[10px] font-semibold" style={{ color: item.confidence === "High" ? "#374151" : item.confidence === "Medium" ? "#4b5563" : "#9ca3af" }}>
-                                {item.confidence} conf.
-                              </span>
-                            </div>
 
                             {/* Immediate implication */}
                             <div className="flex gap-1.5 mb-1.5 rounded px-2 py-1.5"
@@ -1025,7 +998,6 @@ export default function ClimateNewsPage() {
                   const cat = CATEGORY_CONFIG[item.category];
                   const CatIcon = cat.icon;
                   const ss  = SIGNAL_STRENGTH_CONFIG[item.signalStrength];
-                  const ms  = MARKET_SIG_CONFIG[item.marketSignal];
                   return (
                     <div key={item.id}
                          className={`row-stagger flex gap-3 px-4 py-3${archivingIds.has(item.id) ? " card-exiting" : ""}`}
@@ -1043,10 +1015,6 @@ export default function ClimateNewsPage() {
                           <span className="text-[9px] font-black px-1 py-0.5 rounded uppercase tracking-wide"
                                 style={{ color: ss.color, background: ss.bg }}>
                             {item.signalStrength}
-                          </span>
-                          <span className="text-[9px] font-semibold px-1 py-0.5 rounded"
-                                style={{ color: ms.color, background: ms.bg }}>
-                            {item.marketSignal}
                           </span>
                           <span className="text-[10px] ml-auto shrink-0" style={{ color: "#9ca3af" }}>{item.time}</span>
                         </div>
