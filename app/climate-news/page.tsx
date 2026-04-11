@@ -38,27 +38,27 @@ type SortBy       = "recent" | "impact" | "category";
 type View         = "live" | "archive";
 
 const CATEGORY_CONFIG: Record<Category, { color: string; bg: string; border: string; icon: React.ElementType }> = {
-  Regulatory: { color: "#b45309", bg: "rgba(180,83,9,0.08)",   border: "rgba(180,83,9,0.2)",   icon: ShieldAlert },
-  Markets:    { color: "#0d9488", bg: "rgba(13,148,136,0.08)",  border: "rgba(13,148,136,0.2)", icon: BarChart3 },
-  Standards:  { color: "#4f46e5", bg: "rgba(79,70,229,0.08)",   border: "rgba(79,70,229,0.2)",  icon: BookOpen },
-  Science:    { color: "#7c3aed", bg: "rgba(124,58,237,0.08)",  border: "rgba(124,58,237,0.2)", icon: Beaker },
-  Risk:       { color: "#dc2626", bg: "rgba(220,38,38,0.08)",   border: "rgba(220,38,38,0.2)",  icon: AlertTriangle },
-  Policy:     { color: "#0891b2", bg: "rgba(8,145,178,0.08)",   border: "rgba(8,145,178,0.2)",  icon: Newspaper },
+  Regulatory: { color: "#F86501", bg: "rgba(248,101,1,0.08)",    border: "rgba(248,101,1,0.2)",    icon: ShieldAlert },
+  Markets:    { color: "#00938C", bg: "rgba(0,147,140,0.08)",    border: "rgba(0,147,140,0.2)",    icon: BarChart3 },
+  Standards:  { color: "#374151", bg: "rgba(55,65,81,0.08)",     border: "rgba(55,65,81,0.2)",     icon: BookOpen },
+  Science:    { color: "#4b5563", bg: "rgba(75,85,99,0.08)",     border: "rgba(75,85,99,0.2)",     icon: Beaker },
+  Risk:       { color: "#F86501", bg: "rgba(248,101,1,0.08)",    border: "rgba(248,101,1,0.2)",    icon: AlertTriangle },
+  Policy:     { color: "#6b7280", bg: "rgba(107,114,128,0.08)",  border: "rgba(107,114,128,0.2)", icon: Newspaper },
 };
 
 const IMPACT_ORDER: Record<ImpactLevel, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
 const IMPACT_CONFIG: Record<ImpactLevel, { label: string; color: string; bg: string; border: string; dot: string }> = {
-  HIGH:   { label: "High Impact",   color: "#dc2626", bg: "rgba(220,38,38,0.08)",  border: "rgba(220,38,38,0.25)",  dot: "#dc2626" },
-  MEDIUM: { label: "Medium Impact", color: "#b45309", bg: "rgba(180,83,9,0.08)",   border: "rgba(180,83,9,0.25)",   dot: "#d97706" },
-  LOW:    { label: "Low Impact",    color: "#0d9488", bg: "rgba(13,148,136,0.08)", border: "rgba(13,148,136,0.25)", dot: "#0d9488" },
+  HIGH:   { label: "High Impact",   color: "#F86501", bg: "rgba(248,101,1,0.08)",    border: "rgba(248,101,1,0.25)",    dot: "#F86501" },
+  MEDIUM: { label: "Medium Impact", color: "#6b7280", bg: "rgba(107,114,128,0.08)",  border: "rgba(107,114,128,0.25)",  dot: "#6b7280" },
+  LOW:    { label: "Low Impact",    color: "#00938C", bg: "rgba(0,147,140,0.08)",    border: "rgba(0,147,140,0.25)",    dot: "#00938C" },
 };
 
 const TYPE_COLORS: Record<ProjectType, { bg: string; color: string }> = {
-  "REDD+":       { bg: "rgba(13,148,136,0.1)",  color: "#0d9488" },
-  "IFM":         { bg: "rgba(124,58,237,0.1)",  color: "#7c3aed" },
-  "ARR":         { bg: "rgba(8,145,178,0.1)",   color: "#0891b2" },
-  "Blue Carbon": { bg: "rgba(3,105,161,0.1)",   color: "#0369a1" },
+  "REDD+":       { bg: "rgba(0,147,140,0.1)",    color: "#00938C" },
+  "IFM":         { bg: "rgba(55,65,81,0.1)",     color: "#374151" },
+  "ARR":         { bg: "rgba(107,114,128,0.1)",  color: "#6b7280" },
+  "Blue Carbon": { bg: "rgba(0,147,140,0.1)",    color: "#00938C" },
 };
 
 const ALL_CATEGORIES: ("All" | Category)[] = ["All", "Regulatory", "Markets", "Standards", "Science", "Risk", "Policy"];
@@ -100,10 +100,10 @@ interface CalEvent {
 }
 
 const EVENT_TYPE_COLORS: Record<CalEvent["type"], { color: string; bg: string }> = {
-  Conference: { color: "#0891b2", bg: "rgba(8,145,178,0.1)"   },
-  Deadline:   { color: "#dc2626", bg: "rgba(220,38,38,0.1)"   },
-  Review:     { color: "#7c3aed", bg: "rgba(124,58,237,0.1)"  },
-  Launch:     { color: "#0d9488", bg: "rgba(13,148,136,0.1)"  },
+  Conference: { color: "#00938C", bg: "rgba(0,147,140,0.1)"   },
+  Deadline:   { color: "#F86501", bg: "rgba(248,101,1,0.1)"   },
+  Review:     { color: "#4b5563", bg: "rgba(75,85,99,0.1)"    },
+  Launch:     { color: "#00938C", bg: "rgba(0,147,140,0.1)"   },
 };
 
 const calEvents: CalEvent[] = [
@@ -378,15 +378,15 @@ export default function ClimateNewsPage() {
         <Sidebar />
       </div>
 
-      <div className="page-enter flex-1 flex flex-col min-w-0 overflow-hidden" style={{ background: "#f5f9f7" }}>
+      <div className="page-enter flex-1 flex flex-col min-w-0 overflow-hidden" style={{ background: "#f9fafb" }}>
 
         {/* ── Header ── */}
         <header className="shrink-0 flex items-center gap-3 px-5 py-3.5"
                 style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
-          <Newspaper className="w-4 h-4" style={{ color: "#0d9488" }} />
+          <Newspaper className="w-4 h-4" style={{ color: "#00938C" }} />
           <h1 className="text-base font-semibold" style={{ color: "#111827" }}>Carbon Market Intelligence</h1>
           <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full"
-                style={{ background: "rgba(13,148,136,0.1)", color: "#0d9488" }}>Live</span>
+                style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>Live</span>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Country filter dropdown */}
@@ -395,9 +395,9 @@ export default function ClimateNewsPage() {
                 onClick={() => setCountryOpen(v => !v)}
                 className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors"
                 style={{
-                  background: selectedCountry !== "All" ? "rgba(13,148,136,0.08)" : "#f3f4f6",
-                  color:      selectedCountry !== "All" ? "#0d9488" : "#374151",
-                  border:     selectedCountry !== "All" ? "1px solid rgba(13,148,136,0.2)" : "1px solid #e5e7eb",
+                  background: selectedCountry !== "All" ? "rgba(0,147,140,0.08)" : "#f3f4f6",
+                  color:      selectedCountry !== "All" ? "#00938C" : "#374151",
+                  border:     selectedCountry !== "All" ? "1px solid rgba(0,147,140,0.2)" : "1px solid #e5e7eb",
                 }}
                 onMouseEnter={(e) => { if (selectedCountry === "All") (e.currentTarget as HTMLElement).style.background = "#e5e7eb"; }}
                 onMouseLeave={(e) => { if (selectedCountry === "All") (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
@@ -417,8 +417,8 @@ export default function ClimateNewsPage() {
                       onClick={() => { setSelectedCountry(country); setCountryOpen(false); }}
                       className="w-full text-left px-3.5 py-2 text-[12px] font-medium transition-colors flex items-center gap-2"
                       style={{
-                        color:      selectedCountry === country ? "#0d9488" : "#374151",
-                        background: selectedCountry === country ? "rgba(13,148,136,0.06)" : "transparent",
+                        color:      selectedCountry === country ? "#00938C" : "#374151",
+                        background: selectedCountry === country ? "rgba(0,147,140,0.06)" : "transparent",
                       }}
                       onMouseEnter={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
                       onMouseLeave={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
@@ -453,8 +453,8 @@ export default function ClimateNewsPage() {
                       onClick={() => { setSortBy(opt); setSortOpen(false); }}
                       className="w-full text-left px-3.5 py-2 text-[12px] font-medium transition-colors"
                       style={{
-                        color: sortBy === opt ? "#0d9488" : "#374151",
-                        background: sortBy === opt ? "rgba(13,148,136,0.06)" : "transparent",
+                        color: sortBy === opt ? "#00938C" : "#374151",
+                        background: sortBy === opt ? "rgba(0,147,140,0.06)" : "transparent",
                       }}
                       onMouseEnter={(e) => { if (sortBy !== opt) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
                       onMouseLeave={(e) => { if (sortBy !== opt) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
@@ -471,9 +471,9 @@ export default function ClimateNewsPage() {
               onClick={() => setView(v => v === "live" ? "archive" : "live")}
               className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors"
               style={{
-                background: view === "archive" ? "rgba(79,70,229,0.08)" : "#f3f4f6",
-                color:      view === "archive" ? "#4f46e5" : "#374151",
-                border:     view === "archive" ? "1px solid rgba(79,70,229,0.2)" : "1px solid #e5e7eb",
+                background: view === "archive" ? "rgba(55,65,81,0.08)" : "#f3f4f6",
+                color:      view === "archive" ? "#374151" : "#374151",
+                border:     view === "archive" ? "1px solid rgba(55,65,81,0.2)" : "1px solid #e5e7eb",
               }}
               onMouseEnter={(e) => { if (view !== "archive") (e.currentTarget as HTMLElement).style.background = "#e5e7eb"; }}
               onMouseLeave={(e) => { if (view !== "archive") (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
@@ -482,8 +482,8 @@ export default function ClimateNewsPage() {
               Archive
               {archiveCount > 0 && (
                 <span className="text-[11px] font-bold px-1 rounded"
-                      style={{ background: view === "archive" ? "rgba(79,70,229,0.15)" : "#e5e7eb",
-                               color: view === "archive" ? "#4f46e5" : "#6b7280" }}>
+                      style={{ background: view === "archive" ? "rgba(55,65,81,0.15)" : "#e5e7eb",
+                               color: view === "archive" ? "#374151" : "#6b7280" }}>
                   {archiveCount}
                 </span>
               )}
@@ -496,16 +496,16 @@ export default function ClimateNewsPage() {
           <div className="shrink-0" style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
             <div className="grid grid-cols-4 divide-x" style={{ borderColor: "#e5e7eb" }}>
               {[
-                { label: "High-Impact Alerts", value: animHigh, color: "#dc2626", Icon: AlertTriangle, large: true },
-                { label: "Regulatory Updates", value: animReg,  color: "#b45309", Icon: ShieldAlert },
-                { label: "Market Signals",      value: animMkt,  color: "#0d9488", Icon: BarChart3 },
-                { label: "Standard Changes",    value: animStd,  color: "#4f46e5", Icon: BookOpen },
+                { label: "High-Impact Alerts", value: animHigh, color: "#F86501", Icon: AlertTriangle, large: true },
+                { label: "Regulatory Updates", value: animReg,  color: "#F86501", Icon: ShieldAlert },
+                { label: "Market Signals",      value: animMkt,  color: "#00938C", Icon: BarChart3 },
+                { label: "Standard Changes",    value: animStd,  color: "#374151", Icon: BookOpen },
               ].map(({ label, value, color, Icon, large }) => (
                 <div key={label} className="flex items-center gap-2.5 px-4 py-2">
                   <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
                   <div>
                     <div className={`${large ? "text-xl" : "text-[17px]"} font-bold tabular-nums leading-none`} style={{ color }}>{value}</div>
-                    <div className="text-[10px] uppercase tracking-wider mt-0.5 font-semibold" style={{ color: "#64748b" }}>{label}</div>
+                    <div className="text-[10px] uppercase tracking-wider mt-0.5 font-semibold" style={{ color: "#6b7280" }}>{label}</div>
                   </div>
                 </div>
               ))}
@@ -525,7 +525,7 @@ export default function ClimateNewsPage() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className="relative shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-medium transition-colors"
-                style={{ color: isActive ? (cfg?.color ?? "#0d9488") : "#4b5563" }}
+                style={{ color: isActive ? (cfg?.color ?? "#00938C") : "#4b5563" }}
                 onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#374151"; }}
                 onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#4b5563"; }}
               >
@@ -533,7 +533,7 @@ export default function ClimateNewsPage() {
                 {cat}
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-all"
                       style={{
-                        background: cfg?.color ?? "#0d9488",
+                        background: cfg?.color ?? "#00938C",
                         opacity: isActive ? 1 : 0,
                         transform: isActive ? "scaleX(1)" : "scaleX(0)",
                         transformOrigin: "left",
@@ -551,22 +551,22 @@ export default function ClimateNewsPage() {
           <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ background: "#fff" }}>
             {view === "archive" && (
               <div className="flex items-center gap-2 px-4 py-2.5"
-                   style={{ background: "rgba(79,70,229,0.06)", borderBottom: "1px solid rgba(79,70,229,0.2)" }}>
-                <Archive className="w-3.5 h-3.5 shrink-0" style={{ color: "#4f46e5" }} />
-                <span className="text-[12px]" style={{ color: "#4f46e5" }}>
+                   style={{ background: "rgba(55,65,81,0.06)", borderBottom: "1px solid rgba(55,65,81,0.2)" }}>
+                <Archive className="w-3.5 h-3.5 shrink-0" style={{ color: "#374151" }} />
+                <span className="text-[12px]" style={{ color: "#374151" }}>
                   Showing {archiveCount} archived item{archiveCount !== 1 ? "s" : ""} older than 7 days
                 </span>
                 <button onClick={() => setView("live")} className="ml-auto text-[12px] font-semibold"
-                        style={{ color: "#4f46e5" }}>← Live feed</button>
+                        style={{ color: "#374151" }}>← Live feed</button>
               </div>
             )}
 
             {sorted.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center px-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                     style={{ background: "rgba(13,148,136,0.08)" }}>
-                  {watchlistOnly ? <BellOff className="w-5 h-5" style={{ color: "#0d9488" }} />
-                                 : <Newspaper className="w-5 h-5" style={{ color: "#0d9488" }} />}
+                     style={{ background: "rgba(0,147,140,0.08)" }}>
+                  {watchlistOnly ? <BellOff className="w-5 h-5" style={{ color: "#00938C" }} />
+                                 : <Newspaper className="w-5 h-5" style={{ color: "#00938C" }} />}
                 </div>
                 <p className="font-semibold text-sm" style={{ color: "#374151" }}>
                   {watchlistOnly
@@ -612,7 +612,7 @@ export default function ClimateNewsPage() {
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0${item.impact === "HIGH" ? " impact-pulse" : ""}`}
                                   style={{ background: imp.dot }} />
                             <span className="text-[11px] font-bold" style={{ color: cat.color }}>{item.category}</span>
-                            {watching && <Bell className="w-2.5 h-2.5 shrink-0" style={{ color: "#0d9488" }} />}
+                            {watching && <Bell className="w-2.5 h-2.5 shrink-0" style={{ color: "#00938C" }} />}
                             <span className="ml-auto text-[10px] flex items-center gap-1 shrink-0" style={{ color: "#9ca3af" }}>
                               <Clock className="w-2.5 h-2.5" />{item.time}
                             </span>
@@ -623,11 +623,11 @@ export default function ClimateNewsPage() {
                           {/* Portfolio Insight */}
                           <div className="flex gap-1.5 mb-1.5 rounded px-2 py-1.5"
                                style={{
-                                 background: item.impact === "HIGH" ? "rgba(220,38,38,0.04)" : "rgba(13,148,136,0.04)",
-                                 border: `1px solid ${item.impact === "HIGH" ? "rgba(220,38,38,0.1)" : "rgba(13,148,136,0.1)"}`,
+                                 background: item.impact === "HIGH" ? "rgba(248,101,1,0.04)" : "rgba(0,147,140,0.04)",
+                                 border: `1px solid ${item.impact === "HIGH" ? "rgba(248,101,1,0.1)" : "rgba(0,147,140,0.1)"}`,
                                }}>
                             <span className="shrink-0 text-[10px] font-black uppercase tracking-wide mt-px"
-                                  style={{ color: item.impact === "HIGH" ? "#dc2626" : "#0d9488" }}>▸</span>
+                                  style={{ color: item.impact === "HIGH" ? "#F86501" : "#00938C" }}>▸</span>
                             <p className="text-[11px] leading-snug line-clamp-2" style={{ color: "#374151" }}>
                               {item.portfolioTakeaway}
                             </p>
@@ -640,7 +640,7 @@ export default function ClimateNewsPage() {
                             ))}
                             {item.priceSignal && (
                               <span className="flex items-center gap-0.5 text-[10px] font-semibold"
-                                    style={{ color: item.priceSignal === "up" ? "#0d9488" : "#dc2626" }}>
+                                    style={{ color: item.priceSignal === "up" ? "#00938C" : "#F86501" }}>
                                 {item.priceSignal === "up" ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                                 {item.priceSignal === "up" ? "↑" : "↓"}
                               </span>
@@ -687,7 +687,7 @@ export default function ClimateNewsPage() {
                       {manualArchive.has(item.id) && (
                         <button onClick={(e) => { e.stopPropagation(); unarchiveItem(item.id); }}
                                 className="shrink-0 text-[11px] font-semibold self-center"
-                                style={{ color: "#4f46e5" }}>↩ Restore</button>
+                                style={{ color: "#374151" }}>↩ Restore</button>
                       )}
                     </div>
                   );
@@ -714,10 +714,10 @@ export default function ClimateNewsPage() {
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5" style={{ color: "#0891b2" }} />
+                  <Calendar className="w-3.5 h-3.5" style={{ color: "#00938C" }} />
                   <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#374151" }}>Upcoming Events</span>
                   <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: "rgba(8,145,178,0.1)", color: "#0891b2" }}>
+                        style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>
                     {calEvents.length}
                   </span>
                 </div>
@@ -750,11 +750,11 @@ export default function ClimateNewsPage() {
                             <span className="text-[10px] font-semibold uppercase tracking-wide"
                                   style={{ color: tc.color }}>{ev.type}</span>
                             <span className="text-[10px]" style={{ color: "#9ca3af" }}>·</span>
-                            <span className="text-[10px]" style={{ color: "#64748b" }}>{ev.date}</span>
+                            <span className="text-[10px]" style={{ color: "#6b7280" }}>{ev.date}</span>
                           </div>
                         </div>
                         <span className="shrink-0 text-[11px] font-bold tabular-nums mt-0.5"
-                              style={{ color: urgent ? "#dc2626" : "#9ca3af" }}>
+                              style={{ color: urgent ? "#F86501" : "#9ca3af" }}>
                           {ev.daysUntil}d
                         </span>
                       </div>

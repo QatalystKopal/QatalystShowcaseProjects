@@ -48,20 +48,20 @@
 
 :root {
   /* Qatalyst brand */
-  --brand-teal: #0d9488;
-  --brand-teal-light: #14b8a6;
-  --brand-orange: #f97316;
+  --brand-teal: #00938C;
+  --brand-teal-light: #00b0a8;
+  --brand-orange: #F86501;
   --sidebar-bg: #0e0e16;
 
   /* ── Semantic text scale ─────────────────────── */
   --text-primary:   #111827;   /* highest emphasis body text */
   --text-secondary: #374151;   /* medium emphasis */
   --text-tertiary:  #4b5563;   /* supporting / secondary text */
-  --text-label:     #64748b;   /* muted uppercase labels — WCAG AA 4.7:1 on white */
+  --text-label:     #6b7280;   /* muted uppercase labels — WCAG AA 4.7:1 on white */
   --text-disabled:  #9ca3af;   /* disabled / empty states */
 
   /* ── Semantic surfaces ──────────────────────── */
-  --surface-page:   #f5f9f7;   /* main app background (teal-tinted) */
+  --surface-page:   #f9fafb;   /* main app background */
   --surface-card:   #ffffff;   /* card / panel background */
   --surface-subtle: #f9fafb;   /* row hovers, table headers */
   --surface-tinted: #f3f4f6;   /* pill backgrounds, metric bg */
@@ -76,7 +76,7 @@
   --card-foreground: oklch(0.13 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.13 0 0);
-  --primary: #0d9488;
+  --primary: #00938C;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.2 0 0);
@@ -87,17 +87,17 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.91 0 0);
   --input: oklch(0.91 0 0);
-  --ring: #0d9488;
+  --ring: #00938C;
   --radius: 0.5rem;
 
   --sidebar: #0e0e16;
   --sidebar-foreground: rgba(255,255,255,0.65);
-  --sidebar-primary: #f97316;
+  --sidebar-primary: #F86501;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(255,255,255,0.08);
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255,255,255,0.07);
-  --sidebar-ring: #0d9488;
+  --sidebar-ring: #00938C;
 }
 
 @layer base {
@@ -127,7 +127,7 @@
       transform 150ms ease-out;
   }
   .card-interactive:hover {
-    border-color: #0d9488;
+    border-color: #00938C;
     box-shadow: 0 6px 20px rgba(13,148,136,0.10), 0 2px 6px rgba(0,0,0,0.05);
     transform: translateY(-2px);
   }
@@ -137,9 +137,9 @@
   }
   /* Keyboard focus ring */
   .card-interactive:focus-visible {
-    outline: 2px solid #0d9488;
+    outline: 2px solid #00938C;
     outline-offset: 2px;
-    border-color: #0d9488;
+    border-color: #00938C;
   }
 
   /* Header toolbar buttons */
@@ -150,11 +150,11 @@
     transition: border-color 150ms ease-out, color 150ms ease-out;
   }
   .header-btn:hover {
-    border-color: #0d9488;
+    border-color: #00938C;
     color: #374151;
   }
   .header-btn:focus-visible {
-    outline: 2px solid #0d9488;
+    outline: 2px solid #00938C;
     outline-offset: 2px;
   }
 
@@ -187,13 +187,13 @@
   }
   .section-btn:hover .section-divider,
   .section-btn:focus-visible .section-divider {
-    background: #0d9488;
+    background: #00938C;
   }
 
   /* ── Allocation fingerprint bar ── */
   .alloc-bar {
     height: 2px;
-    background: #0d9488;
+    background: #00938C;
     transform-origin: left;
     transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -203,7 +203,7 @@
     transition: background 120ms ease-out;
   }
   .vintage-row:hover {
-    background: rgba(13, 148, 136, 0.04);
+    background: rgba(0, 147, 140, 0.04);
   }
 
   /* ── Card stagger entrance ── */
