@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import {
   Newspaper, ExternalLink, Clock, AlertTriangle, TrendingUp, TrendingDown,
   ShieldAlert, BookOpen, Beaker, BarChart3, Plus, X, Bell, BellOff,
-  Archive, ArrowUpDown, Calendar, ChevronDown,
+  Archive, ArrowUpDown, Calendar, ChevronDown, MapPin,
 } from "lucide-react";
 
 /** Animates a number from its previous value to a new target. */
@@ -62,6 +62,19 @@ const TYPE_COLORS: Record<ProjectType, { bg: string; color: string }> = {
 };
 
 const ALL_CATEGORIES: ("All" | Category)[] = ["All", "Regulatory", "Markets", "Standards", "Science", "Risk", "Policy"];
+
+const COUNTRY_OPTIONS = ["All", "Brazil", "Indonesia", "EU", "Kenya", "Peru"] as const;
+type CountryFilter = typeof COUNTRY_OPTIONS[number];
+const COUNTRY_KEYWORDS: Record<string, string[]> = {
+  Brazil:    ["brazil", "amazon", "belem"],
+  Indonesia: ["indonesia", "kalimantan", "sumatra"],
+  EU:        ["eu", "european", "cbam"],
+  Kenya:     ["kenya"],
+  Peru:      ["peru"],
+};
+const COUNTRY_FLAGS: Record<string, string> = {
+  Brazil: "🇧🇷", Indonesia: "🇮🇩", EU: "🇪🇺", Kenya: "🇰🇪", Peru: "🇵🇪",
+};
 
 interface NewsItem {
   id: number;
@@ -246,13 +259,16 @@ export default function ClimateNewsPage() {
   const [manualArchive, setManualArchive] = useState<Set<number>>(new Set());
   const [watchlistOpen, setWatchlistOpen] = useState(true);
   const [archivingIds, setArchivingIds]   = useState<Set<number>>(new Set());
-  const sortRef = useRef<HTMLDivElement>(null);
-  const mainRef = useRef<HTMLElement>(null);
+  const [selectedCountry, setSelectedCountry] = useState<CountryFilter>("All");
+  const [countryOpen, setCountryOpen] = useState(false);
+  const sortRef    = useRef<HTMLDivElement>(null);
+  const countryRef = useRef<HTMLDivElement>(null);
+  const mainRef    = useRef<HTMLElement>(null);
 
   // Scroll feed to top on filter/view changes
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-  }, [activeCategory, view, sortBy, watchlistOnly]);
+  }, [activeCategory, view, sortBy, watchlistOnly, selectedCountry]);
 
   // Load watchlist from localStorage
   useEffect(() => {
@@ -271,6 +287,15 @@ export default function ClimateNewsPage() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close country dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (countryRef.current && !countryRef.current.contains(e.target as Node)) setCountryOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -312,9 +337,16 @@ export default function ClimateNewsPage() {
   const baseItems = allNews.filter(n => view === "archive" ? isArchived(n) : !isArchived(n));
   const categoryFiltered = activeCategory === "All" ? baseItems : baseItems.filter(n => n.category === activeCategory);
   const watchFiltered = watchlistOnly ? categoryFiltered.filter(n => matchesWatchlist(n)) : categoryFiltered;
+  const countryFiltered = selectedCountry === "All"
+    ? watchFiltered
+    : watchFiltered.filter(n => {
+        const keys = COUNTRY_KEYWORDS[selectedCountry] ?? [];
+        const text = `${n.headline} ${n.summary} ${n.keywords.join(" ")}`.toLowerCase();
+        return keys.some(k => text.includes(k));
+      });
 
   // Sort
-  const sorted = [...watchFiltered].sort((a, b) => {
+  const sorted = [...countryFiltered].sort((a, b) => {
     if (sortBy === "impact") {
       const diff = IMPACT_ORDER[a.impact] - IMPACT_ORDER[b.impact];
       return diff !== 0 ? diff : a.daysAgo - b.daysAgo;
@@ -357,6 +389,48 @@ export default function ClimateNewsPage() {
                 style={{ background: "rgba(13,148,136,0.1)", color: "#0d9488" }}>Live</span>
 
           <div className="ml-auto flex items-center gap-2">
+            {/* Country filter dropdown */}
+            <div className="relative" ref={countryRef}>
+              <button
+                onClick={() => setCountryOpen(v => !v)}
+                className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{
+                  background: selectedCountry !== "All" ? "rgba(13,148,136,0.08)" : "#f3f4f6",
+                  color:      selectedCountry !== "All" ? "#0d9488" : "#374151",
+                  border:     selectedCountry !== "All" ? "1px solid rgba(13,148,136,0.2)" : "1px solid #e5e7eb",
+                }}
+                onMouseEnter={(e) => { if (selectedCountry === "All") (e.currentTarget as HTMLElement).style.background = "#e5e7eb"; }}
+                onMouseLeave={(e) => { if (selectedCountry === "All") (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
+              >
+                <MapPin className="w-3 h-3" />
+                {selectedCountry === "All"
+                  ? "All Countries"
+                  : <>{COUNTRY_FLAGS[selectedCountry]}&nbsp;{selectedCountry}</>}
+                <ChevronDown className="w-3 h-3 ml-0.5" style={{ opacity: 0.5 }} />
+              </button>
+              {countryOpen && (
+                <div className="drop-in absolute right-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
+                     style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+                  {COUNTRY_OPTIONS.map(country => (
+                    <button
+                      key={country}
+                      onClick={() => { setSelectedCountry(country); setCountryOpen(false); }}
+                      className="w-full text-left px-3.5 py-2 text-[12px] font-medium transition-colors flex items-center gap-2"
+                      style={{
+                        color:      selectedCountry === country ? "#0d9488" : "#374151",
+                        background: selectedCountry === country ? "rgba(13,148,136,0.06)" : "transparent",
+                      }}
+                      onMouseEnter={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                      onMouseLeave={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    >
+                      <span>{country === "All" ? "🌐" : COUNTRY_FLAGS[country]}</span>
+                      {country === "All" ? "All Countries" : country}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Sort dropdown */}
             <div className="relative" ref={sortRef}>
               <button
@@ -495,7 +569,11 @@ export default function ClimateNewsPage() {
                                  : <Newspaper className="w-5 h-5" style={{ color: "#0d9488" }} />}
                 </div>
                 <p className="font-semibold text-sm" style={{ color: "#374151" }}>
-                  {watchlistOnly ? "No watchlist matches in this category" : "No items in this category"}
+                  {watchlistOnly
+                    ? "No watchlist matches in this category"
+                    : selectedCountry !== "All"
+                    ? `No ${selectedCountry} coverage in this view`
+                    : "No items in this category"}
                 </p>
               </div>
             ) : view === "live" ? (
@@ -509,7 +587,7 @@ export default function ClimateNewsPage() {
                 </div>
 
                 {/* ── Story rows ── */}
-                <div key={activeCategory + view + sortBy + String(watchlistOnly)}>
+                <div key={activeCategory + view + sortBy + String(watchlistOnly) + selectedCountry}>
                   {sorted.map((item, i) => {
                     const imp = IMPACT_CONFIG[item.impact];
                     const cat = CATEGORY_CONFIG[item.category];
@@ -585,7 +663,7 @@ export default function ClimateNewsPage() {
               </>
             ) : (
               /* ── Archive view ── */
-              <div key={activeCategory + view + sortBy + String(watchlistOnly)} className="divide-y" style={{ borderColor: "#e5e7eb" }}>
+              <div key={activeCategory + view + sortBy + String(watchlistOnly) + selectedCountry} className="divide-y" style={{ borderColor: "#e5e7eb" }}>
                 {sorted.map((item, i) => {
                   const imp = IMPACT_CONFIG[item.impact];
                   const cat = CATEGORY_CONFIG[item.category];
