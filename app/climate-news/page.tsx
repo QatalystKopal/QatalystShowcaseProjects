@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import {
   Newspaper, Clock, AlertTriangle, ShieldAlert, BookOpen, Beaker,
   BarChart3, Archive, ArrowUpDown, Calendar, ChevronDown, MapPin,
-  Globe, Briefcase,
+  Globe, Briefcase, Link2, Plus, X, ExternalLink,
 } from "lucide-react";
 
 function useCountUp(target: number, duration = 600): number {
@@ -114,6 +114,12 @@ interface NewsItem {
   context: string;
   relatedDevelopments: RelatedDevelopment[];
   keywords: string[];
+}
+
+interface NewsSource {
+  id: string;
+  url: string;
+  label: string;
 }
 
 interface CalEvent {
@@ -558,6 +564,11 @@ export default function ClimateNewsPage() {
   const [manualArchive,   setManualArchive]   = useState<Set<number>>(new Set());
   const [archivingIds,    setArchivingIds]    = useState<Set<number>>(new Set());
   const [expandedIds,     setExpandedIds]     = useState<Set<number>>(new Set());
+  const [sources,         setSources]         = useState<NewsSource[]>([]);
+  const [sourcesOpen,     setSourcesOpen]     = useState(true);
+  const [addingSource,    setAddingSource]    = useState(false);
+  const [newSourceUrl,    setNewSourceUrl]    = useState("");
+  const [newSourceLabel,  setNewSourceLabel]  = useState("");
   const sortRef    = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
   const mainRef    = useRef<HTMLElement>(null);
@@ -581,6 +592,40 @@ export default function ClimateNewsPage() {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
+
+  // Load / save news sources from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("qatalyst-news-sources");
+      if (saved) setSources(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("qatalyst-news-sources", JSON.stringify(sources));
+    } catch {}
+  }, [sources]);
+
+  function addSource() {
+    const url = newSourceUrl.trim();
+    if (!url) return;
+    const label = newSourceLabel.trim();
+    setSources(prev => [...prev, { id: Date.now().toString(), url, label }]);
+    setNewSourceUrl("");
+    setNewSourceLabel("");
+    setAddingSource(false);
+  }
+
+  function cancelAdd() {
+    setNewSourceUrl("");
+    setNewSourceLabel("");
+    setAddingSource(false);
+  }
+
+  function removeSource(id: string) {
+    setSources(prev => prev.filter(s => s.id !== id));
+  }
 
   function archiveItem(id: number) {
     setArchivingIds(prev => new Set(prev).add(id));
@@ -1161,6 +1206,158 @@ export default function ClimateNewsPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── My Sources ── */}
+            <div style={{ borderTop: "1px solid #e5e7eb" }}>
+              <button
+                onClick={() => setSourcesOpen(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3"
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                <div className="flex items-center gap-2">
+                  <Link2 className="w-3.5 h-3.5" style={{ color: "#00938C" }} />
+                  <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#374151" }}>
+                    My Sources
+                  </span>
+                  {sources.length > 0 && (
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>
+                      {sources.length}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200"
+                             style={{ color: "#9ca3af", transform: sourcesOpen ? "rotate(0deg)" : "rotate(-90deg)" }} />
+              </button>
+
+              <div style={{
+                display: "grid",
+                gridTemplateRows: sourcesOpen ? "1fr" : "0fr",
+                transition: "grid-template-rows 250ms cubic-bezier(0.16,1,0.3,1)",
+              }}>
+                <div style={{ overflow: "hidden" }}>
+                  <div className="px-4 pb-4">
+
+                    {/* Add form */}
+                    {addingSource ? (
+                      <div className="space-y-1.5 mb-3">
+                        <input
+                          type="url"
+                          value={newSourceUrl}
+                          onChange={(e) => setNewSourceUrl(e.target.value)}
+                          placeholder="https://example.com/news"
+                          autoFocus
+                          className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
+                          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#111827" }}
+                          onFocus={(e)    => { (e.currentTarget as HTMLElement).style.border = "1px solid #00938C"; }}
+                          onBlur={(e)     => { (e.currentTarget as HTMLElement).style.border = "1px solid #e5e7eb"; }}
+                          onKeyDown={(e)  => { if (e.key === "Enter") addSource(); if (e.key === "Escape") cancelAdd(); }}
+                        />
+                        <input
+                          type="text"
+                          value={newSourceLabel}
+                          onChange={(e) => setNewSourceLabel(e.target.value)}
+                          placeholder="Label (optional)"
+                          className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
+                          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#111827" }}
+                          onFocus={(e)    => { (e.currentTarget as HTMLElement).style.border = "1px solid #00938C"; }}
+                          onBlur={(e)     => { (e.currentTarget as HTMLElement).style.border = "1px solid #e5e7eb"; }}
+                          onKeyDown={(e)  => { if (e.key === "Enter") addSource(); if (e.key === "Escape") cancelAdd(); }}
+                        />
+                        <div className="flex gap-1.5 pt-0.5">
+                          <button
+                            onClick={addSource}
+                            className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg"
+                            style={{ background: "#00938C", color: "#fff" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#007d77"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#00938C"; }}
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={cancelAdd}
+                            className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg"
+                            style={{ background: "#f3f4f6", color: "#374151" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#e5e7eb"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAddingSource(true)}
+                        className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-lg mb-2"
+                        style={{ background: "transparent", color: "#6b7280", border: "1px dashed #d1d5db" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#00938C"; (e.currentTarget as HTMLElement).style.color = "#00938C"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#d1d5db"; (e.currentTarget as HTMLElement).style.color = "#6b7280"; }}
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add Source URL
+                      </button>
+                    )}
+
+                    {/* Source list */}
+                    {sources.length === 0 && !addingSource && (
+                      <p className="text-[11px] text-center py-2" style={{ color: "#9ca3af" }}>
+                        No sources added yet
+                      </p>
+                    )}
+                    <div className="space-y-1.5">
+                      {sources.map(src => {
+                        let displayUrl = src.url;
+                        try { displayUrl = new URL(src.url).hostname.replace(/^www\./, ""); } catch {}
+                        return (
+                          <div
+                            key={src.id}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-2"
+                            style={{ background: "#f9fafb", border: "1px solid #f3f4f6" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#f3f4f6"; }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              {src.label && (
+                                <div className="text-[11px] font-semibold truncate leading-snug" style={{ color: "#374151" }}>
+                                  {src.label}
+                                </div>
+                              )}
+                              <div className="text-[10px] truncate" style={{ color: "#9ca3af" }}>
+                                {displayUrl}
+                              </div>
+                            </div>
+                            <a
+                              href={src.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Open in new tab"
+                              style={{ color: "#9ca3af", flexShrink: 0 }}
+                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#00938C"; }}
+                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#9ca3af"; }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                            <button
+                              onClick={() => removeSource(src.id)}
+                              title="Remove source"
+                              style={{ color: "#d1d5db", flexShrink: 0 }}
+                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F86501"; }}
+                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#d1d5db"; }}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </aside>
         </div>
       </div>
