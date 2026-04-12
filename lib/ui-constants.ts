@@ -19,7 +19,8 @@ export const STATUS_CONFIG: Record<string, StatusConfig> = {
   Verified:           { icon: CheckCircle2, color: "#0d9488", bg: "rgba(13,148,136,0.1)",  label: "Verified" },
   Active:             { icon: Clock,        color: "#3b82f6", bg: "rgba(59,130,246,0.1)",  label: "Active" },
   // Canonical amber (#b45309) — ProjectModal.tsx incorrectly used #f97316 (orange); fixed here
-  "Under Validation": { icon: AlertCircle,  color: "#b45309", bg: "rgba(180,83,9,0.08)",   label: "Under Validation" },
+  "Under Validation":       { icon: AlertCircle,  color: "#b45309", bg: "rgba(180,83,9,0.08)",   label: "Under Validation" },
+  "Registration Requested": { icon: AlertCircle,  color: "#00938C", bg: "rgba(0,147,140,0.08)",  label: "Registration Requested" },
 };
 
 // ─── Project Type ─────────────────────────────────────────────────────────────
