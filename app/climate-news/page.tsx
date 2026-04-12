@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import {
-  Newspaper, Clock, AlertTriangle, ShieldAlert, BookOpen, Beaker,
-  BarChart3, Archive, ArrowUpDown, Calendar, ChevronDown, MapPin,
+  Newspaper, Clock, ShieldAlert, BookOpen, Beaker,
+  BarChart3, Archive, ArrowUpDown, ChevronDown, MapPin,
   Globe, Briefcase, Link2, Plus, X, ExternalLink,
 } from "lucide-react";
 
@@ -114,12 +114,6 @@ interface NewsItem {
   context: string;
   relatedDevelopments: RelatedDevelopment[];
   keywords: string[];
-}
-
-interface NewsSource {
-  id: string;
-  url: string;
-  label: string;
 }
 
 interface CalEvent {
@@ -560,15 +554,9 @@ export default function ClimateNewsPage() {
   const [sortOpen,        setSortOpen]        = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<CountryFilter>("All");
   const [countryOpen,     setCountryOpen]     = useState(false);
-  const [eventsOpen,      setEventsOpen]      = useState(true);
   const [manualArchive,   setManualArchive]   = useState<Set<number>>(new Set());
   const [archivingIds,    setArchivingIds]    = useState<Set<number>>(new Set());
   const [expandedIds,     setExpandedIds]     = useState<Set<number>>(new Set());
-  const [sources,         setSources]         = useState<NewsSource[]>([]);
-  const [sourcesOpen,     setSourcesOpen]     = useState(true);
-  const [addingSource,    setAddingSource]    = useState(false);
-  const [newSourceUrl,    setNewSourceUrl]    = useState("");
-  const [newSourceLabel,  setNewSourceLabel]  = useState("");
   const sortRef    = useRef<HTMLDivElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
   const mainRef    = useRef<HTMLElement>(null);
@@ -592,40 +580,6 @@ export default function ClimateNewsPage() {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
-
-  // Load / save news sources from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("qatalyst-news-sources");
-      if (saved) setSources(JSON.parse(saved));
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("qatalyst-news-sources", JSON.stringify(sources));
-    } catch {}
-  }, [sources]);
-
-  function addSource() {
-    const url = newSourceUrl.trim();
-    if (!url) return;
-    const label = newSourceLabel.trim();
-    setSources(prev => [...prev, { id: Date.now().toString(), url, label }]);
-    setNewSourceUrl("");
-    setNewSourceLabel("");
-    setAddingSource(false);
-  }
-
-  function cancelAdd() {
-    setNewSourceUrl("");
-    setNewSourceLabel("");
-    setAddingSource(false);
-  }
-
-  function removeSource(id: string) {
-    setSources(prev => prev.filter(s => s.id !== id));
-  }
 
   function archiveItem(id: number) {
     setArchivingIds(prev => new Set(prev).add(id));
@@ -675,17 +629,7 @@ export default function ClimateNewsPage() {
   });
 
   // Stats counts
-  const liveItems    = allNews.filter(n => !isArchived(n));
-  const archiveCount = allNews.filter(n =>  isArchived(n)).length;
-  const highCount    = liveItems.filter(n => n.significance === "High").length;
-  const art6Count    = liveItems.filter(n => n.domain === "Article 6").length;
-  const vcmCount     = liveItems.filter(n => n.domain === "VCM").length;
-  const sciCount     = liveItems.filter(n => n.domain === "Science").length;
-
-  const animHigh = useCountUp(highCount, 700);
-  const animArt6 = useCountUp(art6Count, 700);
-  const animVcm  = useCountUp(vcmCount,  700);
-  const animSci  = useCountUp(sciCount,  700);
+  const archiveCount = allNews.filter(n => isArchived(n)).length;
 
   const SORT_LABELS: Record<SortBy, string> = {
     recent:       "Most Recent",
@@ -805,27 +749,6 @@ export default function ClimateNewsPage() {
           </div>
         </header>
 
-        {/* ── Stats bar ── */}
-        {view === "live" && (
-          <div className="shrink-0" style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
-            <div className="grid grid-cols-4 divide-x" style={{ borderColor: "#e5e7eb" }}>
-              {[
-                { label: "High Significance", value: animHigh, color: "#F86501", Icon: AlertTriangle, large: true },
-                { label: "Article 6",          value: animArt6, color: "#00938C", Icon: Globe    },
-                { label: "VCM Updates",         value: animVcm,  color: "#374151", Icon: BookOpen },
-                { label: "Science & Integrity", value: animSci,  color: "#4b5563", Icon: Beaker   },
-              ].map(({ label, value, color, Icon, large }) => (
-                <div key={label} className="flex items-center gap-2.5 px-4 py-2">
-                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
-                  <div>
-                    <div className={`${large ? "text-xl" : "text-[17px]"} font-bold tabular-nums leading-none`} style={{ color }}>{value}</div>
-                    <div className="text-[10px] uppercase tracking-wider mt-0.5 font-semibold" style={{ color: "#6b7280" }}>{label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── Domain tabs ── */}
         <div className="shrink-0 flex items-center gap-1 px-5 overflow-x-auto"
@@ -1144,221 +1067,6 @@ export default function ClimateNewsPage() {
             </p>
           </main>
 
-          {/* ── Right panel: Events ── */}
-          <aside className="shrink-0 flex flex-col overflow-y-auto"
-                 style={{ width: 272, background: "#f9fafb", borderLeft: "1px solid #e5e7eb" }}>
-            <div>
-              <button onClick={() => setEventsOpen(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3"
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-              >
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5" style={{ color: "#00938C" }} />
-                  <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#374151" }}>
-                    On the Horizon
-                  </span>
-                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>
-                    {calEvents.length}
-                  </span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200"
-                             style={{ color: "#9ca3af", transform: eventsOpen ? "rotate(0deg)" : "rotate(-90deg)" }} />
-              </button>
-
-              <div style={{
-                display: "grid",
-                gridTemplateRows: eventsOpen ? "1fr" : "0fr",
-                transition: "grid-template-rows 250ms cubic-bezier(0.16,1,0.3,1)",
-              }}>
-                <div style={{ overflow: "hidden" }}>
-                  <div className="pb-3">
-                    {calEvents.map(ev => {
-                      const tc = EVENT_TYPE_COLORS[ev.type];
-                      const urgent = ev.daysUntil <= 45;
-                      return (
-                        <div key={ev.id} className="flex gap-3 px-4 py-2.5"
-                             style={{ borderLeft: `3px solid ${tc.color}`, marginBottom: 1 }}
-                             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
-                             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-semibold leading-snug" style={{ color: "#111827" }}>
-                              {ev.title}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: tc.color }}>
-                                {ev.type}
-                              </span>
-                              <span className="text-[10px]" style={{ color: "#9ca3af" }}>·</span>
-                              <span className="text-[10px]" style={{ color: "#6b7280" }}>{ev.date}</span>
-                            </div>
-                          </div>
-                          <span className="shrink-0 text-[11px] font-bold tabular-nums mt-0.5"
-                                style={{ color: urgent ? "#F86501" : "#9ca3af" }}>
-                            {ev.daysUntil}d
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── My Sources ── */}
-            <div style={{ borderTop: "1px solid #e5e7eb" }}>
-              <button
-                onClick={() => setSourcesOpen(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3"
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-              >
-                <div className="flex items-center gap-2">
-                  <Link2 className="w-3.5 h-3.5" style={{ color: "#00938C" }} />
-                  <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: "#374151" }}>
-                    My Sources
-                  </span>
-                  {sources.length > 0 && (
-                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                          style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>
-                      {sources.length}
-                    </span>
-                  )}
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200"
-                             style={{ color: "#9ca3af", transform: sourcesOpen ? "rotate(0deg)" : "rotate(-90deg)" }} />
-              </button>
-
-              <div style={{
-                display: "grid",
-                gridTemplateRows: sourcesOpen ? "1fr" : "0fr",
-                transition: "grid-template-rows 250ms cubic-bezier(0.16,1,0.3,1)",
-              }}>
-                <div style={{ overflow: "hidden" }}>
-                  <div className="px-4 pb-4">
-
-                    {/* Add form */}
-                    {addingSource ? (
-                      <div className="space-y-1.5 mb-3">
-                        <input
-                          type="url"
-                          value={newSourceUrl}
-                          onChange={(e) => setNewSourceUrl(e.target.value)}
-                          placeholder="https://example.com/news"
-                          autoFocus
-                          className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
-                          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#111827" }}
-                          onFocus={(e)    => { (e.currentTarget as HTMLElement).style.border = "1px solid #00938C"; }}
-                          onBlur={(e)     => { (e.currentTarget as HTMLElement).style.border = "1px solid #e5e7eb"; }}
-                          onKeyDown={(e)  => { if (e.key === "Enter") addSource(); if (e.key === "Escape") cancelAdd(); }}
-                        />
-                        <input
-                          type="text"
-                          value={newSourceLabel}
-                          onChange={(e) => setNewSourceLabel(e.target.value)}
-                          placeholder="Label (optional)"
-                          className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
-                          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#111827" }}
-                          onFocus={(e)    => { (e.currentTarget as HTMLElement).style.border = "1px solid #00938C"; }}
-                          onBlur={(e)     => { (e.currentTarget as HTMLElement).style.border = "1px solid #e5e7eb"; }}
-                          onKeyDown={(e)  => { if (e.key === "Enter") addSource(); if (e.key === "Escape") cancelAdd(); }}
-                        />
-                        <div className="flex gap-1.5 pt-0.5">
-                          <button
-                            onClick={addSource}
-                            className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg"
-                            style={{ background: "#00938C", color: "#fff" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#007d77"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#00938C"; }}
-                          >
-                            Add
-                          </button>
-                          <button
-                            onClick={cancelAdd}
-                            className="flex-1 text-[11px] font-semibold py-1.5 rounded-lg"
-                            style={{ background: "#f3f4f6", color: "#374151" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#e5e7eb"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setAddingSource(true)}
-                        className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-lg mb-2"
-                        style={{ background: "transparent", color: "#6b7280", border: "1px dashed #d1d5db" }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#00938C"; (e.currentTarget as HTMLElement).style.color = "#00938C"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#d1d5db"; (e.currentTarget as HTMLElement).style.color = "#6b7280"; }}
-                      >
-                        <Plus className="w-3 h-3" />
-                        Add Source URL
-                      </button>
-                    )}
-
-                    {/* Source list */}
-                    {sources.length === 0 && !addingSource && (
-                      <p className="text-[11px] text-center py-2" style={{ color: "#9ca3af" }}>
-                        No sources added yet
-                      </p>
-                    )}
-                    <div className="space-y-1.5">
-                      {sources.map(src => {
-                        let displayUrl = src.url;
-                        try { displayUrl = new URL(src.url).hostname.replace(/^www\./, ""); } catch {}
-                        return (
-                          <div
-                            key={src.id}
-                            className="flex items-center gap-2 rounded-lg px-2.5 py-2"
-                            style={{ background: "#f9fafb", border: "1px solid #f3f4f6" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#f3f4f6"; }}
-                          >
-                            <div className="flex-1 min-w-0">
-                              {src.label && (
-                                <div className="text-[11px] font-semibold truncate leading-snug" style={{ color: "#374151" }}>
-                                  {src.label}
-                                </div>
-                              )}
-                              <div className="text-[10px] truncate" style={{ color: "#9ca3af" }}>
-                                {displayUrl}
-                              </div>
-                            </div>
-                            <a
-                              href={src.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Open in new tab"
-                              style={{ color: "#9ca3af", flexShrink: 0 }}
-                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#00938C"; }}
-                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#9ca3af"; }}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                            <button
-                              onClick={() => removeSource(src.id)}
-                              title="Remove source"
-                              style={{ color: "#d1d5db", flexShrink: 0 }}
-                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F86501"; }}
-                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#d1d5db"; }}
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </aside>
         </div>
       </div>
     </div>
