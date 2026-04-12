@@ -848,7 +848,6 @@ export default function ClimateNewsPage() {
                     const dom = DOMAIN_CONFIG[item.domain];
                     const DomIcon = dom.icon;
                     const sig = SIGNIFICANCE_CONFIG[item.significance];
-                    const conf = CONFIDENCE_CONFIG[item.confidence];
                     const factCol = FACT_LABEL_CONFIG[item.keyFactLabel];
                     const isExpanded = expandedIds.has(item.id);
 
@@ -885,9 +884,6 @@ export default function ClimateNewsPage() {
                               <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0"
                                     style={{ color: sig.color, background: sig.bg, border: `1px solid ${sig.border}` }}>
                                 {item.significance}
-                              </span>
-                              <span className="text-[9px] font-semibold shrink-0" style={{ color: conf.color }}>
-                                {item.confidence} conf.
                               </span>
                               <span className="ml-auto text-[10px] flex items-center gap-1 shrink-0" style={{ color: "#9ca3af" }}>
                                 <Clock className="w-2.5 h-2.5" />{item.time}
