@@ -1,4 +1,4 @@
-export type ProjectStatus = "Active" | "Under Validation" | "Verified";
+export type ProjectStatus = "Active" | "Under Validation" | "Registration Requested" | "Verified";
 export type ProjectType = "REDD+" | "IFM" | "ARR" | "Blue Carbon";
 export type Registry = "Verra VCS";
 
@@ -133,7 +133,7 @@ export const projects: Project[] = [
     vcsVersion: "VCS 4.7",
     standardCodes: ["VM0007 REDD+ Methodology Framework, v1.6"],
     hasCCBGold: false,
-    status: "Under Validation",
+    status: "Registration Requested",
 
     firstIssuance: "Q2–Q3 2026",
     vintageRange: "V22–V25",
@@ -324,7 +324,7 @@ export const projects: Project[] = [
       "CCB Standards v3.0",
     ],
     hasCCBGold: false,
-    status: "Under Validation",
+    status: "Registration Requested",
 
     firstIssuance: "Q2–Q3 2026",
     vintageRange: "V21–V24",
