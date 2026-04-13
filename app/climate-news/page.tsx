@@ -557,9 +557,11 @@ export default function ClimateNewsPage() {
   const [manualArchive,   setManualArchive]   = useState<Set<number>>(new Set());
   const [archivingIds,    setArchivingIds]    = useState<Set<number>>(new Set());
   const [expandedIds,     setExpandedIds]     = useState<Set<number>>(new Set());
-  const sortRef    = useRef<HTMLDivElement>(null);
-  const countryRef = useRef<HTMLDivElement>(null);
-  const mainRef    = useRef<HTMLElement>(null);
+  const sortRef          = useRef<HTMLDivElement>(null);
+  const sortMobileRef    = useRef<HTMLDivElement>(null);
+  const countryRef       = useRef<HTMLDivElement>(null);
+  const countryMobileRef = useRef<HTMLDivElement>(null);
+  const mainRef          = useRef<HTMLElement>(null);
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -567,7 +569,8 @@ export default function ClimateNewsPage() {
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
+      if (!sortRef.current?.contains(e.target as Node) &&
+          !sortMobileRef.current?.contains(e.target as Node)) setSortOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -575,7 +578,8 @@ export default function ClimateNewsPage() {
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (countryRef.current && !countryRef.current.contains(e.target as Node)) setCountryOpen(false);
+      if (!countryRef.current?.contains(e.target as Node) &&
+          !countryMobileRef.current?.contains(e.target as Node)) setCountryOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -644,56 +648,141 @@ export default function ClimateNewsPage() {
       <div className="page-enter flex-1 flex flex-col min-w-0 overflow-hidden" style={{ background: "#f9fafb" }}>
 
         {/* ── Header ── */}
-        <header className="shrink-0 flex items-center"
-                style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", height: 44 }}>
+        <header className="shrink-0" style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
 
-          {/* Left — icon + title + live badge + info */}
-          <div className="flex items-center gap-2 px-5">
+          {/* Title row — always visible */}
+          <div className="flex items-center gap-2 px-4 sm:px-5" style={{ height: 44 }}>
             <Newspaper className="w-3.5 h-3.5 shrink-0" style={{ color: "#6b7280" }} />
-            <h1 className="text-[13px] font-medium whitespace-nowrap" style={{ color: "#111827" }}>
+            <h1 className="text-[13px] font-medium truncate min-w-0" style={{ color: "#111827" }}>
               Carbon Market Intelligence
             </h1>
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
                   style={{ background: "rgba(0,147,140,0.1)", color: "#00938C" }}>Live</span>
-            <div className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 cursor-default select-none"
+            <div className="w-4 h-4 rounded-full hidden sm:flex items-center justify-center text-[9px] font-bold shrink-0 cursor-default select-none"
                  style={{ border: "1px solid #d1d5db", color: "#9ca3af" }} title="Factual intelligence summaries — not financial advice">
               i
             </div>
-          </div>
 
-          {/* Right — flat tab-style controls */}
-          <div className="ml-auto flex items-center h-full">
+            {/* Desktop-only controls — hidden on mobile */}
+            <div className="hidden sm:flex items-center self-stretch ml-auto">
 
-            {/* Country filter */}
-            <div className="relative h-full" ref={countryRef}
-                 style={{ borderLeft: "1px solid #e5e7eb" }}>
+              <div className="relative flex items-center self-stretch" ref={countryRef}
+                   style={{ borderLeft: "1px solid #e5e7eb" }}>
+                <button
+                  onClick={() => setCountryOpen(v => !v)}
+                  className="self-stretch flex items-center gap-1.5 px-4 text-[12px] font-medium"
+                  style={{ color: selectedCountry !== "All" ? "#00938C" : "#6b7280" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span className={selectedCountry !== "All" ? "flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" : ""}
+                        style={selectedCountry !== "All" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
+                    {selectedCountry === "All" ? "All Countries" : <>{COUNTRY_FLAGS[selectedCountry]}&nbsp;{selectedCountry}</>}
+                  </span>
+                  <ChevronDown className="w-3 h-3 shrink-0" style={{ opacity: 0.4 }} />
+                </button>
+                {countryOpen && (
+                  <div className="drop-in absolute right-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
+                       style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+                    {COUNTRY_OPTIONS.map(country => (
+                      <button key={country}
+                        onClick={() => { setSelectedCountry(country); setCountryOpen(false); }}
+                        className="w-full text-left px-3.5 py-2 text-[12px] font-medium flex items-center gap-2"
+                        style={{ color: selectedCountry === country ? "#00938C" : "#374151", background: selectedCountry === country ? "rgba(0,147,140,0.06)" : "transparent" }}
+                        onMouseEnter={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                        onMouseLeave={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      >
+                        <span>{country === "All" ? "🌐" : COUNTRY_FLAGS[country]}</span>
+                        {country === "All" ? "All Countries" : country}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex items-center self-stretch" ref={sortRef}
+                   style={{ borderLeft: "1px solid #e5e7eb" }}>
+                <button
+                  onClick={() => setSortOpen(v => !v)}
+                  className="self-stretch flex items-center gap-1.5 px-4 text-[12px] font-medium"
+                  style={{ color: sortBy !== "recent" ? "#00938C" : "#6b7280" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  <ArrowUpDown className="w-3 h-3 shrink-0" />
+                  <span className={sortBy !== "recent" ? "px-2 py-0.5 rounded-full text-[11px] font-semibold" : ""}
+                        style={sortBy !== "recent" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
+                    {SORT_LABELS[sortBy]}
+                  </span>
+                  <ChevronDown className="w-3 h-3 shrink-0" style={{ opacity: 0.4 }} />
+                </button>
+                {sortOpen && (
+                  <div className="drop-in absolute right-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
+                       style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+                    {(["recent", "significance", "domain"] as SortBy[]).map(opt => (
+                      <button key={opt} onClick={() => { setSortBy(opt); setSortOpen(false); }}
+                        className="w-full text-left px-3.5 py-2 text-[12px] font-medium"
+                        style={{ color: sortBy === opt ? "#00938C" : "#374151", background: sortBy === opt ? "rgba(0,147,140,0.06)" : "transparent" }}
+                        onMouseEnter={(e) => { if (sortBy !== opt) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                        onMouseLeave={(e) => { if (sortBy !== opt) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      >
+                        {SORT_LABELS[opt]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
-                onClick={() => setCountryOpen(v => !v)}
-                className="h-full flex items-center gap-1.5 px-4 text-[12px] font-medium"
-                style={{ color: selectedCountry !== "All" ? "#00938C" : "#6b7280" }}
+                onClick={() => setView(v => v === "live" ? "archive" : "live")}
+                className="self-stretch flex items-center gap-1.5 px-4 text-[12px] font-medium"
+                style={{ color: view === "archive" ? "#00938C" : "#6b7280", borderLeft: "1px solid #e5e7eb" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                <MapPin className="w-3 h-3 shrink-0" />
-                <span className={selectedCountry !== "All" ? "flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" : ""}
-                      style={selectedCountry !== "All" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
-                  {selectedCountry === "All" ? "All Countries" : <>{COUNTRY_FLAGS[selectedCountry]}&nbsp;{selectedCountry}</>}
+                <Archive className="w-3 h-3 shrink-0" />
+                <span className={view === "archive" ? "px-2 py-0.5 rounded-full text-[11px] font-semibold" : ""}
+                      style={view === "archive" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
+                  Archive
                 </span>
-                <ChevronDown className="w-3 h-3 shrink-0" style={{ opacity: 0.4 }} />
+                {archiveCount > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: view === "archive" ? "rgba(0,147,140,0.15)" : "#f3f4f6", color: view === "archive" ? "#00938C" : "#9ca3af" }}>
+                    {archiveCount}
+                  </span>
+                )}
+              </button>
+
+            </div>
+          </div>
+
+          {/* Mobile-only controls row */}
+          <div className="sm:hidden flex" style={{ borderTop: "1px solid #e5e7eb" }}>
+
+            {/* Country */}
+            <div className="flex-1 relative" ref={countryMobileRef}
+                 style={{ borderRight: "1px solid #e5e7eb" }}>
+              <button
+                onClick={() => setCountryOpen(v => !v)}
+                className="w-full min-h-[44px] flex items-center justify-center gap-1.5 text-[12px] font-medium"
+                style={{ color: selectedCountry !== "All" ? "#00938C" : "#6b7280" }}
+              >
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className={selectedCountry !== "All" ? "px-1.5 py-0.5 rounded-full text-[11px] font-semibold" : ""}
+                      style={selectedCountry !== "All" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
+                  {selectedCountry === "All" ? "Countries" : <>{COUNTRY_FLAGS[selectedCountry]}&nbsp;{selectedCountry}</>}
+                </span>
+                <ChevronDown className="w-2.5 h-2.5 shrink-0" style={{ opacity: 0.4 }} />
               </button>
               {countryOpen && (
-                <div className="drop-in absolute right-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
-                     style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+                <div className="drop-in absolute left-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
+                     style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
                   {COUNTRY_OPTIONS.map(country => (
                     <button key={country}
                       onClick={() => { setSelectedCountry(country); setCountryOpen(false); }}
-                      className="w-full text-left px-3.5 py-2 text-[12px] font-medium flex items-center gap-2"
-                      style={{
-                        color:      selectedCountry === country ? "#00938C" : "#374151",
-                        background: selectedCountry === country ? "rgba(0,147,140,0.06)" : "transparent",
-                      }}
-                      onMouseEnter={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-                      onMouseLeave={(e) => { if (selectedCountry !== country) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      className="w-full text-left px-3.5 py-2.5 text-[12px] font-medium flex items-center gap-2"
+                      style={{ color: selectedCountry === country ? "#00938C" : "#374151", background: selectedCountry === country ? "rgba(0,147,140,0.06)" : "transparent" }}
                     >
                       <span>{country === "All" ? "🌐" : COUNTRY_FLAGS[country]}</span>
                       {country === "All" ? "All Countries" : country}
@@ -704,34 +793,27 @@ export default function ClimateNewsPage() {
             </div>
 
             {/* Sort */}
-            <div className="relative h-full" ref={sortRef}
-                 style={{ borderLeft: "1px solid #e5e7eb" }}>
+            <div className="flex-1 relative" ref={sortMobileRef}
+                 style={{ borderRight: "1px solid #e5e7eb" }}>
               <button
                 onClick={() => setSortOpen(v => !v)}
-                className="h-full flex items-center gap-1.5 px-4 text-[12px] font-medium"
+                className="w-full min-h-[44px] flex items-center justify-center gap-1.5 text-[12px] font-medium"
                 style={{ color: sortBy !== "recent" ? "#00938C" : "#6b7280" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
                 <ArrowUpDown className="w-3 h-3 shrink-0" />
-                <span className={sortBy !== "recent" ? "px-2 py-0.5 rounded-full text-[11px] font-semibold" : ""}
+                <span className={sortBy !== "recent" ? "px-1.5 py-0.5 rounded-full text-[11px] font-semibold" : ""}
                       style={sortBy !== "recent" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
-                  {SORT_LABELS[sortBy]}
+                  {sortBy === "recent" ? "Sort" : SORT_LABELS[sortBy]}
                 </span>
-                <ChevronDown className="w-3 h-3 shrink-0" style={{ opacity: 0.4 }} />
+                <ChevronDown className="w-2.5 h-2.5 shrink-0" style={{ opacity: 0.4 }} />
               </button>
               {sortOpen && (
-                <div className="drop-in absolute right-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
-                     style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+                <div className="drop-in absolute left-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
+                     style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
                   {(["recent", "significance", "domain"] as SortBy[]).map(opt => (
                     <button key={opt} onClick={() => { setSortBy(opt); setSortOpen(false); }}
-                      className="w-full text-left px-3.5 py-2 text-[12px] font-medium"
-                      style={{
-                        color:      sortBy === opt ? "#00938C" : "#374151",
-                        background: sortBy === opt ? "rgba(0,147,140,0.06)" : "transparent",
-                      }}
-                      onMouseEnter={(e) => { if (sortBy !== opt) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-                      onMouseLeave={(e) => { if (sortBy !== opt) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      className="w-full text-left px-3.5 py-2.5 text-[12px] font-medium"
+                      style={{ color: sortBy === opt ? "#00938C" : "#374151", background: sortBy === opt ? "rgba(0,147,140,0.06)" : "transparent" }}
                     >
                       {SORT_LABELS[opt]}
                     </button>
@@ -740,28 +822,20 @@ export default function ClimateNewsPage() {
               )}
             </div>
 
-            {/* Archive toggle */}
+            {/* Archive */}
             <button
               onClick={() => setView(v => v === "live" ? "archive" : "live")}
-              className="h-full flex items-center gap-1.5 px-4 text-[12px] font-medium"
-              style={{
-                color: view === "archive" ? "#00938C" : "#6b7280",
-                borderLeft: "1px solid #e5e7eb",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 text-[12px] font-medium"
+              style={{ color: view === "archive" ? "#00938C" : "#6b7280" }}
             >
               <Archive className="w-3 h-3 shrink-0" />
-              <span className={view === "archive" ? "px-2 py-0.5 rounded-full text-[11px] font-semibold" : ""}
+              <span className={view === "archive" ? "px-1.5 py-0.5 rounded-full text-[11px] font-semibold" : ""}
                     style={view === "archive" ? { background: "rgba(0,147,140,0.1)", color: "#00938C" } : {}}>
                 Archive
               </span>
               {archiveCount > 0 && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                      style={{
-                        background: view === "archive" ? "rgba(0,147,140,0.15)" : "#f3f4f6",
-                        color:      view === "archive" ? "#00938C" : "#9ca3af",
-                      }}>
+                      style={{ background: view === "archive" ? "rgba(0,147,140,0.15)" : "#f3f4f6", color: view === "archive" ? "#00938C" : "#9ca3af" }}>
                   {archiveCount}
                 </span>
               )}
@@ -772,15 +846,15 @@ export default function ClimateNewsPage() {
 
 
         {/* ── Domain tabs ── */}
-        <div className="shrink-0 flex items-center gap-1 px-5 overflow-x-auto"
-             style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
+        <div className="shrink-0 flex items-center gap-0.5 sm:gap-1 px-2 sm:px-5 overflow-x-auto"
+             style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
           {ALL_DOMAINS.map(dom => {
             const isActive = activeDomain === dom;
             const cfg = dom !== "All" ? DOMAIN_CONFIG[dom] : null;
             const DomIcon = cfg?.icon;
             return (
               <button key={dom} onClick={() => setActiveDomain(dom)}
-                className="relative shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-[13px] font-medium transition-colors"
+                className="relative shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-2.5 text-[12px] sm:text-[13px] font-medium transition-colors"
                 style={{ color: isActive ? (cfg?.color ?? "#00938C") : "#4b5563" }}
                 onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#374151"; }}
                 onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.color = "#4b5563"; }}
