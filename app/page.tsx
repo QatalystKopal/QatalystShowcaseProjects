@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { projects } from "@/lib/projects";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Sidebar } from "@/components/Sidebar";
+import Link from "next/link";
 import {
   Search, SlidersHorizontal, LayoutGrid, List, Plus, Columns3,
   Leaf, TrendingUp, Building2, Globe, AlertCircle, CheckCircle2, Clock,
+  ShieldCheck, ArrowRight,
 } from "lucide-react";
 
 /** Animates a number from its previous value to a new target whenever target changes. */
@@ -377,6 +379,29 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* SPO Assessment CTA */}
+              <Link href="/sll-report"
+                className="mb-5 flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all"
+                style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(59,130,246,0.2)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(59,130,246,0.4)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(59,130,246,0.2)"; }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                     style={{ background: "rgba(59,130,246,0.1)" }}>
+                  <ShieldCheck className="w-5 h-5" style={{ color: "#3b82f6" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold" style={{ color: "#111827" }}>Second Party Opinion Assessment</p>
+                  <p className="text-[11px]" style={{ color: "#6b7280" }}>
+                    Upload a loan application and generate a full SPO — KPI validation, SPT calibration, benchmarking & reporting review
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-semibold"
+                     style={{ background: "#3b82f6", color: "#fff" }}>
+                  Start Assessment <ArrowRight className="w-3.5 h-3.5" />
+                </div>
+              </Link>
+
               {sllFiltered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4" style={{ background: "rgba(59,130,246,0.08)" }}>
@@ -458,9 +483,20 @@ export default function HomePage() {
                             </ul>
                           </div>
 
-                          {/* Lead arranger */}
-                          <div className="text-[11px]" style={{ color: "#9ca3af" }}>
-                            Lead: <span style={{ color: "#6b7280", fontWeight: 600 }}>{deal.lead}</span>
+                          {/* Lead arranger + SPO button */}
+                          <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid #f3f4f6" }}>
+                            <div className="text-[11px]" style={{ color: "#9ca3af" }}>
+                              Lead: <span style={{ color: "#6b7280", fontWeight: 600 }}>{deal.lead}</span>
+                            </div>
+                            <Link href="/sll-report"
+                              onClick={e => e.stopPropagation()}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                              style={{ background: "rgba(59,130,246,0.08)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.15)" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(59,130,246,0.14)"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(59,130,246,0.08)"; }}
+                            >
+                              <ShieldCheck className="w-3 h-3" /> SPO Review
+                            </Link>
                           </div>
                         </div>
                       </div>

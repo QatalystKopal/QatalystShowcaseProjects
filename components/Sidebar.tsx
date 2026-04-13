@@ -7,7 +7,7 @@ import {
   LayoutGrid, Glasses, BarChart2, Users, Newspaper,
   ClipboardList, FileText, BadgeCheck, Globe2, SlidersHorizontal,
   Star, FileBarChart2, Monitor, Network, HelpCircle, Headphones,
-  ChevronUp,
+  ChevronUp, ShieldCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -249,6 +249,9 @@ export function Sidebar() {
           </li>
           <li>
             <NavLink icon={Newspaper} label="Climate News" href="/climate-news" />
+          </li>
+          <li>
+            <NavLink icon={ShieldCheck} label="SPO Assessment" href="/sll-report" />
           </li>
         </ul>
 
