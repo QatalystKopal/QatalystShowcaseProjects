@@ -117,12 +117,18 @@ interface NewsItem {
   keywords: string[];
 }
 
+type EventFormat = "In-Person" | "Virtual" | "Hybrid";
+type EventSortBy = "date" | "type" | "country";
+type EventCountry = "All" | "EU" | "Brazil" | "Canada" | "Switzerland" | "Global";
+
 interface CalEvent {
   id: number;
   title: string;
   date: string;
   daysUntil: number;
   type: "Conference" | "Deadline" | "Review" | "Launch";
+  format: EventFormat;
+  country: EventCountry;
   description: string;
   organizer: string;
   location?: string;
@@ -144,6 +150,8 @@ const calEvents: CalEvent[] = [
     date: "May 31, 2026",
     daysUntil: 48,
     type: "Deadline",
+    format: "Virtual",
+    country: "EU",
     organizer: "European Commission",
     location: "EU Member States",
     description: "Final deadline for importers in the EU to surrender CBAM certificates covering embedded emissions from 2025 imports of iron, steel, cement, aluminium, fertilisers, electricity, and hydrogen.",
@@ -160,6 +168,8 @@ const calEvents: CalEvent[] = [
     date: "May 15, 2026",
     daysUntil: 32,
     type: "Review",
+    format: "Virtual",
+    country: "Global",
     organizer: "BeZero Carbon",
     description: "BeZero Carbon's quarterly recalibration of carbon credit ratings across its rated project portfolio. Ratings may be upgraded, downgraded, or placed under review based on updated methodology, new monitoring data, and regulatory developments.",
     relevance: "Rating changes directly affect the perceived quality and market value of affected VCM credits. Projects under Verra, Gold Standard, and ACR registries may be impacted. Portfolio managers should anticipate potential mark-to-market adjustments.",
@@ -175,6 +185,8 @@ const calEvents: CalEvent[] = [
     date: "Jun 1, 2026",
     daysUntil: 49,
     type: "Deadline",
+    format: "Virtual",
+    country: "Global",
     organizer: "Voluntary Carbon Markets Integrity Initiative (VCMI)",
     description: "VCMI's updated Claims Code of Practice (v2.0) becomes the binding reference standard for corporate claims of carbon credit use. Claims made after this date must conform to the revised framework, including enhanced corresponding adjustment and disclosure requirements.",
     relevance: "Corporates using VCM credits in net-zero or carbon neutrality claims must audit their claims language. Non-conforming claims risk reputational and regulatory exposure as VCMI alignment is increasingly referenced by institutional investors and regulators.",
@@ -190,6 +202,8 @@ const calEvents: CalEvent[] = [
     date: "Jul 1, 2026",
     daysUntil: 79,
     type: "Deadline",
+    format: "Virtual",
+    country: "Global",
     organizer: "Verra",
     description: "All projects registered under Verra's VM0048 (Reducing Emissions from Deforestation and Forest Degradation) methodology must transition to version 2.0 by this date. VM0048 v2.0 introduces revised leakage accounting, updated reference region requirements, and stricter permanence buffer pool contributions.",
     relevance: "Affects the majority of active REDD+ projects in Verra's registry. Projects unable to demonstrate compliance risk suspension of credit issuance. For buyers, credits issued after the deadline from non-compliant projects may be subject to invalidation.",
@@ -205,6 +219,8 @@ const calEvents: CalEvent[] = [
     date: "Jul 15, 2026",
     daysUntil: 93,
     type: "Launch",
+    format: "Hybrid",
+    country: "Switzerland",
     organizer: "Gold Standard Foundation",
     location: "Geneva, Switzerland (online)",
     description: "Gold Standard launches a new dedicated registry for SDG-linked carbon credits, enabling buyers to filter and procure credits with verified co-benefit contributions across specific UN Sustainable Development Goals. The registry will include a machine-readable co-benefit data layer.",
@@ -221,6 +237,8 @@ const calEvents: CalEvent[] = [
     date: "Sep 30, 2026",
     daysUntil: 170,
     type: "Review",
+    format: "In-Person",
+    country: "Canada",
     organizer: "International Civil Aviation Organization (ICAO)",
     location: "Montreal, Canada",
     description: "ICAO convenes its scheduled mid-cycle review of the CORSIA Phase 2 (2024–2026) programme, assessing participating airline compliance, eligible emissions unit standards, and the adequacy of the 2024–2026 baseline methodology. Outcomes will inform Phase 3 (2027–2035) design.",
@@ -237,6 +255,8 @@ const calEvents: CalEvent[] = [
     date: "Nov 10, 2026",
     daysUntil: 211,
     type: "Conference",
+    format: "In-Person",
+    country: "Brazil",
     organizer: "UNFCCC",
     location: "Belém, Pará, Brazil",
     description: "The 30th Conference of the Parties to the UNFCCC. COP30 is the first COP to be held in the Amazon region and is expected to be a landmark session for Article 6 full operationalisation, updated Nationally Determined Contributions (NDCs), and Loss & Damage finance. Brazil holds the Presidency.",
@@ -661,6 +681,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function ClimateNewsPage() {
   const [activeTab,       setActiveTab]       = useState<"news" | "events">("news");
+  const [evtSortBy,       setEvtSortBy]       = useState<EventSortBy>("date");
+  const [evtCountry,      setEvtCountry]      = useState<EventCountry>("All");
+  const [evtFormat,       setEvtFormat]       = useState<"All" | EventFormat>("All");
+  const [evtShowArchived, setEvtShowArchived] = useState(false);
+  const [evtSortOpen,     setEvtSortOpen]     = useState(false);
+  const [evtCountryOpen,  setEvtCountryOpen]  = useState(false);
+  const [evtFormatOpen,   setEvtFormatOpen]   = useState(false);
+  const evtSortRef    = useRef<HTMLDivElement>(null);
+  const evtCountryRef = useRef<HTMLDivElement>(null);
+  const evtFormatRef  = useRef<HTMLDivElement>(null);
   const [activeDomain,    setActiveDomain]    = useState<"All" | Domain>("All");
   const [view,            setView]            = useState<View>("live");
   const [sortBy,          setSortBy]          = useState<SortBy>("recent");
@@ -693,6 +723,16 @@ export default function ClimateNewsPage() {
     const h = (e: MouseEvent) => {
       if (!countryRef.current?.contains(e.target as Node) &&
           !countryMobileRef.current?.contains(e.target as Node)) setCountryOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (!evtSortRef.current?.contains(e.target as Node))    setEvtSortOpen(false);
+      if (!evtCountryRef.current?.contains(e.target as Node)) setEvtCountryOpen(false);
+      if (!evtFormatRef.current?.contains(e.target as Node))  setEvtFormatOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -1014,103 +1054,135 @@ export default function ClimateNewsPage() {
 
             {/* ── Events view ── */}
             {activeTab === "events" && (() => {
-              const urgent = calEvents.filter(e => e.daysUntil <= 30);
-              const soon   = calEvents.filter(e => e.daysUntil > 30 && e.daysUntil <= 90);
-              const later  = calEvents.filter(e => e.daysUntil > 90);
+              const FORMAT_COLORS: Record<EventFormat, { color: string; bg: string }> = {
+                "In-Person": { color: "#374151", bg: "rgba(55,65,81,0.08)"  },
+                "Virtual":   { color: "#00938C", bg: "rgba(0,147,140,0.08)" },
+                "Hybrid":    { color: "#F86501", bg: "rgba(248,101,1,0.08)" },
+              };
 
-              const EventCard = ({ ev }: { ev: CalEvent }) => {
+              const ALL_EVT_COUNTRIES: EventCountry[] = ["All", "EU", "Brazil", "Canada", "Switzerland", "Global"];
+              const ALL_EVT_FORMATS: ("All" | EventFormat)[] = ["All", "In-Person", "Virtual", "Hybrid"];
+              const EVT_SORT_LABELS: Record<EventSortBy, string> = { date: "Date", type: "Type", country: "Country" };
+
+              // filter + sort
+              const upcoming = calEvents.filter(e => e.daysUntil >= 0);
+              const past     = calEvents.filter(e => e.daysUntil < 0);
+
+              const applyFilters = (list: CalEvent[]) => {
+                let r = list;
+                if (evtCountry !== "All") r = r.filter(e => e.country === evtCountry);
+                if (evtFormat  !== "All") r = r.filter(e => e.format  === evtFormat);
+                return [...r].sort((a, b) => {
+                  if (evtSortBy === "type")    return a.type.localeCompare(b.type) || a.daysUntil - b.daysUntil;
+                  if (evtSortBy === "country") return a.country.localeCompare(b.country) || a.daysUntil - b.daysUntil;
+                  return a.daysUntil - b.daysUntil; // date
+                });
+              };
+
+              const filtered = applyFilters(upcoming);
+              const urgent   = filtered.filter(e => e.daysUntil <= 30);
+              const soon     = filtered.filter(e => e.daysUntil > 30 && e.daysUntil <= 90);
+              const later    = filtered.filter(e => e.daysUntil > 90);
+              const archived = applyFilters(past);
+
+              const activeFilters = (evtCountry !== "All" ? 1 : 0) + (evtFormat !== "All" ? 1 : 0);
+
+              const EventCard = ({ ev, isPast }: { ev: CalEvent; isPast?: boolean }) => {
                 const tc = EVENT_TYPE_COLORS[ev.type];
-                const urgent = ev.daysUntil <= 30;
+                const fc = FORMAT_COLORS[ev.format];
+                const isUrgent = ev.daysUntil <= 30 && ev.daysUntil >= 0;
                 return (
                   <div className="rounded-xl overflow-hidden"
-                       style={{ border: "1px solid #e5e7eb", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
-                    {/* Card top accent */}
-                    <div className="h-1" style={{ background: tc.color }} />
+                       style={{ border: "1px solid #e5e7eb", background: isPast ? "#fafafa" : "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", opacity: isPast ? 0.75 : 1 }}>
+                    <div className="h-1" style={{ background: isPast ? "#d1d5db" : tc.color }} />
                     <div className="p-4 sm:p-5">
-                      {/* Type badge + countdown */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
+                      {/* Type badge + format badge + countdown */}
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                              style={{ color: tc.color, background: tc.bg }}>
+                              style={{ color: isPast ? "#9ca3af" : tc.color, background: isPast ? "rgba(156,163,175,0.1)" : tc.bg }}>
                           <Calendar className="w-2.5 h-2.5" />
                           {ev.type}
                         </span>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{ color: fc.color, background: fc.bg }}>
+                          {ev.format}
+                        </span>
+                        <span className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full"
                               style={{
-                                background: urgent ? "rgba(248,101,1,0.1)" : "rgba(0,147,140,0.08)",
-                                color: urgent ? "#F86501" : "#00938C",
+                                background: isPast ? "rgba(156,163,175,0.1)" : isUrgent ? "rgba(248,101,1,0.1)" : "rgba(0,147,140,0.08)",
+                                color: isPast ? "#9ca3af" : isUrgent ? "#F86501" : "#00938C",
                               }}>
-                          {ev.daysUntil === 0 ? "Today" : `${ev.daysUntil}d away`}
+                          {isPast ? `${Math.abs(ev.daysUntil)}d ago` : ev.daysUntil === 0 ? "Today" : `${ev.daysUntil}d away`}
                         </span>
                       </div>
 
-                      {/* Title + date */}
-                      <h3 className="text-[14px] sm:text-[15px] font-bold leading-snug mb-1" style={{ color: "#111827" }}>
+                      {/* Title */}
+                      <h3 className="text-[14px] sm:text-[15px] font-bold leading-snug mb-1"
+                          style={{ color: isPast ? "#6b7280" : "#111827" }}>
                         {ev.title}
                       </h3>
                       <div className="flex items-center gap-3 mb-3 flex-wrap">
                         <span className="flex items-center gap-1 text-[11px]" style={{ color: "#6b7280" }}>
-                          <Calendar className="w-3 h-3" />
-                          {ev.date}
+                          <Calendar className="w-3 h-3" />{ev.date}
                         </span>
                         {ev.location && (
                           <span className="flex items-center gap-1 text-[11px]" style={{ color: "#6b7280" }}>
-                            <MapPin className="w-3 h-3" />
-                            {ev.location}
+                            <MapPin className="w-3 h-3" />{ev.location}
                           </span>
                         )}
                         <span className="flex items-center gap-1 text-[11px]" style={{ color: "#6b7280" }}>
-                          <Building2 className="w-3 h-3" />
-                          {ev.organizer}
+                          <Building2 className="w-3 h-3" />{ev.organizer}
                         </span>
                       </div>
 
-                      {/* Description */}
                       <p className="text-[12px] sm:text-[13px] leading-relaxed mb-4" style={{ color: "#374151" }}>
                         {ev.description}
                       </p>
 
-                      {/* Relevance */}
-                      <div className="rounded-lg p-3 mb-4"
-                           style={{ background: "rgba(0,147,140,0.05)", border: "1px solid rgba(0,147,140,0.15)" }}>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Tag className="w-3 h-3 shrink-0" style={{ color: "#00938C" }} />
-                          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#00938C" }}>
-                            Carbon Market Relevance
-                          </span>
-                        </div>
-                        <p className="text-[11px] sm:text-[12px] leading-relaxed" style={{ color: "#374151" }}>
-                          {ev.relevance}
-                        </p>
-                      </div>
-
-                      {/* Key actions */}
-                      {ev.keyActions && ev.keyActions.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <Users className="w-3 h-3 shrink-0" style={{ color: "#6b7280" }} />
-                            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#6b7280" }}>
-                              Key Actions
-                            </span>
+                      {!isPast && (
+                        <>
+                          <div className="rounded-lg p-3 mb-4"
+                               style={{ background: "rgba(0,147,140,0.05)", border: "1px solid rgba(0,147,140,0.15)" }}>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <Tag className="w-3 h-3 shrink-0" style={{ color: "#00938C" }} />
+                              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#00938C" }}>
+                                Carbon Market Relevance
+                              </span>
+                            </div>
+                            <p className="text-[11px] sm:text-[12px] leading-relaxed" style={{ color: "#374151" }}>
+                              {ev.relevance}
+                            </p>
                           </div>
-                          <ul className="space-y-1.5">
-                            {ev.keyActions.map((action, i) => (
-                              <li key={i} className="flex items-start gap-2 text-[11px] sm:text-[12px]" style={{ color: "#374151" }}>
-                                <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
-                                      style={{ background: tc.bg, color: tc.color }}>
-                                  {i + 1}
+
+                          {ev.keyActions && ev.keyActions.length > 0 && (
+                            <div>
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Users className="w-3 h-3 shrink-0" style={{ color: "#6b7280" }} />
+                                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#6b7280" }}>
+                                  Key Actions
                                 </span>
-                                {action}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                              </div>
+                              <ul className="space-y-1.5">
+                                {ev.keyActions.map((action, i) => (
+                                  <li key={i} className="flex items-start gap-2 text-[11px] sm:text-[12px]" style={{ color: "#374151" }}>
+                                    <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                                          style={{ background: tc.bg, color: tc.color }}>
+                                      {i + 1}
+                                    </span>
+                                    {action}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
                 );
               };
 
-              const Section = ({ label, events, accent }: { label: string; events: CalEvent[]; accent: string }) => {
+              const Section = ({ label, events, accent, isPast }: { label: string; events: CalEvent[]; accent: string; isPast?: boolean }) => {
                 if (events.length === 0) return null;
                 return (
                   <div className="mb-8">
@@ -1120,29 +1192,157 @@ export default function ClimateNewsPage() {
                       <span className="text-[10px] tabular-nums" style={{ color: "#9ca3af" }}>{events.length} event{events.length !== 1 ? "s" : ""}</span>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {events.map(ev => <EventCard key={ev.id} ev={ev} />)}
+                      {events.map(ev => <EventCard key={ev.id} ev={ev} isPast={isPast} />)}
                     </div>
                   </div>
                 );
               };
 
+              const DropdownBtn = ({
+                label, isActive, open, setOpen, refEl, children,
+              }: {
+                label: React.ReactNode; isActive: boolean; open: boolean;
+                setOpen: (v: boolean) => void; refEl: React.RefObject<HTMLDivElement | null>; children: React.ReactNode;
+              }) => (
+                <div className="relative" ref={refEl}>
+                  <button
+                    onClick={() => setOpen(!open)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                    style={{
+                      color: isActive ? "#00938C" : "#6b7280",
+                      background: isActive ? "rgba(0,147,140,0.08)" : "#f3f4f6",
+                      border: `1px solid ${isActive ? "rgba(0,147,140,0.2)" : "#e5e7eb"}`,
+                    }}
+                    onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#e9eaec"; }}
+                    onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#f3f4f6"; }}
+                  >
+                    {label}
+                    <ChevronDown className="w-3 h-3 shrink-0" style={{ opacity: 0.5 }} />
+                  </button>
+                  {open && (
+                    <div className="drop-in absolute left-0 top-full mt-1 rounded-lg overflow-hidden z-30 min-w-[160px]"
+                         style={{ background: "#fff", border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
+                      {children}
+                    </div>
+                  )}
+                </div>
+              );
+
+              const optBtn = (label: string, isSelected: boolean, onClick: () => void) => (
+                <button key={label} onClick={onClick}
+                  className="w-full text-left px-3.5 py-2 text-[12px] font-medium"
+                  style={{ color: isSelected ? "#00938C" : "#374151", background: isSelected ? "rgba(0,147,140,0.06)" : "transparent" }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
+                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  {label}
+                </button>
+              );
+
               return (
-                <div className="px-4 sm:px-6 py-6">
-                  {/* Events header */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                         style={{ background: "rgba(0,147,140,0.08)" }}>
-                      <Calendar className="w-4 h-4" style={{ color: "#00938C" }} />
-                    </div>
-                    <div>
-                      <h2 className="text-[15px] font-bold" style={{ color: "#111827" }}>Upcoming Events & Deadlines</h2>
-                      <p className="text-[11px]" style={{ color: "#6b7280" }}>{calEvents.length} events · sorted by date</p>
-                    </div>
+                <div>
+                  {/* ── Controls bar ── */}
+                  <div className="sticky top-0 z-10 flex items-center gap-2 px-4 sm:px-6 py-3 flex-wrap"
+                       style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
+                    <span className="text-[11px] font-semibold mr-1" style={{ color: "#6b7280" }}>
+                      {filtered.length} event{filtered.length !== 1 ? "s" : ""}
+                    </span>
+
+                    {/* Sort */}
+                    <DropdownBtn
+                      label={<><ArrowUpDown className="w-3 h-3" />{EVT_SORT_LABELS[evtSortBy]}</>}
+                      isActive={evtSortBy !== "date"}
+                      open={evtSortOpen} setOpen={setEvtSortOpen} refEl={evtSortRef}
+                    >
+                      {(["date", "type", "country"] as EventSortBy[]).map(opt =>
+                        optBtn(EVT_SORT_LABELS[opt], evtSortBy === opt, () => { setEvtSortBy(opt); setEvtSortOpen(false); })
+                      )}
+                    </DropdownBtn>
+
+                    {/* Country */}
+                    <DropdownBtn
+                      label={<><MapPin className="w-3 h-3" />{evtCountry === "All" ? "Country" : evtCountry}</>}
+                      isActive={evtCountry !== "All"}
+                      open={evtCountryOpen} setOpen={setEvtCountryOpen} refEl={evtCountryRef}
+                    >
+                      {ALL_EVT_COUNTRIES.map(c =>
+                        optBtn(c === "All" ? "All Countries" : c, evtCountry === c, () => { setEvtCountry(c); setEvtCountryOpen(false); })
+                      )}
+                    </DropdownBtn>
+
+                    {/* Format */}
+                    <DropdownBtn
+                      label={<><Globe className="w-3 h-3" />{evtFormat === "All" ? "Format" : evtFormat}</>}
+                      isActive={evtFormat !== "All"}
+                      open={evtFormatOpen} setOpen={setEvtFormatOpen} refEl={evtFormatRef}
+                    >
+                      {ALL_EVT_FORMATS.map(f =>
+                        optBtn(f === "All" ? "All Formats" : f, evtFormat === f, () => { setEvtFormat(f); setEvtFormatOpen(false); })
+                      )}
+                    </DropdownBtn>
+
+                    {/* Clear filters */}
+                    {activeFilters > 0 && (
+                      <button
+                        onClick={() => { setEvtCountry("All"); setEvtFormat("All"); }}
+                        className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg"
+                        style={{ color: "#F86501", background: "rgba(248,101,1,0.08)", border: "1px solid rgba(248,101,1,0.2)" }}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                        Clear {activeFilters}
+                      </button>
+                    )}
+
+                    {/* Archive toggle */}
+                    <button
+                      onClick={() => setEvtShowArchived(v => !v)}
+                      className="ml-auto flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg"
+                      style={{
+                        color: evtShowArchived ? "#00938C" : "#6b7280",
+                        background: evtShowArchived ? "rgba(0,147,140,0.08)" : "#f3f4f6",
+                        border: `1px solid ${evtShowArchived ? "rgba(0,147,140,0.2)" : "#e5e7eb"}`,
+                      }}
+                    >
+                      <Archive className="w-3 h-3 shrink-0" />
+                      Past events
+                      {past.length > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                              style={{ background: evtShowArchived ? "rgba(0,147,140,0.15)" : "#e5e7eb", color: evtShowArchived ? "#00938C" : "#9ca3af" }}>
+                          {past.length}
+                        </span>
+                      )}
+                    </button>
                   </div>
 
-                  <Section label="Urgent — within 30 days" events={urgent} accent="#F86501" />
-                  <Section label="Coming up — 31–90 days" events={soon} accent="#374151" />
-                  <Section label="On the horizon — 90+ days" events={later} accent="#9ca3af" />
+                  {/* ── Event cards ── */}
+                  <div className="px-4 sm:px-6 py-6">
+                    {filtered.length === 0 && !evtShowArchived ? (
+                      <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+                             style={{ background: "rgba(0,147,140,0.08)" }}>
+                          <Calendar className="w-5 h-5" style={{ color: "#00938C" }} />
+                        </div>
+                        <p className="font-semibold text-sm mb-1" style={{ color: "#374151" }}>No events match these filters</p>
+                        <button onClick={() => { setEvtCountry("All"); setEvtFormat("All"); }}
+                                className="text-[12px] font-medium mt-1" style={{ color: "#00938C" }}>
+                          Clear filters
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Section label="Urgent — within 30 days"  events={urgent} accent="#F86501" />
+                        <Section label="Coming up — 31–90 days"   events={soon}   accent="#374151" />
+                        <Section label="On the horizon — 90+ days" events={later}  accent="#9ca3af" />
+
+                        {evtShowArchived && archived.length > 0 && (
+                          <Section label="Past events" events={archived} accent="#9ca3af" isPast />
+                        )}
+                        {evtShowArchived && archived.length === 0 && (
+                          <p className="text-center text-[12px] py-6" style={{ color: "#9ca3af" }}>No past events match the current filters.</p>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })()}
