@@ -5,7 +5,8 @@ import { Sidebar } from "@/components/Sidebar";
 import {
   Newspaper, Clock, ShieldAlert, BookOpen, Beaker,
   BarChart3, Archive, ArrowUpDown, ChevronDown, MapPin,
-  Globe, Briefcase, Link2, Plus, X, ExternalLink,
+  Globe, Briefcase, Link2, Plus, X, ExternalLink, Calendar,
+  Building2, Users, Tag,
 } from "lucide-react";
 
 function useCountUp(target: number, duration = 600): number {
@@ -117,8 +118,16 @@ interface NewsItem {
 }
 
 interface CalEvent {
-  id: number; title: string; date: string; daysUntil: number;
+  id: number;
+  title: string;
+  date: string;
+  daysUntil: number;
   type: "Conference" | "Deadline" | "Review" | "Launch";
+  description: string;
+  organizer: string;
+  location?: string;
+  relevance: string;
+  keyActions?: string[];
 }
 
 const EVENT_TYPE_COLORS: Record<CalEvent["type"], { color: string; bg: string }> = {
@@ -129,13 +138,116 @@ const EVENT_TYPE_COLORS: Record<CalEvent["type"], { color: string; bg: string }>
 };
 
 const calEvents: CalEvent[] = [
-  { id: 1, title: "CBAM Certificate Submission Deadline",  date: "May 31, 2026",  daysUntil: 51,  type: "Deadline"   },
-  { id: 2, title: "BeZero Q2 Portfolio Ratings Review",    date: "May 15, 2026",  daysUntil: 35,  type: "Review"     },
-  { id: 3, title: "VCMI 2.0 Claims Code Enforcement",      date: "Jun 1, 2026",   daysUntil: 52,  type: "Deadline"   },
-  { id: 4, title: "Verra VM0048 v2.0 Compliance Deadline", date: "Jul 1, 2026",   daysUntil: 82,  type: "Deadline"   },
-  { id: 5, title: "Gold Standard SDG Registry Launch",     date: "Jul 15, 2026",  daysUntil: 96,  type: "Launch"     },
-  { id: 6, title: "ICAO CORSIA Phase 2 Review",            date: "Sep 30, 2026",  daysUntil: 173, type: "Review"     },
-  { id: 7, title: "COP30 — Belém, Brazil",                 date: "Nov 10, 2026",  daysUntil: 214, type: "Conference" },
+  {
+    id: 1,
+    title: "CBAM Certificate Submission Deadline",
+    date: "May 31, 2026",
+    daysUntil: 48,
+    type: "Deadline",
+    organizer: "European Commission",
+    location: "EU Member States",
+    description: "Final deadline for importers in the EU to surrender CBAM certificates covering embedded emissions from 2025 imports of iron, steel, cement, aluminium, fertilisers, electricity, and hydrogen.",
+    relevance: "Directly impacts carbon-intensive goods exporters and EU importers. Non-compliance incurs penalties of €50–€150 per tonne of CO₂. Carbon market participants holding CBAM certificates should confirm final positions.",
+    keyActions: [
+      "Verify embedded emissions calculations for all covered goods",
+      "Ensure sufficient CBAM certificates are held in the national registry",
+      "Submit the CBAM declaration via the EU CBAM Transitional Registry",
+    ],
+  },
+  {
+    id: 2,
+    title: "BeZero Q2 Portfolio Ratings Review",
+    date: "May 15, 2026",
+    daysUntil: 32,
+    type: "Review",
+    organizer: "BeZero Carbon",
+    description: "BeZero Carbon's quarterly recalibration of carbon credit ratings across its rated project portfolio. Ratings may be upgraded, downgraded, or placed under review based on updated methodology, new monitoring data, and regulatory developments.",
+    relevance: "Rating changes directly affect the perceived quality and market value of affected VCM credits. Projects under Verra, Gold Standard, and ACR registries may be impacted. Portfolio managers should anticipate potential mark-to-market adjustments.",
+    keyActions: [
+      "Review BeZero-rated projects in your portfolio ahead of the cycle",
+      "Monitor BeZero's research publications for methodology updates",
+      "Prepare counterparty communications if holdings are subject to downgrade",
+    ],
+  },
+  {
+    id: 3,
+    title: "VCMI 2.0 Claims Code Enforcement",
+    date: "Jun 1, 2026",
+    daysUntil: 49,
+    type: "Deadline",
+    organizer: "Voluntary Carbon Markets Integrity Initiative (VCMI)",
+    description: "VCMI's updated Claims Code of Practice (v2.0) becomes the binding reference standard for corporate claims of carbon credit use. Claims made after this date must conform to the revised framework, including enhanced corresponding adjustment and disclosure requirements.",
+    relevance: "Corporates using VCM credits in net-zero or carbon neutrality claims must audit their claims language. Non-conforming claims risk reputational and regulatory exposure as VCMI alignment is increasingly referenced by institutional investors and regulators.",
+    keyActions: [
+      "Audit existing corporate carbon claims against VCMI 2.0 requirements",
+      "Update marketing materials, ESG disclosures, and annual report language",
+      "Confirm that purchased credits meet the enhanced VCMI eligibility criteria",
+    ],
+  },
+  {
+    id: 4,
+    title: "Verra VM0048 v2.0 Compliance Deadline",
+    date: "Jul 1, 2026",
+    daysUntil: 79,
+    type: "Deadline",
+    organizer: "Verra",
+    description: "All projects registered under Verra's VM0048 (Reducing Emissions from Deforestation and Forest Degradation) methodology must transition to version 2.0 by this date. VM0048 v2.0 introduces revised leakage accounting, updated reference region requirements, and stricter permanence buffer pool contributions.",
+    relevance: "Affects the majority of active REDD+ projects in Verra's registry. Projects unable to demonstrate compliance risk suspension of credit issuance. For buyers, credits issued after the deadline from non-compliant projects may be subject to invalidation.",
+    keyActions: [
+      "Confirm VM0048 v2.0 compliance status with project developers",
+      "Review buffer pool contribution requirements for held credits",
+      "Request updated validation reports from third-party auditors",
+    ],
+  },
+  {
+    id: 5,
+    title: "Gold Standard SDG Registry Launch",
+    date: "Jul 15, 2026",
+    daysUntil: 93,
+    type: "Launch",
+    organizer: "Gold Standard Foundation",
+    location: "Geneva, Switzerland (online)",
+    description: "Gold Standard launches a new dedicated registry for SDG-linked carbon credits, enabling buyers to filter and procure credits with verified co-benefit contributions across specific UN Sustainable Development Goals. The registry will include a machine-readable co-benefit data layer.",
+    relevance: "Opens a differentiated procurement channel for buyers with SDG-linked sustainability mandates. Credits with verified SDG contributions have historically commanded a premium. Early access to the registry may provide first-mover sourcing advantages.",
+    keyActions: [
+      "Register for early access to the SDG Registry portal",
+      "Map procurement needs to specific SDG categories ahead of launch",
+      "Engage Gold Standard on co-benefit verification requirements for pipeline projects",
+    ],
+  },
+  {
+    id: 6,
+    title: "ICAO CORSIA Phase 2 Review",
+    date: "Sep 30, 2026",
+    daysUntil: 170,
+    type: "Review",
+    organizer: "International Civil Aviation Organization (ICAO)",
+    location: "Montreal, Canada",
+    description: "ICAO convenes its scheduled mid-cycle review of the CORSIA Phase 2 (2024–2026) programme, assessing participating airline compliance, eligible emissions unit standards, and the adequacy of the 2024–2026 baseline methodology. Outcomes will inform Phase 3 (2027–2035) design.",
+    relevance: "Review outcomes directly affect CORSIA Eligible Emissions Unit (CEEU) eligibility criteria and approved standard status. Changes could materially impact demand for aviation-sector offsets and the price of CEEU-eligible credits through Phase 3.",
+    keyActions: [
+      "Monitor ICAO Council working paper publications leading up to the review",
+      "Assess CEEU-eligible credit exposure in portfolio if standard eligibility changes",
+      "Engage with IATA or relevant industry bodies on representation at the review",
+    ],
+  },
+  {
+    id: 7,
+    title: "COP30 — Belém, Brazil",
+    date: "Nov 10, 2026",
+    daysUntil: 211,
+    type: "Conference",
+    organizer: "UNFCCC",
+    location: "Belém, Pará, Brazil",
+    description: "The 30th Conference of the Parties to the UNFCCC. COP30 is the first COP to be held in the Amazon region and is expected to be a landmark session for Article 6 full operationalisation, updated Nationally Determined Contributions (NDCs), and Loss & Damage finance. Brazil holds the Presidency.",
+    relevance: "COP30 is the single most consequential carbon market event of 2026. Article 6.4 full operationalisation, corresponding adjustment frameworks, and potential revision of CORSIA baselines are all on the agenda. Market participants should plan for high volatility in VCM credit pricing and policy positioning in the lead-up.",
+    keyActions: [
+      "Monitor Article 6 negotiation outcomes for impact on ITMO and VCM pricing",
+      "Track Brazil's NDC submission and implications for host country agreement availability",
+      "Prepare portfolio stress-tests for regulatory shift scenarios",
+      "Consider engagement through IETA, WBCSD, or national delegations",
+    ],
+  },
 ];
 
 // ── News Data ─────────────────────────────────────────────────────────────
@@ -548,6 +660,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function ClimateNewsPage() {
+  const [activeTab,       setActiveTab]       = useState<"news" | "events">("news");
   const [activeDomain,    setActiveDomain]    = useState<"All" | Domain>("All");
   const [view,            setView]            = useState<View>("live");
   const [sortBy,          setSortBy]          = useState<SortBy>("recent");
@@ -663,8 +776,8 @@ export default function ClimateNewsPage() {
               i
             </div>
 
-            {/* Desktop-only controls — hidden on mobile */}
-            <div className="hidden sm:flex items-center self-stretch ml-auto">
+            {/* Desktop-only controls — hidden on mobile and when Events tab is active */}
+            <div className={`${activeTab === "events" ? "hidden" : "hidden sm:flex"} items-center self-stretch ml-auto`}>
 
               <div className="relative flex items-center self-stretch" ref={countryRef}
                    style={{ borderLeft: "1px solid #e5e7eb" }}>
@@ -758,7 +871,7 @@ export default function ClimateNewsPage() {
           </div>
 
           {/* Mobile-only controls row */}
-          <div className="sm:hidden flex" style={{ borderTop: "1px solid #e5e7eb" }}>
+          {activeTab === "news" && <div className="sm:hidden flex" style={{ borderTop: "1px solid #e5e7eb" }}>
 
             {/* Country */}
             <div className="flex-1 relative" ref={countryMobileRef}
@@ -841,14 +954,15 @@ export default function ClimateNewsPage() {
               )}
             </button>
 
-          </div>
+          </div>}
         </header>
 
 
         {/* ── Domain tabs ── */}
         <div className="shrink-0 flex items-center gap-0.5 sm:gap-1 px-2 sm:px-5 overflow-x-auto"
              style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-          {ALL_DOMAINS.map(dom => {
+          {/* News domain tabs — hidden when Events tab is active */}
+          {activeTab === "news" && ALL_DOMAINS.map(dom => {
             const isActive = activeDomain === dom;
             const cfg = dom !== "All" ? DOMAIN_CONFIG[dom] : null;
             const DomIcon = cfg?.icon;
@@ -871,6 +985,26 @@ export default function ClimateNewsPage() {
               </button>
             );
           })}
+
+          {/* Divider + Events tab */}
+          <div className="shrink-0 w-px self-stretch mx-1" style={{ background: "#e5e7eb" }} />
+          <button
+            onClick={() => setActiveTab(t => t === "events" ? "news" : "events")}
+            className="relative shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-2.5 text-[12px] sm:text-[13px] font-medium transition-colors"
+            style={{ color: activeTab === "events" ? "#00938C" : "#4b5563" }}
+            onMouseEnter={(e) => { if (activeTab !== "events") (e.currentTarget as HTMLElement).style.color = "#374151"; }}
+            onMouseLeave={(e) => { if (activeTab !== "events") (e.currentTarget as HTMLElement).style.color = "#4b5563"; }}
+          >
+            <Calendar className="w-3 h-3" />
+            Events
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-all"
+                  style={{
+                    background: "#00938C",
+                    opacity: activeTab === "events" ? 1 : 0,
+                    transform: activeTab === "events" ? "scaleX(1)" : "scaleX(0)",
+                    transformOrigin: "left",
+                  }} />
+          </button>
         </div>
 
         {/* ── Content ── */}
@@ -878,7 +1012,143 @@ export default function ClimateNewsPage() {
 
           <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ background: "#fff" }}>
 
-            {view === "archive" && (
+            {/* ── Events view ── */}
+            {activeTab === "events" && (() => {
+              const urgent = calEvents.filter(e => e.daysUntil <= 30);
+              const soon   = calEvents.filter(e => e.daysUntil > 30 && e.daysUntil <= 90);
+              const later  = calEvents.filter(e => e.daysUntil > 90);
+
+              const EventCard = ({ ev }: { ev: CalEvent }) => {
+                const tc = EVENT_TYPE_COLORS[ev.type];
+                const urgent = ev.daysUntil <= 30;
+                return (
+                  <div className="rounded-xl overflow-hidden"
+                       style={{ border: "1px solid #e5e7eb", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+                    {/* Card top accent */}
+                    <div className="h-1" style={{ background: tc.color }} />
+                    <div className="p-4 sm:p-5">
+                      {/* Type badge + countdown */}
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                              style={{ color: tc.color, background: tc.bg }}>
+                          <Calendar className="w-2.5 h-2.5" />
+                          {ev.type}
+                        </span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{
+                                background: urgent ? "rgba(248,101,1,0.1)" : "rgba(0,147,140,0.08)",
+                                color: urgent ? "#F86501" : "#00938C",
+                              }}>
+                          {ev.daysUntil === 0 ? "Today" : `${ev.daysUntil}d away`}
+                        </span>
+                      </div>
+
+                      {/* Title + date */}
+                      <h3 className="text-[14px] sm:text-[15px] font-bold leading-snug mb-1" style={{ color: "#111827" }}>
+                        {ev.title}
+                      </h3>
+                      <div className="flex items-center gap-3 mb-3 flex-wrap">
+                        <span className="flex items-center gap-1 text-[11px]" style={{ color: "#6b7280" }}>
+                          <Calendar className="w-3 h-3" />
+                          {ev.date}
+                        </span>
+                        {ev.location && (
+                          <span className="flex items-center gap-1 text-[11px]" style={{ color: "#6b7280" }}>
+                            <MapPin className="w-3 h-3" />
+                            {ev.location}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 text-[11px]" style={{ color: "#6b7280" }}>
+                          <Building2 className="w-3 h-3" />
+                          {ev.organizer}
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-[12px] sm:text-[13px] leading-relaxed mb-4" style={{ color: "#374151" }}>
+                        {ev.description}
+                      </p>
+
+                      {/* Relevance */}
+                      <div className="rounded-lg p-3 mb-4"
+                           style={{ background: "rgba(0,147,140,0.05)", border: "1px solid rgba(0,147,140,0.15)" }}>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Tag className="w-3 h-3 shrink-0" style={{ color: "#00938C" }} />
+                          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#00938C" }}>
+                            Carbon Market Relevance
+                          </span>
+                        </div>
+                        <p className="text-[11px] sm:text-[12px] leading-relaxed" style={{ color: "#374151" }}>
+                          {ev.relevance}
+                        </p>
+                      </div>
+
+                      {/* Key actions */}
+                      {ev.keyActions && ev.keyActions.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Users className="w-3 h-3 shrink-0" style={{ color: "#6b7280" }} />
+                            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#6b7280" }}>
+                              Key Actions
+                            </span>
+                          </div>
+                          <ul className="space-y-1.5">
+                            {ev.keyActions.map((action, i) => (
+                              <li key={i} className="flex items-start gap-2 text-[11px] sm:text-[12px]" style={{ color: "#374151" }}>
+                                <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                                      style={{ background: tc.bg, color: tc.color }}>
+                                  {i + 1}
+                                </span>
+                                {action}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              };
+
+              const Section = ({ label, events, accent }: { label: string; events: CalEvent[]; accent: string }) => {
+                if (events.length === 0) return null;
+                return (
+                  <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accent }}>{label}</span>
+                      <div className="flex-1 h-px" style={{ background: "#e5e7eb" }} />
+                      <span className="text-[10px] tabular-nums" style={{ color: "#9ca3af" }}>{events.length} event{events.length !== 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {events.map(ev => <EventCard key={ev.id} ev={ev} />)}
+                    </div>
+                  </div>
+                );
+              };
+
+              return (
+                <div className="px-4 sm:px-6 py-6">
+                  {/* Events header */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                         style={{ background: "rgba(0,147,140,0.08)" }}>
+                      <Calendar className="w-4 h-4" style={{ color: "#00938C" }} />
+                    </div>
+                    <div>
+                      <h2 className="text-[15px] font-bold" style={{ color: "#111827" }}>Upcoming Events & Deadlines</h2>
+                      <p className="text-[11px]" style={{ color: "#6b7280" }}>{calEvents.length} events · sorted by date</p>
+                    </div>
+                  </div>
+
+                  <Section label="Urgent — within 30 days" events={urgent} accent="#F86501" />
+                  <Section label="Coming up — 31–90 days" events={soon} accent="#374151" />
+                  <Section label="On the horizon — 90+ days" events={later} accent="#9ca3af" />
+                </div>
+              );
+            })()}
+
+            {/* ── News view ── */}
+            {activeTab === "news" && view === "archive" && (
               <div className="flex items-center gap-2 px-4 py-2.5"
                    style={{ background: "rgba(55,65,81,0.06)", borderBottom: "1px solid rgba(55,65,81,0.2)" }}>
                 <Archive className="w-3.5 h-3.5 shrink-0" style={{ color: "#374151" }} />
@@ -890,7 +1160,7 @@ export default function ClimateNewsPage() {
               </div>
             )}
 
-            {sorted.length === 0 ? (
+            {activeTab === "news" && (sorted.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center px-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
                      style={{ background: "rgba(0,147,140,0.08)" }}>
@@ -1151,7 +1421,7 @@ export default function ClimateNewsPage() {
                   );
                 })}
               </div>
-            )}
+            ))}
 
             <p className="py-5 text-center text-[11px]" style={{ color: "#9ca3af" }}>
               Factual summaries for informational purposes only · Not investment, financial, legal, or compliance advice
