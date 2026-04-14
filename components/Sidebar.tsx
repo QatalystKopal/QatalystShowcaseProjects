@@ -251,7 +251,7 @@ export function Sidebar() {
             <NavLink icon={Newspaper} label="Climate News" href="/climate-news" />
           </li>
           <li>
-            <NavLink icon={ShieldCheck} label="SPO Assessment" href="/sll-report" />
+            <NavLink icon={ShieldCheck} label="SLL Assessment" href="/sll-report" />
           </li>
         </ul>
 

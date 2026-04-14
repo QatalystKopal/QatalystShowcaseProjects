@@ -819,7 +819,7 @@ export default function SLLReportPage() {
 
         {/* Overall Opinion */}
         <div className="p-6 mb-6 text-center" style={{ ...cardStyle, borderColor: opinion.color, borderWidth: 2 }}>
-          <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Overall SPO Assessment</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Overall SLL Assessment</p>
           <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl mb-3"
                style={{ background: opinion.bg }}>
             <ShieldCheck className="w-6 h-6" style={{ color: opinion.color }} />
@@ -1068,7 +1068,7 @@ export default function SLLReportPage() {
           <div className="px-5 pt-5 pb-3">
             <div className="flex items-center gap-2 mb-1">
               <ShieldCheck className="w-4 h-4" style={{ color: "#3b82f6" }} />
-              <h2 className="text-[14px] font-bold" style={{ color: "#111827" }}>SPO Assessment</h2>
+              <h2 className="text-[14px] font-bold" style={{ color: "#111827" }}>SLL Assessment</h2>
             </div>
             <p className="text-[11px]" style={{ color: "#6b7280" }}>Sustainability-Linked Loan</p>
           </div>

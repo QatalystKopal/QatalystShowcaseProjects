@@ -387,7 +387,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* SPO Assessment CTA */}
+              {/* SLL Assessment CTA */}
               <Link href="/sll-report"
                 className="mb-5 flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all"
                 style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(59,130,246,0.2)" }}
@@ -399,14 +399,14 @@ export default function HomePage() {
                   <ShieldCheck className="w-5 h-5" style={{ color: "#3b82f6" }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold" style={{ color: "#111827" }}>Second Party Opinion Assessment</p>
+                  <p className="text-[13px] font-bold" style={{ color: "#111827" }}>SLL Assessment</p>
                   <p className="text-[11px]" style={{ color: "#6b7280" }}>
                     Upload a loan application and generate a full SPO — KPI validation, SPT calibration, benchmarking & reporting review
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-semibold"
                      style={{ background: "#3b82f6", color: "#fff" }}>
-                  Start Assessment <ArrowRight className="w-3.5 h-3.5" />
+                  Start SLL Assessment <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </Link>
 
@@ -503,7 +503,7 @@ export default function HomePage() {
                               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(59,130,246,0.14)"; }}
                               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(59,130,246,0.08)"; }}
                             >
-                              <ShieldCheck className="w-3 h-3" /> SPO Review
+                              <ShieldCheck className="w-3 h-3" /> SLL Review
                             </Link>
                           </div>
                         </div>
