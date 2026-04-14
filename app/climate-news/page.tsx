@@ -1095,7 +1095,7 @@ export default function ClimateNewsPage() {
                   <div className="rounded-xl overflow-hidden"
                        style={{ border: "1px solid #e5e7eb", background: isPast ? "#fafafa" : "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", opacity: isPast ? 0.75 : 1 }}>
                     <div className="h-1" style={{ background: isPast ? "#d1d5db" : tc.color }} />
-                    <div className="p-4 sm:p-5">
+                    <div className="p-3 sm:p-4">
                       {/* Type badge + format badge + countdown */}
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
@@ -1242,7 +1242,7 @@ export default function ClimateNewsPage() {
               return (
                 <div>
                   {/* ── Controls bar ── */}
-                  <div className="sticky top-0 z-10 flex items-center gap-2 px-4 sm:px-6 py-3 flex-wrap"
+                  <div className="sticky top-0 z-10 flex items-center gap-2 px-3 sm:px-4 py-2.5 flex-wrap"
                        style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
                     <span className="text-[11px] font-semibold mr-1" style={{ color: "#6b7280" }}>
                       {filtered.length} event{filtered.length !== 1 ? "s" : ""}
@@ -1315,7 +1315,7 @@ export default function ClimateNewsPage() {
                   </div>
 
                   {/* ── Event cards ── */}
-                  <div className="px-4 sm:px-6 py-6">
+                  <div className="px-3 sm:px-4 py-4">
                     {filtered.length === 0 && !evtShowArchived ? (
                       <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
@@ -1349,7 +1349,7 @@ export default function ClimateNewsPage() {
 
             {/* ── News view ── */}
             {activeTab === "news" && view === "archive" && (
-              <div className="flex items-center gap-2 px-4 py-2.5"
+              <div className="flex items-center gap-2 px-3 py-2"
                    style={{ background: "rgba(55,65,81,0.06)", borderBottom: "1px solid rgba(55,65,81,0.2)" }}>
                 <Archive className="w-3.5 h-3.5 shrink-0" style={{ color: "#374151" }} />
                 <span className="text-[12px]" style={{ color: "#374151" }}>
@@ -1375,7 +1375,7 @@ export default function ClimateNewsPage() {
             ) : view === "live" ? (
               <>
                 {/* Section header */}
-                <div className="flex items-center gap-3 px-4 py-2.5"
+                <div className="flex items-center gap-3 px-3 py-2"
                      style={{ borderBottom: "1px solid #e5e7eb", background: "#fafafa" }}>
                   <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#374151" }}>
                     Latest Intelligence
@@ -1403,7 +1403,7 @@ export default function ClimateNewsPage() {
                       >
                         {/* ── Layer 1: Compact ── */}
                         <div
-                          className="flex gap-3 px-4 py-3 cursor-pointer"
+                          className="flex gap-3 px-3 py-2.5 cursor-pointer"
                           onClick={() => toggleExpand(item.id)}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#fafafa"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; }}

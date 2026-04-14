@@ -168,7 +168,7 @@ export default function HomePage() {
       <div className="page-enter flex-1 flex flex-col min-w-0 overflow-hidden" style={{ background: "#f5f9f7" }}>
 
         {/* ── Header ── */}
-        <header className="shrink-0 flex items-center gap-3 px-5 py-3.5"
+        <header className="shrink-0 flex items-center gap-2 px-4 py-2.5"
                 style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
 
           {/* Title + workspace toggle */}
@@ -261,7 +261,7 @@ export default function HomePage() {
         </header>
 
         {/* ── Tabs ── */}
-        <div className="shrink-0 flex items-center gap-1 px-5 overflow-x-auto"
+        <div className="shrink-0 flex items-center gap-0.5 px-3 overflow-x-auto"
              style={{ background: "#ffffff", borderBottom: "1px solid #e5e7eb" }}>
           {workspace === "carbon"
             ? tabs.map((tab) => {
@@ -312,7 +312,7 @@ export default function HomePage() {
         </div>
 
         {/* ── Content ── */}
-        <main className="flex-1 overflow-y-auto p-5">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4">
 
           {/* ── Carbon workspace ── */}
           {workspace === "carbon" && (
@@ -325,7 +325,7 @@ export default function HomePage() {
                     { label: "Annual Avg. ERs",     value: `${(animERsInt / 10).toFixed(1)}M`,   sub: "tCO₂e/yr" },
                     { label: "Countries",           value: String(animCountries) },
                   ].map(({ label, value, sub, live }) => (
-                    <div key={label} className="px-4 py-3">
+                    <div key={label} className="px-3 py-2.5">
                       <div className="flex items-baseline gap-1.5 flex-wrap">
                         {live && <span className="w-1.5 h-1.5 rounded-full shrink-0 motion-safe:animate-pulse mb-0.5" style={{ background: "#0d9488" }} />}
                         <span className="text-xl font-bold tabular-nums leading-none" style={{ color: "#111827" }}>{value}</span>
@@ -347,7 +347,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div key={activeTab + "—" + query}
-                     className={`grid gap-4 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 max-w-2xl"}`}>
+                     className={`grid gap-3 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 max-w-2xl"}`}>
                   {filtered.map((project, i) => (
                     <div key={project.id} className="card-stagger" style={{ "--i": i } as React.CSSProperties}>
                       <ProjectCard project={project} onClick={(p) => router.push(`/projects/${p.id}`)} allocationPct={project.qatalystTotalAllocation / maxAlloc} />
@@ -375,7 +375,7 @@ export default function HomePage() {
                     { label: "Active",           value: String(animSllActive) },
                     { label: "Countries",        value: String(animSllCnt) },
                   ].map(({ label, value, sub, live }) => (
-                    <div key={label} className="px-4 py-3">
+                    <div key={label} className="px-3 py-2.5">
                       <div className="flex items-baseline gap-1.5 flex-wrap">
                         {live && <span className="w-1.5 h-1.5 rounded-full shrink-0 motion-safe:animate-pulse mb-0.5" style={{ background: "#3b82f6" }} />}
                         <span className="text-xl font-bold tabular-nums leading-none" style={{ color: "#111827" }}>{value}</span>
@@ -389,7 +389,7 @@ export default function HomePage() {
 
               {/* SLL Assessment CTA */}
               <Link href="/sll-report"
-                className="mb-5 flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all"
+                className="mb-4 flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
                 style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(59,130,246,0.2)" }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(59,130,246,0.4)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(59,130,246,0.2)"; }}
@@ -418,7 +418,7 @@ export default function HomePage() {
                   <p className="font-semibold text-sm" style={{ color: "#374151" }}>No loans match your criteria</p>
                 </div>
               ) : (
-                <div key={sllTab + "—" + query} className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div key={sllTab + "—" + query} className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {sllFiltered.map((deal, i) => {
                     const sc = SLL_STATUS_CONFIG[deal.status];
                     const StatusIcon = sc.icon;

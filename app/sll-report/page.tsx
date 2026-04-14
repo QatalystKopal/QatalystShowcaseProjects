@@ -123,13 +123,13 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
 function SectionHeader({ icon: Icon, title, sub }: { icon: React.ElementType; title: string; sub: string }) {
   return (
-    <div className="flex items-center gap-3 mb-6">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+    <div className="flex items-center gap-2.5 mb-4">
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
            style={{ background: "rgba(59,130,246,0.08)" }}>
         <Icon className="w-5 h-5" style={{ color: "#3b82f6" }} />
       </div>
       <div>
-        <h2 className="text-[16px] font-bold" style={{ color: "#111827" }}>{title}</h2>
+        <h2 className="text-[14px] font-bold" style={{ color: "#111827" }}>{title}</h2>
         <p className="text-[12px]" style={{ color: "#6b7280" }}>{sub}</p>
       </div>
     </div>
@@ -420,7 +420,7 @@ export default function SLLReportPage() {
         <SectionHeader icon={Upload} title="Document Upload & Borrower Profile" sub="Upload the loan application and related documents, then complete the borrower profile." />
 
         {/* Progress bar */}
-        <div className="mb-5 p-4 rounded-xl" style={cardStyle}>
+        <div className="mb-3 p-3 rounded-lg" style={cardStyle}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[12px] font-bold" style={{ color: "#111827" }}>
               Document Readiness
@@ -450,7 +450,7 @@ export default function SLLReportPage() {
         </div>
 
         {/* Two-column layout: upload + checklist */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
 
           {/* Upload zone + uploaded list */}
           <div>
@@ -567,9 +567,9 @@ export default function SLLReportPage() {
         </div>
 
         {/* Profile form */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Borrower Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <Field label="Company Name">
               <input className={inputCls} style={inputStyle} value={profile.companyName} onChange={e => updateProfile("companyName", e.target.value)} placeholder="e.g. Natura &Co" />
             </Field>
@@ -586,7 +586,7 @@ export default function SLLReportPage() {
               <input className={inputCls} style={inputStyle} value={profile.employees} onChange={e => updateProfile("employees", e.target.value)} placeholder="e.g. 35,000" />
             </Field>
           </div>
-          <div className="mt-4">
+          <div className="mt-3">
             <Field label="Business Description">
               <textarea className={inputCls} style={{ ...inputStyle, minHeight: 64 }} value={profile.description}
                         onChange={e => updateProfile("description", e.target.value)}
@@ -596,9 +596,9 @@ export default function SLLReportPage() {
         </div>
 
         {/* ESG Ratings */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Existing ESG Ratings</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Sustainalytics ESG Risk Score">
               <input className={inputCls} style={inputStyle} value={profile.sustainalyticsScore} onChange={e => updateProfile("sustainalyticsScore", e.target.value)} placeholder="e.g. 18.5 (Low Risk)" />
             </Field>
@@ -644,7 +644,7 @@ export default function SLLReportPage() {
       <div>
         <SectionHeader icon={Target} title="KPI Selection & Materiality Assessment"
                        sub="Define the Key Performance Indicators. KPIs must be material, measurable, externally verifiable, and benchmarkable (SLLP Core Component 1)." />
-        <div className="space-y-4">
+        <div className="space-y-3">
           {kpis.map((kpi, idx) => (
             <div key={kpi.id} className="p-5 relative" style={cardStyle}>
               <div className="flex items-center justify-between mb-4">
@@ -655,7 +655,7 @@ export default function SLLReportPage() {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                 <Field label="KPI Name">
                   <input className={inputCls} style={inputStyle} value={kpi.name} onChange={e => updateKPI(kpi.id, "name", e.target.value)} placeholder="e.g. Scope 1+2 GHG Emissions" />
                 </Field>
@@ -675,7 +675,7 @@ export default function SLLReportPage() {
                   <input className={inputCls} style={inputStyle} value={kpi.baselineYear} onChange={e => updateKPI(kpi.id, "baselineYear", e.target.value)} placeholder="e.g. 2023" />
                 </Field>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="Data Source">
                   <input className={inputCls} style={inputStyle} value={kpi.dataSource} onChange={e => updateKPI(kpi.id, "dataSource", e.target.value)} placeholder="e.g. Annual sustainability report, GHG inventory" />
                 </Field>
@@ -706,7 +706,7 @@ export default function SLLReportPage() {
       <div>
         <SectionHeader icon={TrendingUp} title="SPT Calibration & Ambition Assessment"
                        sub="Set Sustainability Performance Targets for each KPI and assess ambition against science-based pathways and peer benchmarks (SLLP Core Component 2)." />
-        <div className="space-y-4">
+        <div className="space-y-3">
           {kpis.map((kpi, idx) => {
             const spt = spts.find(s => s.kpiId === kpi.id);
             if (!spt) return null;
@@ -719,7 +719,7 @@ export default function SLLReportPage() {
                     Baseline: {kpi.baselineValue || "—"} {kpi.unit} ({kpi.baselineYear})
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                   <Field label="Target Value">
                     <input className={inputCls} style={inputStyle} value={spt.targetValue} onChange={e => updateSPT(kpi.id, "targetValue", e.target.value)} placeholder="e.g. 225,000" />
                   </Field>
@@ -730,7 +730,7 @@ export default function SLLReportPage() {
                     <Select value={spt.scienceAligned} onChange={v => updateSPT(kpi.id, "scienceAligned", v)} options={["Yes", "Partial", "No"]} />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <Field label="Peer Average">
                     <input className={inputCls} style={inputStyle} value={spt.peerAverage} onChange={e => updateSPT(kpi.id, "peerAverage", e.target.value)} placeholder="Sector peer average value" />
                   </Field>
@@ -741,7 +741,7 @@ export default function SLLReportPage() {
                     <Select value={spt.ambition} onChange={v => updateSPT(kpi.id, "ambition", v)} options={["Leading", "Ambitious", "Moderate", "Conservative"]} />
                   </Field>
                 </div>
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Margin Step-Up on Miss (bps)">
                     <input className={inputCls} style={inputStyle} value={spt.stepUpBps} onChange={e => updateSPT(kpi.id, "stepUpBps", e.target.value)} placeholder="e.g. 7.5" />
                   </Field>
@@ -759,8 +759,8 @@ export default function SLLReportPage() {
       <div>
         <SectionHeader icon={Banknote} title="Loan / Facility Characteristics"
                        sub="Define the financial structure and sustainability-linked margin adjustment mechanism (SLLP Core Component 3)." />
-        <div className="p-5 mb-4" style={cardStyle}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div className="p-3 mb-3" style={cardStyle}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
             <Field label="Facility Type">
               <Select value={loan.facilityType} onChange={v => updateLoan("facilityType", v)} options={FACILITY_TYPES} placeholder="Select type" />
             </Field>
@@ -779,9 +779,9 @@ export default function SLLReportPage() {
           </div>
         </div>
 
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Margin Ratchet Mechanism</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <Field label="Step-Up on SPT Miss (bps)">
               <div className="flex items-center gap-2">
                 <ArrowUpRight className="w-4 h-4 shrink-0" style={{ color: "#ef4444" }} />
@@ -832,8 +832,8 @@ export default function SLLReportPage() {
       <div>
         <SectionHeader icon={FileCheck} title="Reporting & Verification"
                        sub="Define reporting commitments and external verification arrangements (SLLP Core Components 4 & 5)." />
-        <div className="p-5 mb-4" style={cardStyle}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="p-3 mb-3" style={cardStyle}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <Field label="Reporting Frequency">
               <Select value={reporting.frequency} onChange={v => updateReporting("frequency", v)} options={["Annual", "Semi-Annual", "Quarterly"]} />
             </Field>
@@ -865,21 +865,21 @@ export default function SLLReportPage() {
       <div>
         <SectionHeader icon={Compass} title="Borrower Sustainability Strategy"
                        sub="Assess the borrower's overall sustainability positioning, commitments, and governance framework." />
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Commitments & Alignment</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 mb-4">
             <Toggle checked={strategy.parisAligned} onChange={v => updateStrategy("parisAligned", v)} label="Paris Agreement aligned (1.5°C / well-below 2°C)" />
             <Toggle checked={strategy.sbtiCommitted} onChange={v => updateStrategy("sbtiCommitted", v)} label="SBTi committed or approved" />
             <Toggle checked={strategy.euTaxonomy} onChange={v => updateStrategy("euTaxonomy", v)} label="EU Taxonomy aligned activities" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Net Zero Target Year">
               <input className={inputCls} style={inputStyle} value={strategy.netZeroYear} onChange={e => updateStrategy("netZeroYear", e.target.value)} placeholder="e.g. 2050" />
             </Field>
           </div>
         </div>
 
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-3" style={{ color: "#111827" }}>UN Sustainable Development Goals</h3>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {Object.entries(SDG_LABELS).map(([num, label]) => {
@@ -899,7 +899,7 @@ export default function SLLReportPage() {
         </div>
 
         <div className="p-5" style={cardStyle}>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Field label="Transition Plan Summary">
               <textarea className={inputCls} style={{ ...inputStyle, minHeight: 72 }} value={strategy.transitionPlan}
                         onChange={e => updateStrategy("transitionPlan", e.target.value)}
@@ -922,7 +922,7 @@ export default function SLLReportPage() {
         <SectionHeader icon={BarChart3} title="Benchmarking & Peer Comparison"
                        sub="Provide historical performance data and peer benchmarks to assess trajectory and relative ambition." />
 
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Historical KPI Performance</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]" style={{ borderCollapse: "collapse" }}>
@@ -1040,7 +1040,7 @@ export default function SLLReportPage() {
                        sub={`Assessment of ${profile.companyName || "Borrower"}'s Sustainability-Linked Loan Framework`} />
 
         {/* Overall Opinion */}
-        <div className="p-6 mb-6 text-center" style={{ ...cardStyle, borderColor: opinion.color, borderWidth: 2 }}>
+        <div className="p-4 mb-3 text-center" style={{ ...cardStyle, borderColor: opinion.color, borderWidth: 2 }}>
           <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Overall SLL Assessment</p>
           <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl mb-3"
                style={{ background: opinion.bg }}>
@@ -1057,7 +1057,7 @@ export default function SLLReportPage() {
         </div>
 
         {/* Framework Summary */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-3" style={{ color: "#111827" }}>Framework Summary</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
@@ -1075,7 +1075,7 @@ export default function SLLReportPage() {
         </div>
 
         {/* Score Breakdown */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>SLLP Alignment Scores</h3>
           <div className="space-y-3">
             {sections.map(({ label, score, component }) => (
@@ -1099,7 +1099,7 @@ export default function SLLReportPage() {
         </div>
 
         {/* KPI Assessment Table */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>KPI Materiality Assessment</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]" style={{ borderCollapse: "collapse" }}>
@@ -1139,7 +1139,7 @@ export default function SLLReportPage() {
         </div>
 
         {/* SPT Ambition Table */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>SPT Ambition Assessment</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]" style={{ borderCollapse: "collapse" }}>
@@ -1187,7 +1187,7 @@ export default function SLLReportPage() {
 
         {/* Benchmark Visualization */}
         {kpis[0]?.name && (
-          <div className="p-5 mb-4" style={cardStyle}>
+          <div className="p-3 mb-3" style={cardStyle}>
             <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Benchmark Comparison — {kpis[0].name}</h3>
             <div className="space-y-3">
               {[
@@ -1217,7 +1217,7 @@ export default function SLLReportPage() {
         )}
 
         {/* Alignment Matrix */}
-        <div className="p-5 mb-4" style={cardStyle}>
+        <div className="p-3 mb-3" style={cardStyle}>
           <h3 className="text-[13px] font-bold mb-4" style={{ color: "#111827" }}>Framework Alignment Matrix</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
@@ -1285,9 +1285,9 @@ export default function SLLReportPage() {
       <div className="flex-1 flex min-w-0 overflow-hidden" style={{ background: "#f5f7fa" }}>
 
         {/* ── Step sidebar ── */}
-        <div className="hidden sm:flex shrink-0 flex-col w-[240px] overflow-y-auto"
+        <div className="hidden sm:flex shrink-0 flex-col w-[192px] overflow-y-auto"
              style={{ background: "#fff", borderRight: "1px solid #e5e7eb" }}>
-          <div className="px-5 pt-5 pb-3">
+          <div className="px-4 pt-4 pb-2.5">
             <div className="flex items-center gap-2 mb-1">
               <ShieldCheck className="w-4 h-4" style={{ color: "#3b82f6" }} />
               <h2 className="text-[14px] font-bold" style={{ color: "#111827" }}>SLL Assessment</h2>
@@ -1295,7 +1295,7 @@ export default function SLLReportPage() {
             <p className="text-[11px]" style={{ color: "#6b7280" }}>Sustainability-Linked Loan</p>
           </div>
 
-          <nav className="flex-1 px-3 pb-4">
+          <nav className="flex-1 px-2.5 pb-3">
             {STEPS.map((s) => {
               const Icon = s.icon;
               const isActive = step === s.id;
@@ -1310,7 +1310,7 @@ export default function SLLReportPage() {
                   onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#f9fafb"; }}
                   onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = isActive ? "rgba(59,130,246,0.08)" : "transparent"; }}
                 >
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                        style={{
                          background: isActive ? "#3b82f6" : completion === "complete" ? "rgba(5,150,105,0.1)" : "#f3f4f6",
                          border: isActive ? "none" : completion === "complete" ? "1px solid rgba(5,150,105,0.3)" : "1px solid #e5e7eb",
@@ -1351,14 +1351,14 @@ export default function SLLReportPage() {
           </div>
 
           {/* Scrollable form area */}
-          <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
-            <div className="max-w-3xl mx-auto">
+          <main className="flex-1 overflow-y-auto px-3 sm:px-5 py-4">
+            <div>
               {renderActiveStep()}
             </div>
           </main>
 
           {/* Navigation footer */}
-          <div className="shrink-0 flex items-center justify-between px-4 sm:px-8 py-3"
+          <div className="shrink-0 flex items-center justify-between px-3 sm:px-5 py-2.5"
                style={{ background: "#fff", borderTop: "1px solid #e5e7eb" }}>
             <button onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold transition-opacity"
