@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import {
   Upload, Target, TrendingUp, Banknote, FileCheck, Compass, BarChart3,
   FileText, ChevronRight, ChevronLeft, Plus, X, CheckCircle2, Clock,
   AlertCircle, Globe, Building2, Leaf, ShieldCheck, ArrowUpRight,
-  ArrowDownRight, Minus, Info,
+  ArrowDownRight, Minus, Info, Search, Sparkles, RefreshCw,
 } from "lucide-react";
+import type { CompanyLookupResult } from "@/app/api/company-lookup/route";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -216,6 +217,81 @@ function overallOpinion(scores: number[]): { label: string; color: string; bg: s
 export default function SLLReportPage() {
   const [step, setStep] = useState(1);
 
+  // Company search
+  const [searchQuery,   setSearchQuery]   = useState("");
+  const [searching,     setSearching]     = useState(false);
+  const [searchResult,  setSearchResult]  = useState<CompanyLookupResult | null>(null);
+  const [searchError,   setSearchError]   = useState<string | null>(null);
+  const [applyPreview,  setApplyPreview]  = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleCompanySearch() {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchError(null);
+    setSearchResult(null);
+    setApplyPreview(false);
+    try {
+      const res = await fetch("/api/company-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyName: q, sector: profile.sector, country: profile.country }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data: CompanyLookupResult = await res.json();
+      setSearchResult(data);
+      setApplyPreview(true);
+    } catch (e) {
+      setSearchError("Search failed — check your internet connection or API key.");
+      console.error(e);
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function applySearchResult(data: CompanyLookupResult) {
+    if (data.companyName) updateProfile("companyName", data.companyName);
+    if (data.sector)      updateProfile("sector",      data.sector);
+    if (data.country)     updateProfile("country",     data.country);
+    if (data.revenue)     updateProfile("revenue",     data.revenue);
+    if (data.employees)   updateProfile("employees",   data.employees);
+    if (data.description) updateProfile("description", data.description);
+    if (data.sustainalyticsScore) updateProfile("sustainalyticsScore", data.sustainalyticsScore);
+    if (data.msciRating)  updateProfile("msciRating",  data.msciRating);
+    if (data.cdpScore)    updateProfile("cdpScore",    data.cdpScore);
+    if (data.materialRisks?.length) updateProfile("materialRisks", data.materialRisks);
+    if (data.parisAligned   != null) updateStrategy("parisAligned",   data.parisAligned);
+    if (data.sbtiCommitted  != null) updateStrategy("sbtiCommitted",  data.sbtiCommitted);
+    if (data.netZeroYear)            updateStrategy("netZeroYear",    data.netZeroYear);
+    if (data.euTaxonomy    != null)  updateStrategy("euTaxonomy",     data.euTaxonomy);
+    if (data.sdgs?.length)           updateStrategy("sdgs",           data.sdgs);
+    if (data.transitionPlan)         updateStrategy("transitionPlan", data.transitionPlan);
+    if (data.governance)             updateStrategy("governance",     data.governance);
+    if (data.kpiSuggestions?.length) {
+      const newKpis = data.kpiSuggestions.map((k, i) => ({
+        id: i + 1,
+        name:          k.name,
+        category:      k.category,
+        metricType:    "Absolute" as const,
+        unit:          k.unit,
+        baselineValue: k.baselineValue ?? "",
+        baselineYear:  k.baselineYear  ?? "2023",
+        dataSource:    k.dataSource    ?? "",
+        verified:      false,
+        verifier:      "",
+      }));
+      setKpis(newKpis);
+      setSpts(newKpis.map(k => ({
+        kpiId: k.id, targetValue: "", targetYear: "2030",
+        scienceAligned: "No" as const, peerAverage: "", industryBest: "",
+        ambition: "Moderate" as const, stepUpBps: "",
+      })));
+    }
+    setApplyPreview(false);
+    setSearchResult(null);
+  }
+
   // Step 1
   const [docs, setDocs] = useState<UploadedDoc[]>([]);
   const [profile, setProfile] = useState<BorrowerProfile>({
@@ -418,6 +494,148 @@ export default function SLLReportPage() {
     return (
       <div>
         <SectionHeader icon={Upload} title="Document Upload & Borrower Profile" sub="Upload the loan application and related documents, then complete the borrower profile." />
+
+        {/* ── Company search ── */}
+        <div className="mb-4 p-3 rounded-xl"
+             style={{ background: "linear-gradient(135deg,rgba(59,130,246,0.05) 0%,rgba(99,102,241,0.05) 100%)", border: "1px solid rgba(59,130,246,0.18)" }}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Sparkles className="w-3.5 h-3.5" style={{ color: "#3b82f6" }} />
+            <span className="text-[12px] font-bold" style={{ color: "#111827" }}>Auto-fill from public disclosures</span>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                  style={{ background: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>AI Search</span>
+          </div>
+          <p className="text-[11px] mb-2.5" style={{ color: "#6b7280" }}>
+            Enter a company name and we'll search public websites, sustainability reports, and ESG disclosures to pre-fill the form.
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "#9ca3af" }} />
+              <input
+                ref={searchInputRef}
+                className="w-full text-[13px] pl-8 pr-3 py-2 rounded-lg outline-none"
+                style={{ background: "#fff", border: "1px solid #e5e7eb", color: "#111827" }}
+                placeholder="e.g. Iberdrola, Natura &Co, Ørsted..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleCompanySearch()}
+                onFocus={e => (e.currentTarget.style.borderColor = "#3b82f6")}
+                onBlur={e  => (e.currentTarget.style.borderColor = "#e5e7eb")}
+              />
+            </div>
+            <button
+              onClick={handleCompanySearch}
+              disabled={searching || !searchQuery.trim()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold text-white transition-opacity"
+              style={{ background: "#3b82f6", opacity: searching || !searchQuery.trim() ? 0.6 : 1 }}
+            >
+              {searching
+                ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Searching…</>
+                : <><Search className="w-3.5 h-3.5" /> Search</>}
+            </button>
+          </div>
+
+          {searchError && (
+            <div className="mt-2.5 flex items-start gap-2 p-2.5 rounded-lg" style={{ background: "rgba(220,38,38,0.05)", border: "1px solid rgba(220,38,38,0.15)" }}>
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#dc2626" }} />
+              <p className="text-[11px]" style={{ color: "#dc2626" }}>{searchError}</p>
+            </div>
+          )}
+
+          {/* Preview panel */}
+          {applyPreview && searchResult && (
+            <div className="mt-3 rounded-lg overflow-hidden" style={{ border: "1px solid rgba(59,130,246,0.2)" }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-3 py-2"
+                   style={{ background: "rgba(59,130,246,0.07)", borderBottom: "1px solid rgba(59,130,246,0.15)" }}>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#059669" }} />
+                  <span className="text-[12px] font-bold" style={{ color: "#111827" }}>
+                    Found: {searchResult.companyName}
+                  </span>
+                  {searchResult.confidence && (
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: searchResult.confidence === "high" ? "rgba(5,150,105,0.1)" : searchResult.confidence === "medium" ? "rgba(180,83,9,0.08)" : "rgba(156,163,175,0.1)",
+                            color: searchResult.confidence === "high" ? "#059669" : searchResult.confidence === "medium" ? "#b45309" : "#6b7280",
+                          }}>
+                      {searchResult.confidence} confidence
+                    </span>
+                  )}
+                </div>
+                <button onClick={() => setApplyPreview(false)} style={{ color: "#9ca3af" }}>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Found fields preview */}
+              <div className="p-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-3">
+                  {[
+                    { label: "Sector",      val: searchResult.sector },
+                    { label: "Country",     val: searchResult.country },
+                    { label: "Revenue",     val: searchResult.revenue ? `$${searchResult.revenue}M` : null },
+                    { label: "Employees",   val: searchResult.employees },
+                    { label: "MSCI Rating", val: searchResult.msciRating },
+                    { label: "CDP Score",   val: searchResult.cdpScore },
+                    { label: "Sustainalytics", val: searchResult.sustainalyticsScore },
+                    { label: "Net Zero",    val: searchResult.netZeroYear },
+                    { label: "SBTi",        val: searchResult.sbtiCommitted === true ? "Committed" : searchResult.sbtiCommitted === false ? "Not committed" : null },
+                    { label: "Paris",       val: searchResult.parisAligned  === true ? "Aligned"   : searchResult.parisAligned  === false ? "Not aligned"   : null },
+                    { label: "KPIs found",  val: searchResult.kpiSuggestions?.length ? `${searchResult.kpiSuggestions.length} KPI(s)` : null },
+                    { label: "Sources",     val: searchResult.sources?.length ? `${searchResult.sources.length} source(s)` : null },
+                  ].filter(f => f.val).map(({ label, val }) => (
+                    <div key={label} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
+                         style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                      <CheckCircle2 className="w-2.5 h-2.5 shrink-0" style={{ color: "#059669" }} />
+                      <span className="text-[10px] font-semibold truncate" style={{ color: "#6b7280" }}>{label}:</span>
+                      <span className="text-[10px] font-bold truncate" style={{ color: "#111827" }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {searchResult.notes && (
+                  <p className="text-[10px] mb-3 px-2 py-1.5 rounded" style={{ color: "#6b7280", background: "#f3f4f6" }}>
+                    ℹ️ {searchResult.notes}
+                  </p>
+                )}
+
+                {/* Sources */}
+                {searchResult.sources?.length ? (
+                  <div className="mb-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#9ca3af" }}>Sources</p>
+                    <div className="space-y-1">
+                      {searchResult.sources.map((s, i) => (
+                        <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                           className="flex items-center gap-1 text-[10px] hover:underline truncate"
+                           style={{ color: "#3b82f6" }}>
+                          <Globe className="w-2.5 h-2.5 shrink-0" />
+                          {s.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => applySearchResult(searchResult)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12px] font-semibold text-white"
+                    style={{ background: "#3b82f6" }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Apply to form
+                  </button>
+                  <button
+                    onClick={() => setApplyPreview(false)}
+                    className="px-3 py-2 rounded-lg text-[12px] font-medium"
+                    style={{ background: "#f3f4f6", color: "#6b7280" }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Progress bar */}
         <div className="mb-3 p-3 rounded-lg" style={cardStyle}>
