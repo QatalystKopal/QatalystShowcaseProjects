@@ -312,6 +312,106 @@ export default function SLLReportPage() {
     setDocs([...docs, ...newDocs]);
   };
 
+  // ── Document checklist definition ────────────────────────────────────────
+
+  const DOC_CHECKLIST = [
+    {
+      id: "loan-app",
+      label: "Loan Application",
+      required: true,
+      hint: "Signed loan application form from the borrower",
+      keywords: ["loan", "application", "request", "facility"],
+      step: "Needed now",
+    },
+    {
+      id: "term-sheet",
+      label: "Term Sheet / Facility Agreement",
+      required: true,
+      hint: "Draft or executed term sheet with margin ratchet details",
+      keywords: ["term", "sheet", "facility", "agreement", "credit"],
+      step: "Needed now",
+    },
+    {
+      id: "sll-framework",
+      label: "SLL / Sustainability Framework",
+      required: true,
+      hint: "Borrower's sustainability-linked loan framework document",
+      keywords: ["sustainability", "sll", "framework", "kpi", "linked"],
+      step: "Needed now",
+    },
+    {
+      id: "esg-report",
+      label: "Annual ESG / Sustainability Report",
+      required: true,
+      hint: "Most recent published ESG or sustainability report",
+      keywords: ["esg", "sustainability", "report", "annual", "environment"],
+      step: "Needed now",
+    },
+    {
+      id: "financial",
+      label: "Financial Statements (3 years)",
+      required: true,
+      hint: "Audited financials for the last 3 fiscal years",
+      keywords: ["financial", "statements", "accounts", "annual report", "audit"],
+      step: "Needed now",
+    },
+    {
+      id: "kpi-data",
+      label: "Historical KPI Performance Data",
+      required: true,
+      hint: "3-year baseline data for each proposed KPI",
+      keywords: ["kpi", "performance", "data", "baseline", "historical", "metrics"],
+      step: "Needed now",
+    },
+    {
+      id: "sbti",
+      label: "SBTi Commitment / Approval Letter",
+      required: false,
+      hint: "Science Based Targets initiative commitment or validation letter",
+      keywords: ["sbti", "science", "target", "commitment", "validated"],
+      step: "Recommended",
+    },
+    {
+      id: "third-party",
+      label: "Third-Party Verification Report",
+      required: false,
+      hint: "External auditor opinion on KPI data (ISAE 3000 / 3410)",
+      keywords: ["verification", "assurance", "audit", "isae", "third", "external"],
+      step: "Recommended",
+    },
+    {
+      id: "transition-plan",
+      label: "Climate Transition Plan",
+      required: false,
+      hint: "Documented decarbonisation pathway and interim milestones",
+      keywords: ["transition", "climate", "decarbonisation", "net zero", "pathway"],
+      step: "If available",
+    },
+    {
+      id: "peer-data",
+      label: "Peer / Industry Benchmark Data",
+      required: false,
+      hint: "Sector peer KPI data for SPT ambition calibration",
+      keywords: ["peer", "benchmark", "industry", "sector", "comparison"],
+      step: "If available",
+    },
+  ];
+
+  function matchDocToChecklist(docName: string): string[] {
+    const lower = docName.toLowerCase();
+    return DOC_CHECKLIST
+      .filter(item => item.keywords.some(k => lower.includes(k)))
+      .map(item => item.id);
+  }
+
+  const matchedIds = new Set(docs.flatMap(d => matchDocToChecklist(d.name)));
+  const requiredItems  = DOC_CHECKLIST.filter(d => d.required);
+  const optionalItems  = DOC_CHECKLIST.filter(d => !d.required);
+  const requiredDone   = requiredItems.filter(d => matchedIds.has(d.id)).length;
+  const requiredTotal  = requiredItems.length;
+  const progressPct    = Math.round((requiredDone / requiredTotal) * 100);
+  const nextMissing    = requiredItems.find(d => !matchedIds.has(d.id));
+
   // ── Render Steps ─────────────────────────────────────────────────────────
 
   function renderStep1() {
@@ -319,30 +419,152 @@ export default function SLLReportPage() {
       <div>
         <SectionHeader icon={Upload} title="Document Upload & Borrower Profile" sub="Upload the loan application and related documents, then complete the borrower profile." />
 
-        {/* Upload zone */}
-        <div className="mb-6 p-6 rounded-xl text-center cursor-pointer"
-             style={{ border: "2px dashed #d1d5db", background: "#fafafa" }}
-             onDragOver={e => e.preventDefault()} onDrop={handleFileDrop}
-             onClick={() => document.getElementById("file-input")?.click()}>
-          <Upload className="w-8 h-8 mx-auto mb-2" style={{ color: "#9ca3af" }} />
-          <p className="text-[13px] font-semibold" style={{ color: "#374151" }}>Drop files here or click to browse</p>
-          <p className="text-[11px] mt-1" style={{ color: "#9ca3af" }}>Loan application, term sheet, sustainability framework, ESG reports</p>
-          <input id="file-input" type="file" multiple className="hidden" onChange={handleFileSelect} />
+        {/* Progress bar */}
+        <div className="mb-5 p-4 rounded-xl" style={cardStyle}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-bold" style={{ color: "#111827" }}>
+              Document Readiness
+            </span>
+            <span className="text-[12px] font-bold tabular-nums" style={{ color: progressPct === 100 ? "#059669" : "#3b82f6" }}>
+              {requiredDone}/{requiredTotal} required
+            </span>
+          </div>
+          <div className="w-full h-2 rounded-full overflow-hidden mb-2" style={{ background: "#f3f4f6" }}>
+            <div className="h-full rounded-full transition-all duration-500"
+                 style={{ width: `${progressPct}%`, background: progressPct === 100 ? "#059669" : "#3b82f6" }} />
+          </div>
+          {progressPct < 100 && nextMissing && (
+            <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg" style={{ background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.15)" }}>
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#3b82f6" }} />
+              <p className="text-[11px]" style={{ color: "#374151" }}>
+                <span className="font-semibold">Next:</span> Upload your <span className="font-semibold">{nextMissing.label}</span> — {nextMissing.hint}.
+              </p>
+            </div>
+          )}
+          {progressPct === 100 && (
+            <div className="flex items-center gap-2 mt-2 p-2.5 rounded-lg" style={{ background: "rgba(5,150,105,0.05)", border: "1px solid rgba(5,150,105,0.2)" }}>
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: "#059669" }} />
+              <p className="text-[11px] font-semibold" style={{ color: "#059669" }}>All required documents uploaded. You can proceed.</p>
+            </div>
+          )}
         </div>
 
-        {docs.length > 0 && (
-          <div className="mb-6 space-y-2">
-            {docs.map((d, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ background: "#f3f4f6" }}>
-                <FileText className="w-4 h-4 shrink-0" style={{ color: "#3b82f6" }} />
-                <span className="flex-1 text-[12px] font-medium truncate" style={{ color: "#374151" }}>{d.name}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "#e5e7eb", color: "#6b7280" }}>{d.type}</span>
-                <span className="text-[10px]" style={{ color: "#9ca3af" }}>{d.size}</span>
-                <button onClick={() => setDocs(docs.filter((_, j) => j !== i))}><X className="w-3 h-3" style={{ color: "#9ca3af" }} /></button>
+        {/* Two-column layout: upload + checklist */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+          {/* Upload zone + uploaded list */}
+          <div>
+            <div className="mb-3 p-5 rounded-xl text-center cursor-pointer transition-all"
+                 style={{ border: "2px dashed #d1d5db", background: "#fafafa" }}
+                 onDragOver={e => { e.preventDefault(); (e.currentTarget as HTMLElement).style.borderColor = "#3b82f6"; (e.currentTarget as HTMLElement).style.background = "rgba(59,130,246,0.03)"; }}
+                 onDragLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#d1d5db"; (e.currentTarget as HTMLElement).style.background = "#fafafa"; }}
+                 onDrop={e => { (e.currentTarget as HTMLElement).style.borderColor = "#d1d5db"; (e.currentTarget as HTMLElement).style.background = "#fafafa"; handleFileDrop(e); }}
+                 onClick={() => document.getElementById("file-input")?.click()}>
+              <Upload className="w-7 h-7 mx-auto mb-2" style={{ color: "#9ca3af" }} />
+              <p className="text-[13px] font-semibold" style={{ color: "#374151" }}>Drop files or click to browse</p>
+              <p className="text-[11px] mt-0.5" style={{ color: "#9ca3af" }}>PDF, DOCX, XLSX accepted</p>
+              <input id="file-input" type="file" multiple className="hidden" onChange={handleFileSelect} />
+            </div>
+
+            {docs.length > 0 ? (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#9ca3af" }}>
+                  Uploaded ({docs.length})
+                </p>
+                {docs.map((d, i) => {
+                  const matched = matchDocToChecklist(d.name);
+                  return (
+                    <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
+                         style={{ background: matched.length ? "rgba(5,150,105,0.04)" : "#f9fafb", border: `1px solid ${matched.length ? "rgba(5,150,105,0.15)" : "#e5e7eb"}` }}>
+                      <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: matched.length ? "#059669" : "#9ca3af" }} />
+                      <span className="flex-1 text-[11px] font-medium truncate" style={{ color: "#374151" }}>{d.name}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium" style={{ background: "#e5e7eb", color: "#6b7280" }}>{d.type}</span>
+                      {matched.length > 0 && (
+                        <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: "#059669" }} />
+                      )}
+                      <button onClick={() => setDocs(docs.filter((_, j) => j !== i))}>
+                        <X className="w-3 h-3" style={{ color: "#d1d5db" }} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-[11px]" style={{ color: "#9ca3af" }}>No files uploaded yet</p>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Document checklist */}
+          <div className="p-4 rounded-xl" style={cardStyle}>
+            <h3 className="text-[12px] font-bold mb-3" style={{ color: "#111827" }}>Document Checklist</h3>
+
+            {/* Required */}
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Required</p>
+            <div className="space-y-1.5 mb-4">
+              {requiredItems.map(item => {
+                const done = matchedIds.has(item.id);
+                return (
+                  <div key={item.id} className="flex items-start gap-2.5 p-2.5 rounded-lg transition-all"
+                       style={{ background: done ? "rgba(5,150,105,0.05)" : "rgba(248,101,1,0.04)", border: `1px solid ${done ? "rgba(5,150,105,0.15)" : "rgba(248,101,1,0.12)"}` }}>
+                    <div className="shrink-0 mt-0.5">
+                      {done
+                        ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#059669" }} />
+                        : <div className="w-3.5 h-3.5 rounded-full border-2" style={{ borderColor: "#F86501" }} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold leading-tight" style={{ color: done ? "#059669" : "#374151" }}>
+                        {item.label}
+                      </p>
+                      {!done && (
+                        <p className="text-[10px] mt-0.5 leading-snug" style={{ color: "#9ca3af" }}>{item.hint}</p>
+                      )}
+                    </div>
+                    {!done && (
+                      <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                            style={{ background: "rgba(248,101,1,0.1)", color: "#F86501" }}>
+                        Missing
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Recommended / Optional */}
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Recommended</p>
+            <div className="space-y-1.5">
+              {optionalItems.map(item => {
+                const done = matchedIds.has(item.id);
+                return (
+                  <div key={item.id} className="flex items-start gap-2.5 p-2.5 rounded-lg"
+                       style={{ background: done ? "rgba(5,150,105,0.05)" : "#f9fafb", border: `1px solid ${done ? "rgba(5,150,105,0.15)" : "#e5e7eb"}` }}>
+                    <div className="shrink-0 mt-0.5">
+                      {done
+                        ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "#059669" }} />
+                        : <div className="w-3.5 h-3.5 rounded-full border" style={{ borderColor: "#d1d5db" }} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold leading-tight" style={{ color: done ? "#059669" : "#6b7280" }}>
+                        {item.label}
+                      </p>
+                      {!done && (
+                        <p className="text-[10px] mt-0.5" style={{ color: "#9ca3af" }}>{item.hint}</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded"
+                          style={{ background: "#f3f4f6", color: "#9ca3af" }}>
+                      {item.step}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* Profile form */}
         <div className="p-5 mb-4" style={cardStyle}>
