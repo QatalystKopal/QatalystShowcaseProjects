@@ -242,13 +242,21 @@ export default function HomePage() {
             <button className="header-btn hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg">
               <SlidersHorizontal className="w-3.5 h-3.5" /> Filters
             </button>
-            <button
-              className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-lg transition-opacity hover:opacity-90"
-              style={{ background: accentColor }}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {workspace === "carbon" ? "Create" : "Add Loan"}
-            </button>
+            {workspace === "carbon" ? (
+              <button
+                className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-lg transition-opacity hover:opacity-90"
+                style={{ background: accentColor }}
+              >
+                <Plus className="w-3.5 h-3.5" /> Create
+              </button>
+            ) : (
+              <Link href="/sll-report"
+                className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-lg transition-opacity hover:opacity-90"
+                style={{ background: "#3b82f6" }}
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Loan
+              </Link>
+            )}
           </div>
         </header>
 
