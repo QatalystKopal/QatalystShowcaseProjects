@@ -1,8 +1,3 @@
 node_modules/
-*.png
-bundle_debug.js
-retheme*.py
-feed_*.png
-frame_*.png
-hframe_*.png
-opp_*.png
+*.py
+.DS_Store
