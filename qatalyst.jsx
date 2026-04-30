@@ -17,29 +17,29 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineCh
 
 const LEADS = [
   {
-    id: 1, company: "Microsoft", ticker: "MSFT", industry: "Technology", flag: "🇺🇸",
+    id: 1, company: "Microdyne Systems", ticker: "MSFT", industry: "Technology", flag: "🇺🇸",
     commitment: "Carbon Negative by 2030", emissions: "15.9M tCO₂e/yr", need: "2–5M credits/yr",
     esg: 94, warmth: "hot",
     rationale: "Announced $1B Climate Innovation Fund; Q4 ESG report shows 23% reduction gap requiring offsets",
-    signals: ["Microsoft doubles carbon removal commitment for FY2025","CFO confirms Q4 budget for carbon credit procurement","Climate team expanding — 3 new sustainability hires announced"],
+    signals: ["Microdyne Systems doubles carbon removal commitment for FY2025","CFO confirms Q4 budget for carbon credit procurement","Climate team expanding — 3 new sustainability hires announced"],
     contact: { name: "Melanie Nakagawa", title: "Chief Sustainability Officer", url: "https://linkedin.com/in/melanienakagawa" },
     score: 96
   },
   {
-    id: 2, company: "Shell PLC", ticker: "SHEL", industry: "Oil & Gas", flag: "🇳🇱",
+    id: 2, company: "Shellion Energy PLC", ticker: "SHEL", industry: "Oil & Gas", flag: "🇳🇱",
     commitment: "Net Zero by 2050", emissions: "1.45B tCO₂e/yr", need: "10–20M credits/yr",
     esg: 71, warmth: "warm",
     rationale: "Activist pressure on Scope 3; recently retired 8.5M Verra credits; Nature-based Solutions strategy published",
-    signals: ["Shell NbS report targets 120M offsets by 2030","Activist Motion 29 forces Scope 3 emissions disclosure","Shell exploring direct investment in REDD+ projects"],
+    signals: ["Shellion Energy NbS report targets 120M offsets by 2030","Activist Motion 29 forces Scope 3 emissions disclosure","Shellion Energy exploring direct investment in REDD+ projects"],
     contact: { name: "Anna Mascolo", title: "President – Nature-Based Solutions", url: "https://linkedin.com/in/annamascolo" },
     score: 88
   },
   {
-    id: 3, company: "Amazon", ticker: "AMZN", industry: "E-Commerce / Cloud", flag: "🇺🇸",
+    id: 3, company: "Amazia Cloud", ticker: "AMZN", industry: "E-Commerce / Cloud", flag: "🇺🇸",
     commitment: "Net Zero by 2040 (The Climate Pledge)", emissions: "71.5M tCO₂e/yr", need: "5–15M credits/yr",
     esg: 78, warmth: "hot",
     rationale: "Climate Pledge signatories ramping; logistics electrification behind schedule; active procurement RFP open",
-    signals: ["Amazon Climate Pledge Fund reaches $2B","Logistics fleet electrification 4 years behind schedule","Issued carbon credit RFP with Q1 close deadline"],
+    signals: ["Amazia Cloud Climate Pledge Fund reaches $2B","Logistics fleet electrification 4 years behind schedule","Issued carbon credit RFP with Q1 close deadline"],
     contact: { name: "Kara Hurst", title: "VP Worldwide Sustainability", url: "https://linkedin.com/in/karahurst" },
     score: 93
   },
@@ -71,41 +71,41 @@ const LEADS = [
     score: 62
   },
   {
-    id: 7, company: "Tokyo Gas", ticker: "9531.T", industry: "Utilities / Energy", flag: "🇯🇵",
+    id: 7, company: "Japan Gas", ticker: "9531.T", industry: "Utilities / Energy", flag: "🇯🇵",
     commitment: "Carbon Neutral by 2050", emissions: "9.4M tCO₂e/yr", need: "2–6M credits/yr",
     esg: 82, warmth: "hot",
     rationale: "Actively scaling voluntary carbon credit procurement as part of Japan's GX strategy; strong appetite for high-integrity nature-based credits from Asia-Pacific",
-    signals: ["Tokyo Gas joins Japan GX League with mandatory offset targets","Carbon procurement team expanded to 12 specialists","Published 2030 interim target requiring 4M tCO₂e in offsets"],
+    signals: ["Japan Gas joins Japan GX League with mandatory offset targets","Carbon procurement team expanded to 12 specialists","Published 2030 interim target requiring 4M tCO₂e in offsets"],
     contact: { name: "Takeshi Sato", title: "General Manager, Carbon Strategy", url: "https://linkedin.com/in/takeshisato" },
     score: 91
   },
   {
-    id: 8, company: "Engie", ticker: "ENGI.PA", industry: "Energy & Utilities", flag: "🇫🇷",
+    id: 8, company: "Engenix Energy", ticker: "ENGI.PA", industry: "Energy & Utilities", flag: "🇫🇷",
     commitment: "Net Zero by 2045", emissions: "44M tCO₂e/yr", need: "5–12M credits/yr",
     esg: 79, warmth: "hot",
     rationale: "European utility with active nature-based solutions strategy; targeting high-integrity REDD+ in SE Asia to meet SBTi-validated targets",
-    signals: ["Engie NBS strategy targets 10M tCO₂e by 2030","SE Asia peatland credits shortlisted in procurement RFP","Partnership with BeZero Carbon for rating-gated procurement"],
+    signals: ["Engenix Energy NBS strategy targets 10M tCO₂e by 2030","SE Asia peatland credits shortlisted in procurement RFP","Partnership with BeZero Carbon for rating-gated procurement"],
     contact: { name: "Isabelle Kocher", title: "Chief Sustainability Officer", url: "https://linkedin.com/in/isabellekocher" },
     score: 88
   },
   {
-    id: 9, company: "Vitol", ticker: "PRIVATE", industry: "Commodity Trading", flag: "🇳🇱",
+    id: 9, company: "Vitronix Trading", ticker: "PRIVATE", industry: "Commodity Trading", flag: "🇳🇱",
     commitment: "Net Zero Scope 1 & 2 by 2040", emissions: "6.8M tCO₂e/yr", need: "3–8M credits/yr",
     esg: 74, warmth: "warm",
     rationale: "Global commodity trader building voluntary carbon credit book; prefers BeZero A-rated projects with verified additionality in developing markets",
-    signals: ["Vitol launches voluntary carbon desk with $200M mandate","BeZero A-rated projects prioritised for 2025 procurement","Indonesia peatland corridor identified as strategic focus region"],
-    contact: { name: "Chris Bake", title: "Head of Carbon, Vitol", url: "https://linkedin.com/in/chrisbake" },
+    signals: ["Vitronix Trading launches voluntary carbon desk with $200M mandate","BeZero A-rated projects prioritised for 2025 procurement","Indonesia peatland corridor identified as strategic focus region"],
+    contact: { name: "Chris Bake", title: "Head of Carbon, Vitronix Trading", url: "https://linkedin.com/in/chrisbake" },
     score: 85
   }
 ];
 
 const PROJECTS = [
   {
-    id: 1, name: "Amazon Rainforest REDD+", subtitle: "Primary forest conservation",
+    id: 1, name: "Amazia Cloud Rainforest REDD+", subtitle: "Primary forest conservation",
     country: "Brazil", flag: "🇧🇷", type: "Forestry / REDD+", icon: "tree", registry: "Verra",
     vintages: "2022–2035", credits: "2.4M tCO₂e/yr", size: "412,000 ha", price: "$12–18", quality: 97,
     cobenefits: ["Biodiversity", "Indigenous Rights", "Water Security"],
-    description: "Protects primary Amazon rainforest with CCBS gold-level community & biodiversity certification."
+    description: "Protects primary Amazia Cloud rainforest with CCBS gold-level community & biodiversity certification."
   },
   {
     id: 2, name: "Kenya Turkana Wind", subtitle: "Africa's largest wind farm",
@@ -145,18 +145,18 @@ const PROJECTS = [
 ];
 
 const MATCHES = [
-  { id: 1, demandId: 1, supplyId: 1, score: 97, reason: "Microsoft's nature-based, high-quality preference aligns perfectly. Volume matches their 2–5M need. REDD+ biodiversity standards align with Microsoft's AI for Earth commitments. CCB Gold rating meets internal policy." },
-  { id: 2, demandId: 1, supplyId: 3, score: 91, reason: "Blue carbon premium quality aligns with Microsoft's quality-first approach. Unique asset class diversifies portfolio. Indonesian geography adds regional spread to their carbon strategy." },
-  { id: 3, demandId: 3, supplyId: 5, score: 95, reason: "Congo Basin 3.1M credits/yr perfectly matches Amazon's high-volume need. REDD+ type preferred in The Climate Pledge framework. Verified additionality and strong permanence rating." },
-  { id: 4, demandId: 3, supplyId: 1, score: 88, reason: "Iconic brand alignment — Amazon.com protecting the Amazon rainforest. Forestry focus matches Climate Pledge commitments. Meets quality threshold." },
-  { id: 5, demandId: 2, supplyId: 5, score: 86, reason: "Congo Basin volume helps Shell's large-scale demand. Nature-based type aligns with Shell's published NbS strategy. Price range competitive for Shell's procurement targets." },
+  { id: 1, demandId: 1, supplyId: 1, score: 97, reason: "Microdyne Systems's nature-based, high-quality preference aligns perfectly. Volume matches their 2–5M need. REDD+ biodiversity standards align with Microdyne Systems's AI for Earth commitments. CCB Gold rating meets internal policy." },
+  { id: 2, demandId: 1, supplyId: 3, score: 91, reason: "Blue carbon premium quality aligns with Microdyne Systems's quality-first approach. Unique asset class diversifies portfolio. Indonesian geography adds regional spread to their carbon strategy." },
+  { id: 3, demandId: 3, supplyId: 5, score: 95, reason: "Congo Basin 3.1M credits/yr perfectly matches Amazia Cloud's high-volume need. REDD+ type preferred in The Climate Pledge framework. Verified additionality and strong permanence rating." },
+  { id: 4, demandId: 3, supplyId: 1, score: 88, reason: "Iconic brand alignment — Amazia Cloud.com protecting the Amazia Cloud rainforest. Forestry focus matches Climate Pledge commitments. Meets quality threshold." },
+  { id: 5, demandId: 2, supplyId: 5, score: 86, reason: "Congo Basin volume helps Shellion Energy's large-scale demand. Nature-based type aligns with Shellion Energy's published NbS strategy. Price range competitive for Shellion Energy's procurement targets." },
   { id: 6, demandId: 5, supplyId: 2, score: 84, reason: "Unilever's African supply chain aligns with Kenya Wind's community co-benefits. SDG benefits match Unilever's human rights commitments. Gold Standard preferred by Unilever policy." }
 ];
 
 const DEMAND_NEWS = [
-  { time: "2h ago", source: "Bloomberg ESG", headline: "Microsoft expands carbon removal portfolio, targets REDD+ allocation in 2025", tag: "MSFT" },
-  { time: "4h ago", source: "Reuters", headline: "Shell faces record pressure from activist investors over Scope 3 emissions", tag: "SHEL" },
-  { time: "6h ago", source: "Financial Times", headline: "Amazon Climate Pledge reaches 450 corporate signatories globally", tag: "AMZN" },
+  { time: "2h ago", source: "Bloomberg ESG", headline: "Microdyne Systems expands carbon removal portfolio, targets REDD+ allocation in 2025", tag: "MSFT" },
+  { time: "4h ago", source: "Reuters", headline: "Shellion Energy faces record pressure from activist investors over Scope 3 emissions", tag: "SHEL" },
+  { time: "6h ago", source: "Financial Times", headline: "Amazia Cloud Climate Pledge reaches 450 corporate signatories globally", tag: "AMZN" },
   { time: "1d ago", source: "ESG Dive", headline: "Unilever SBTi targets validated — carbon credit sourcing phase officially begins", tag: "ULVR" },
   { time: "1d ago", source: "Carbon Brief", headline: "Corporate carbon credit demand projected +38% in 2025 as net-zero deadlines approach", tag: "Market" },
   { time: "2d ago", source: "S&P Global", headline: "BP reaffirms large-scale offset program despite capex budget cuts", tag: "BP" },
@@ -186,7 +186,7 @@ function processChat(msg, setPage, addLead, addProject) {
   }
   if (q.includes("match") || q.includes("matchmak")) {
     setTimeout(() => setPage("discovery"), 400);
-    return "Opening the Agents view → Matchmaking column. Generated 6 high-confidence matches. Top match: Microsoft × Amazon REDD+ at 97% confidence.";
+    return "Opening the Agents view → Matchmaking column. Generated 6 high-confidence matches. Top match: Microdyne Systems × Amazia Cloud REDD+ at 97% confidence.";
   }
   if (q.includes("pipeline") || q.includes("deals")) {
     setTimeout(() => setPage("pipeline"), 400);
@@ -210,16 +210,16 @@ function processChat(msg, setPage, addLead, addProject) {
   }
   if (q.includes("hot lead") || q.includes("best lead") || q.includes("top lead")) {
     setTimeout(() => setPage("demand"), 400);
-    return "The 2 hottest leads are Microsoft (score 96 — budget confirmed for Q4) and Amazon (score 93 — active RFP open with Q1 deadline). Both have verified carbon procurement mandates.";
+    return "The 2 hottest leads are Microdyne Systems (score 96 — budget confirmed for Q4) and Amazia Cloud (score 93 — active RFP open with Q1 deadline). Both have verified carbon procurement mandates.";
   }
   if (q.includes("microsoft") || q.includes("msft")) {
-    return "Microsoft: Carbon Negative by 2030. Needs 2–5M credits/yr. ESG 94/100. HOT lead 🔴\nContact: Melanie Nakagawa (CSO). $1B Climate Innovation Fund announced. Q4 budget confirmed.";
+    return "Microdyne Systems: Carbon Negative by 2030. Needs 2–5M credits/yr. ESG 94/100. HOT lead 🔴\nContact: Melanie Nakagawa (CSO). $1B Climate Innovation Fund announced. Q4 budget confirmed.";
   }
-  if (q.includes("amazon") || q.includes("amzn")) {
-    return "Amazon: Net Zero by 2040 via The Climate Pledge. Needs 5–15M credits/yr. ESG 78/100. HOT lead 🔴\nContact: Kara Hurst (VP Sustainability). Active RFP open — Q1 close deadline.";
+  if (q.includes("Amazia Cloud") || q.includes("amzn")) {
+    return "Amazia Cloud: Net Zero by 2040 via The Climate Pledge. Needs 5–15M credits/yr. ESG 78/100. HOT lead 🔴\nContact: Kara Hurst (VP Sustainability). Active RFP open — Q1 close deadline.";
   }
   if (q.includes("shell") || q.includes("shel")) {
-    return "Shell PLC: Net Zero by 2050. Needs 10–20M credits/yr. ESG 71/100. WARM lead 🟡\nContact: Anna Mascolo (President, NbS). Recently retired 8.5M Verra credits. NbS strategy published.";
+    return "Shellion Energy PLC: Net Zero by 2050. Needs 10–20M credits/yr. ESG 71/100. WARM lead 🟡\nContact: Anna Mascolo (President, NbS). Recently retired 8.5M Verra credits. NbS strategy published.";
   }
   if (q.includes(" bp ") || q.includes("bp plc") || q.startsWith("bp")) {
     return "BP PLC: Net Zero by 2050. Needs 8–12M credits/yr. ESG 67/100. WARM lead 🟡\nContact: Giulia Chierchia (EVP Strategy). Active offset program despite 40% capex cuts.";
@@ -231,7 +231,7 @@ function processChat(msg, setPage, addLead, addProject) {
     return "Apple Inc: Carbon Neutral by 2030. Needs 1–3M credits/yr. ESG 90/100. COLD lead 🔵\nContact: Lisa Jackson (VP Environment). Uses credits only as last resort — engagement window in Q4 2025.";
   }
   if (q.includes("redd") || q.includes("forest") || q.includes("forestry")) {
-    return "Top REDD+ projects:\n• Amazon Rainforest, Brazil — 2.4M t/yr, Quality 97, Verra\n• Congo Basin, DRC — 3.1M t/yr, Quality 89, Verra\nBoth have CCBS certification and strong additionality.";
+    return "Top REDD+ projects:\n• Amazia Cloud Rainforest, Brazil — 2.4M t/yr, Quality 97, Verra\n• Congo Basin, DRC — 3.1M t/yr, Quality 89, Verra\nBoth have CCBS certification and strong additionality.";
   }
   if (q.includes("blue carbon") || q.includes("mangrove")) {
     return "Indonesia Blue Carbon (Kalimantan): 1.2M tCO₂e/yr, Quality 95/100, Verra. Premium pricing $22–35/t. 3x demand surge in Q1. Highest carbon density per hectare in SE Asia.";
@@ -240,31 +240,31 @@ function processChat(msg, setPage, addLead, addProject) {
     return "Renewable projects:\n• Kenya Turkana Wind — 850K t/yr, Q91, Gold Standard\n• Morocco Noor Solar — 750K t/yr, Q88, Gold Standard\n• India Solar Initiative — 500K t/yr, Q84, Gold Standard";
   }
   if (q.includes("verra")) {
-    return "Verra-certified projects: Amazon REDD+ (Q97), Indonesia Blue Carbon (Q95), Congo Basin (Q89). New VM0048 methodology approved this week for tropical forests.";
+    return "Verra-certified projects: Amazia Cloud REDD+ (Q97), Indonesia Blue Carbon (Q95), Congo Basin (Q89). New VM0048 methodology approved this week for tropical forests.";
   }
   if (q.includes("gold standard")) {
     return "Gold Standard projects: Kenya Wind (Q91), Morocco Solar (Q88), India Solar (Q84). Enhanced SDG verification framework just launched this week.";
   }
   if (q.includes("best match") || q.includes("top match") || q.includes("highest match")) {
     setTimeout(() => setPage("matching"), 400);
-    return "Best match: Microsoft × Amazon Rainforest REDD+ at 97% confidence. Nature-based preference aligns perfectly, volume matches 2–5M need, and CCB Gold meets their internal policy requirements.";
+    return "Best match: Microdyne Systems × Amazia Cloud Rainforest REDD+ at 97% confidence. Nature-based preference aligns perfectly, volume matches 2–5M need, and CCB Gold meets their internal policy requirements.";
   }
   if (q.includes("add microsoft") || q.includes("pipeline microsoft")) {
-    const lead = LEADS.find(l => l.company === "Microsoft");
+    const lead = LEADS.find(l => l.company === "Microdyne Systems");
     addLead(lead);
-    return "Added Microsoft to your pipeline as a Prospect. Navigate to the Pipeline view to advance them through stages.";
+    return "Added Microdyne Systems to your pipeline as a Prospect. Navigate to the Pipeline view to advance them through stages.";
   }
-  if (q.includes("add amazon") || q.includes("pipeline amazon")) {
-    const lead = LEADS.find(l => l.company === "Amazon");
+  if (q.includes("add Amazia Cloud") || q.includes("pipeline Amazia Cloud")) {
+    const lead = LEADS.find(l => l.company === "Amazia Cloud");
     addLead(lead);
-    return "Added Amazon to your pipeline as a Prospect. They have an active RFP — move to Qualified quickly.";
+    return "Added Amazia Cloud to your pipeline as a Prospect. They have an active RFP — move to Qualified quickly.";
   }
   if (q.includes("run all") || q.includes("run agents") || q.includes("start agents")) {
     setTimeout(() => setPage("discovery"), 400);
     return "Opening the unified Agents view. Demand, Supply, and Matchmaking are all running side by side — use the Refresh buttons to re-scan each column.";
   }
   if (q.includes("help") || q.includes("what can") || q.includes("commands")) {
-    return "I can help you:\n• Run agents: 'Run demand agent', 'Open supply agent'\n• Find leads: 'Show hot leads', 'Tell me about Microsoft'\n• Find projects: 'Show REDD+ projects', 'Verra projects'\n• Matchmaking: 'Show best match', 'Run matching'\n• Pipeline: 'Add Microsoft to pipeline'\n• Navigate: 'Show dashboard'";
+    return "I can help you:\n• Run agents: 'Run demand agent', 'Open supply agent'\n• Find leads: 'Show hot leads', 'Tell me about Microdyne Systems'\n• Find projects: 'Show REDD+ projects', 'Verra projects'\n• Matchmaking: 'Show best match', 'Run matching'\n• Pipeline: 'Add Microdyne Systems to pipeline'\n• Navigate: 'Show dashboard'";
   }
   return "Got it. You can ask me to run agents, find specific leads or projects, show matches, or navigate to any section. Type 'help' to see all commands.";
 }
@@ -1123,7 +1123,7 @@ function ChatPanel({ t, dark, messages, setMessages, setPage, addLead, addProjec
           setTimeout(() => {
             setMessages(prev => [...prev, {
               role: "ai",
-              text: `✓ South Barito Kapuas Project added to your pipeline.\n\nI've matched it to your client accounts — Tokyo Gas, Engie, and Vitol are your strongest fits. Navigating to Client Management now.`,
+              text: `✓ South Barito Kapuas Project added to your pipeline.\n\nI've matched it to your client accounts — Japan Gas, Engenix Energy, and Vitronix Trading are your strongest fits. Navigating to Client Management now.`,
             }]);
           }, 400);
         } else {
@@ -1775,7 +1775,7 @@ const CK_RESPONSES = [
       "Scanning buyer intent signals — email opens, LinkedIn activity…",
       "Generating project intelligence brief…",
     ],
-    answer:"South Barito Kapuas (VCS 4782) — 39,835 ha of protected Central Kalimantan peatland. BeZero A.pre rating, additionality score 'aaa'. Satellite data confirms sequestration +3.2% above projection. Tokyo Gas (NDA opened 4×), Engie, and Vitol matched. Deal velocity 2.3× benchmark — send NDA today.",
+    answer:"South Barito Kapuas (VCS 4782) — 39,835 ha of protected Central Kalimantan peatland. BeZero A.pre rating, additionality score 'aaa'. Satellite data confirms sequestration +3.2% above projection. Japan Gas (NDA opened 4×), Engenix Energy, and Vitronix Trading matched. Deal velocity 2.3× benchmark — send NDA today.",
     action:"Open Project", page:"discovery" },
   { keys:["risk","flag","danger","urgent","alert","stale","slip"],
     steps:[
@@ -1786,7 +1786,7 @@ const CK_RESPONSES = [
       "Scanning deal probability trends — detecting sharp declines…",
       "Ranking flags by revenue impact…",
     ],
-    answer:"7 active red flags detected. Critical: Shell NbS Strategy ($12M, 42 days stale — single deal covers 52% of Q2 gap). Engie REDD+ deal probability dropped 18pp in 7 days. Q2 pipeline shortfall: $11.6M below 4× recommended buffer. Act on Shell re-engagement today.",
+    answer:"7 active red flags detected. Critical: Shellion Energy NbS Strategy ($12M, 42 days stale — single deal covers 52% of Q2 gap). Engenix Energy REDD+ deal probability dropped 18pp in 7 days. Q2 pipeline shortfall: $11.6M below 4× recommended buffer. Act on Shellion Energy re-engagement today.",
     action:"Open Action Center", page:"dashboard2" },
   { keys:["scout","market","scan","discover","opportunity","find"],
     steps:[
@@ -1808,7 +1808,7 @@ const CK_RESPONSES = [
       "Calculating match scores against current pipeline projects…",
       "Generating buyer intelligence summary…",
     ],
-    answer:"Tokyo Gas shows highest intent: NDA email opened 4× in 48h, procurement team active on LinkedIn. Q3 budget cycle opens in 18 days — optimal window. Engie is matched at 88/100 but probability is slipping. Vitol is warm with $200M voluntary carbon mandate confirmed for 2025.",
+    answer:"Japan Gas shows highest intent: NDA email opened 4× in 48h, procurement team active on LinkedIn. Q3 budget cycle opens in 18 days — optimal window. Engenix Energy is matched at 88/100 but probability is slipping. Vitronix Trading is warm with $200M voluntary carbon mandate confirmed for 2025.",
     action:"Open Clients", page:"clients" },
 ];
 
@@ -1955,13 +1955,13 @@ function GlobalCommandK({ dark, onClose, setPage }) {
 // ─── INSIGHT PANEL ────────────────────────────────────────────────────────────
 const GLOBAL_INSIGHTS = [
   { id:1, type:"opportunity", icon:TrendingUp, color:"#FF6B35",
-    title:"Tokyo Gas — high-intent window open",
-    observation:"Tokyo Gas procurement team opened the NDA email 4× in 48h and their Q3 budget cycle opens in 18 days. This is the optimal engagement window.",
+    title:"Japan Gas — high-intent window open",
+    observation:"Japan Gas procurement team opened the NDA email 4× in 48h and their Q3 budget cycle opens in 18 days. This is the optimal engagement window.",
     reasoning:["Email tracking: 4 opens in 48h (team avg: 1.2)","LinkedIn: 2 profile views — Procurement Director + VP Finance","Refinitiv: GX League filing confirms Q3 carbon procurement budget","Match score: 94/100 — highest in active pipeline"],
     action:"Schedule Call", page:"clients" },
   { id:2, type:"risk", icon:Activity, color:"#CC5A25",
-    title:"Shell deal stale — 42 days, $12M at risk",
-    observation:"Shell NbS Strategy has had zero activity in 42 days. At current pace this deal will expire from pipeline before Q2 close.",
+    title:"Shellion Energy deal stale — 42 days, $12M at risk",
+    observation:"Shellion Energy NbS Strategy has had zero activity in 42 days. At current pace this deal will expire from pipeline before Q2 close.",
     reasoning:["Last activity: Tom email — 42 days ago","Stage: Qualified (no advancement since Feb)","Team average stale threshold: 14 days","Revenue impact if lost: closes 52% of Q2 gap"],
     action:"Draft Re-engagement Email", page:"clients" },
   { id:3, type:"verified", icon:CheckCircle, color:"#6B7F6B",
@@ -1972,7 +1972,7 @@ const GLOBAL_INSIGHTS = [
   { id:4, type:"opportunity", icon:Sparkles, color:"#FF6B35",
     title:"Katingan peatland — supply scarcity signal",
     observation:"Katingan Peatland (VCS 1477) credits are down 24% availability QoQ. With 3 buyers matched, this project needs immediate pipeline commitment.",
-    reasoning:["Registry: available vintage 2024 credits down 24% QoQ","Demand: Shell, Tokyo Gas, Volkswagen all matched","Scarcity premium expected: +$4–6/tCO₂e by Q3","Action window: 3–4 weeks before institutional buyers lock in"],
+    reasoning:["Registry: available vintage 2024 credits down 24% QoQ","Demand: Shellion Energy, Japan Gas, Volkswagen all matched","Scarcity premium expected: +$4–6/tCO₂e by Q3","Action window: 3–4 weeks before institutional buyers lock in"],
     action:"Verify & Commit", page:"discovery" },
   { id:5, type:"risk", icon:Target, color:"#CC5A25",
     title:"Q2 pipeline gap — $11.6M shortfall",
@@ -2116,10 +2116,10 @@ const DB_FUNNEL = [
   { stage:"Contracted",  count:1,  value:6.5,  pct:11,  drop:6       },
 ];
 const DB_RED_FLAGS = [
-  { type:"stale",   severity:"high",   name:"Shell NbS Strategy",   corp:"Shell PLC",   desc:"No activity in 42 days", action:"Re-engage",   age:42  },
+  { type:"stale",   severity:"high",   name:"Shellion Energy NbS Strategy",   corp:"Shellion Energy PLC",   desc:"No activity in 42 days", action:"Re-engage",   age:42  },
   { type:"stale",   severity:"medium", name:"BP Scope 3 Programme",  corp:"BP PLC",      desc:"Last contact 28 days ago", action:"Follow-up", age:28  },
   { type:"slip",    severity:"high",   name:"Katingan Peatland NDA", corp:"Toyota Gas",  desc:"NDA due in 3 days — not sent", action:"Send NDA",  due:3   },
-  { type:"slip",    severity:"medium", name:"South Barito Contract", corp:"Engie",       desc:"Q2 deadline slipping by 8 days", action:"Expedite", due:8  },
+  { type:"slip",    severity:"medium", name:"South Barito Contract", corp:"Engenix Energy",       desc:"Q2 deadline slipping by 8 days", action:"Expedite", due:8  },
   { type:"gap",     severity:"high",   name:"Q3 Pipeline Shortfall", corp:"—",           desc:"$4.2M gap to quarterly target", action:"Scout",    gap:4.2 },
   { type:"gap",     severity:"medium", name:"Gold Standard coverage",corp:"—",           desc:"Only 1 GS project in pipeline", action:"Discover", gap:1  },
 ];
@@ -2385,13 +2385,13 @@ const D2 = {
     { name:"Tom",   quota:42,  attain:18,  winRate:15, cycle:78, activities:9,  opps:3,  deals:0 },
   ],
   flags: [
-    { type:"stale",   sev:"high",   deal:"Shell NbS Strategy Alignment",    rep:"Tom",  detail:"Last activity 42 days ago — deal cooling",      action:"Re-engage Rep",     page:"clients"   },
+    { type:"stale",   sev:"high",   deal:"Shellion Energy NbS Strategy Alignment",    rep:"Tom",  detail:"Last activity 42 days ago — deal cooling",      action:"Re-engage Rep",     page:"clients"   },
     { type:"stale",   sev:"medium", deal:"BP Scope 3 Offset Programme",     rep:"Gordian", detail:"Last activity 29 days ago — no follow-up",      action:"Schedule Call",     page:"clients"   },
     { type:"slip",    sev:"high",   deal:"Katingan Peatland NDA",           rep:"Natalie",  detail:"Close date passed 7 days ago — still open",     action:"Update Close Date", page:"clients"   },
     { type:"slip",    sev:"medium", deal:"South Barito Contract",           rep:"Lena", detail:"Close date passing in 2 days — at risk",        action:"Escalate Now",      page:"clients"   },
     { type:"gap",     sev:"high",   deal:"Q2 Pipeline Shortfall",           rep:"—",          detail:"$12.4M pipeline vs $24M needed (3× target)",    action:"Run Scout",         page:"discovery" },
-    { type:"risk",    sev:"high",   deal:"Engie REDD+ Deal ($8.2M)",        rep:"Nicholas",  detail:"Win probability fell 18pp in 7 days",           action:"Review Strategy",   page:"clients"   },
-    { type:"risk",    sev:"medium", deal:"Vitol Peatland Credits",          rep:"Natalie",  detail:"No stakeholder engagement in 3 weeks",          action:"Exec Outreach",     page:"clients"   },
+    { type:"risk",    sev:"high",   deal:"Engenix Energy REDD+ Deal ($8.2M)",        rep:"Nicholas",  detail:"Win probability fell 18pp in 7 days",           action:"Review Strategy",   page:"clients"   },
+    { type:"risk",    sev:"medium", deal:"Vitronix Trading Peatland Credits",          rep:"Natalie",  detail:"No stakeholder engagement in 3 weeks",          action:"Exec Outreach",     page:"clients"   },
   ],
 };
 
@@ -2420,22 +2420,22 @@ function GaugeSVG({ pct, label, color, dark }) {
 const CMD_QA = [
   { keys:["pipeline","coverage","funnel"], steps:["Parsing intent: pipeline status query…","Loading 16 active deals — $48.2M total pipeline…","Calculating coverage vs Q2 target ($16M)…","Detecting stage concentration risk…","Generating insight…"], result:"Your pipeline totals $48.2M across 16 deals — 3.0× coverage, exactly at the minimum threshold. But 73% of value sits in Prospect/Qualified. Only $14.1M is in Negotiating+, meaning one lost deal breaks your Q2 number.", action:"Top-fill the funnel — run Scout now", page:"discovery" },
   { keys:["win rate","close","convert"],   steps:["Querying closed deal outcomes — last 90 days…","Segmenting by rep, deal type, and segment…","Comparing against Q1 baseline (32%)…","Isolating root-cause signals in lost deals…","Generating analysis…"],result:"Team win rate is 24% — down 8pp vs Q1. Enterprise losses are the driver: 3 of 5 Enterprise deals cited pricing objections. Priya and Alex account for the majority of qualified deals; their win rates are holding, but Tom is at 15% and dragging the average.", action:"Review Enterprise pricing strategy and coach Tom", page:"dashboard2" },
-  { keys:["risk","flag","danger","slip"],  steps:["Loading red flag monitor…","Identifying stale deals (>14 days no activity)…","Checking close date compliance across open deals…","Calculating pipeline coverage against 3× rule…","Ranking by revenue impact…"],result:"7 active red flags. Highest risk: Shell NbS deal (42 days stale, $12M) and a Q2 pipeline gap ($12.4M vs $24M needed). Two close dates have already passed. Act on Shell today — that single deal would close 52% of your gap.", action:"Open Action Center → Shell re-engagement", page:"dashboard2" },
+  { keys:["risk","flag","danger","slip"],  steps:["Loading red flag monitor…","Identifying stale deals (>14 days no activity)…","Checking close date compliance across open deals…","Calculating pipeline coverage against 3× rule…","Ranking by revenue impact…"],result:"7 active red flags. Highest risk: Shellion Energy NbS deal (42 days stale, $12M) and a Q2 pipeline gap ($12.4M vs $24M needed). Two close dates have already passed. Act on Shellion Energy today — that single deal would close 52% of your gap.", action:"Open Action Center → Shellion Energy re-engagement", page:"dashboard2" },
   { keys:["team","rep","performance","quota"], steps:["Loading rep quota data for Q2…","Computing attainment, win rates, and cycle lengths…","Benchmarking against team averages…","Identifying outliers…","Generating leaderboard analysis…"],result:"Lena leads at 112% attainment. Natalie is on track at 86%. Concern: Tom at 43% with 6 weeks left — his pipeline of $8.4M is mostly Prospect-stage and his win rate is 15% vs 27% team average. Without intervention, he will miss quota.", action:"Schedule coaching with Tom", page:"dashboard2" },
 ];
 
 const INSIGHTS = [
   { id:1, label:"Win Rate Alert", obs:"Enterprise win rate dropped 8pp in 6 weeks — pricing objections flagged in 3 of 5 lost deals.", reasoning:["[QUERY] SELECT deal_outcome, segment FROM deals WHERE date > NOW()-6w","[RESULT] 5 Enterprise deals: 3 Lost, 2 Won → 40% win rate","[BASELINE] Q1 Enterprise win rate: 48%","[DELTA] −8pp, 3/3 loss notes cite: 'pricing too high vs alternatives'","[HYPOTHESIS] Competitive pricing pressure increasing in Enterprise segment"], action:"Run Competitive Analysis", page:"dashboard2", color:"#CC5A25" },
-  { id:2, label:"High-Intent Signal", obs:"Tokyo Gas: NDA email opened 4×, procurement team viewed LinkedIn profile twice this week.", reasoning:["[SOURCE] Email tracking: 4 opens in 48h (avg: 1.2)","[SOURCE] LinkedIn: 2 profile views — Procurement Director + VP Finance","[MODEL] Intent score: 62 → 89 (threshold: 75 = high-intent)","[CONTEXT] Tokyo Gas Q3 budget cycle opens in 3 weeks","[WINDOW] Optimal engagement window: NOW"], action:"Schedule Discovery Call", page:"clients", color:"#FF6B35" },
-  { id:3, label:"Deal Velocity", obs:"South Barito is moving 2.3× faster than benchmark REDD+ transactions — accelerate to close.", reasoning:["[BENCHMARK] Avg REDD+ deal cycle: 78 days (Verra registry data)","[DEAL] South Barito cycle to date: 34 days, currently: Negotiating","[QUALITY] Project score 94/100 — highest in active pipeline","[BUYER] Tokyo Gas avg procurement cycle: 41 days","[SIGNAL] Velocity indicates high close probability — do not slow down"], action:"Fast-track Contract", page:"clients", color:"#6B7F6B" },
+  { id:2, label:"High-Intent Signal", obs:"Japan Gas: NDA email opened 4×, procurement team viewed LinkedIn profile twice this week.", reasoning:["[SOURCE] Email tracking: 4 opens in 48h (avg: 1.2)","[SOURCE] LinkedIn: 2 profile views — Procurement Director + VP Finance","[MODEL] Intent score: 62 → 89 (threshold: 75 = high-intent)","[CONTEXT] Japan Gas Q3 budget cycle opens in 3 weeks","[WINDOW] Optimal engagement window: NOW"], action:"Schedule Discovery Call", page:"clients", color:"#FF6B35" },
+  { id:3, label:"Deal Velocity", obs:"South Barito is moving 2.3× faster than benchmark REDD+ transactions — accelerate to close.", reasoning:["[BENCHMARK] Avg REDD+ deal cycle: 78 days (Verra registry data)","[DEAL] South Barito cycle to date: 34 days, currently: Negotiating","[QUALITY] Project score 94/100 — highest in active pipeline","[BUYER] Japan Gas avg procurement cycle: 41 days","[SIGNAL] Velocity indicates high close probability — do not slow down"], action:"Fast-track Contract", page:"clients", color:"#6B7F6B" },
   { id:4, label:"Quota Risk", obs:"Tom at 43% attainment with 6 weeks left. Pipeline covers only 1.2× remaining quota.", reasoning:["[DATA] Quota: $42K | Attained: $18K (43%)","[PIPELINE] 3 open deals, $8.4M total — weighted value: $1.26M","[ACTIVITY] 9 activities in period vs team avg: 19","[WIN RATE] 15% vs team avg: 27%","[PROJECTION] At current pace: will close at 54% of quota"], action:"Coach Tom", page:"dashboard2", color:"#CC5A25" },
 ];
 
 const RESOLUTIONS = {
-  stale: { title:"Re-engage Deal", icon:"✉️", steps:["Pull last interaction notes from CRM — last contact: Tom, 42 days ago","Identify new stakeholder angle: ESG procurement lead at Shell","Reference fresh hook: Verra Q2 sequestration data released this week","Draft personalised email referencing project BeZero A.pre rating","Auto-schedule follow-up in 5 days if no response"], preview:"Subject: South Barito Kapuas — Verra Q2 Update & Next Steps\n\nHi [Name],\n\nI wanted to share a quick update on the South Barito Kapuas project. Verra published new satellite verification data this week confirming a 3.2% uplift in sequestration rates — strengthening the credit quality case.\n\nGiven your stated target of 4–8M credits for Q3, I believe this is worth a 20-minute call. Are you available Thursday or Friday this week?\n\nBest,\n[Your Name]" },
-  slip:  { title:"Expedite NDA Package", icon:"📄", steps:["Load NDA template v3 (pre-approved by legal)","Pre-fill buyer details from CRM: Tokyo Gas, Procurement Director","Add project schedule referencing South Barito vintage 2022–2037","Flag for legal review: 2 clauses flagged in previous version","Set e-signature reminder: 48h deadline to meet close date"], preview:"NDA Package:\n• Document: NDA_SouthBarito_TokyoGas_v1.pdf\n• Pre-filled: Buyer details, project schedule, credit delivery terms\n• Legal note: Clauses 4.2 and 7.1 flagged for review\n• Signature deadline: 48 hours\n\nReady to send via DocuSign →" },
+  stale: { title:"Re-engage Deal", icon:"✉️", steps:["Pull last interaction notes from CRM — last contact: Tom, 42 days ago","Identify new stakeholder angle: ESG procurement lead at Shellion Energy","Reference fresh hook: Verra Q2 sequestration data released this week","Draft personalised email referencing project BeZero A.pre rating","Auto-schedule follow-up in 5 days if no response"], preview:"Subject: South Barito Kapuas — Verra Q2 Update & Next Steps\n\nHi [Name],\n\nI wanted to share a quick update on the South Barito Kapuas project. Verra published new satellite verification data this week confirming a 3.2% uplift in sequestration rates — strengthening the credit quality case.\n\nGiven your stated target of 4–8M credits for Q3, I believe this is worth a 20-minute call. Are you available Thursday or Friday this week?\n\nBest,\n[Your Name]" },
+  slip:  { title:"Expedite NDA Package", icon:"📄", steps:["Load NDA template v3 (pre-approved by legal)","Pre-fill buyer details from CRM: Japan Gas, Procurement Director","Add project schedule referencing South Barito vintage 2022–2037","Flag for legal review: 2 clauses flagged in previous version","Set e-signature reminder: 48h deadline to meet close date"], preview:"NDA Package:\n• Document: NDA_SouthBarito_TokyoGas_v1.pdf\n• Pre-filled: Buyer details, project schedule, credit delivery terms\n• Legal note: Clauses 4.2 and 7.1 flagged for review\n• Signature deadline: 48 hours\n\nReady to send via DocuSign →" },
   gap:   { title:"Identify New Leads", icon:"🔍", steps:["Define ICP: Utilities / Energy sector, Asia-Pacific, net zero 2045–2050","Query Refinitiv for companies with active carbon procurement budgets","Cross-reference with LinkedIn for open sustainability roles (intent signal)","Filter: ESG score > 70, emissions > 5M tCO₂/yr, budget cycle Q3","Return top 5 targets ranked by fit score and intent"], preview:"Top Pipeline Candidates:\n1. Jera Co (Japan) — 50M tCO₂/yr, Q3 budget, ESG: 82\n2. TotalEnergies (France) — 40M tCO₂/yr, NBS mandate, ESG: 76\n3. CLP Group (HK) — 8M tCO₂/yr, Net Zero 2050, ESG: 88\n4. Fortum (Finland) — 6M tCO₂/yr, aggressive offset target, ESG: 91\n5. Repsol (Spain) — 22M tCO₂/yr, SBTi validated, ESG: 74\n\nRun Scout agent to initiate outreach →" },
-  risk:  { title:"Draft Exec Review Brief", icon:"📊", steps:["Pull deal history: Engie REDD+ — $8.2M, stage: Negotiating","Identify probability drop: 74% → 56% over 7 days","Analyse stakeholder engagement: no senior sponsor contact in 12 days","Draft exec briefing: deal status, risk factors, suggested interventions","Recommend: exec-to-exec call to re-anchor senior sponsorship"], preview:"Exec Brief — Engie REDD+ Deal ($8.2M)\n\nStatus: AT RISK — Win probability fell 18pp in 7 days\nRoot Cause: Senior sponsor (VP Sustainability) disengaged\nLast Activity: Nicholas — email, 9 days ago (no response)\n\nRecommended Action:\n→ CEO/VP call with Engie's Chief Sustainability Officer\n→ Share updated BeZero rating brief\n→ Re-anchor contract timeline to Q3 close\n\nEstimated recovery probability if actioned today: 68%" },
+  risk:  { title:"Draft Exec Review Brief", icon:"📊", steps:["Pull deal history: Engenix Energy REDD+ — $8.2M, stage: Negotiating","Identify probability drop: 74% → 56% over 7 days","Analyse stakeholder engagement: no senior sponsor contact in 12 days","Draft exec briefing: deal status, risk factors, suggested interventions","Recommend: exec-to-exec call to re-anchor senior sponsorship"], preview:"Exec Brief — Engenix Energy REDD+ Deal ($8.2M)\n\nStatus: AT RISK — Win probability fell 18pp in 7 days\nRoot Cause: Senior sponsor (VP Sustainability) disengaged\nLast Activity: Nicholas — email, 9 days ago (no response)\n\nRecommended Action:\n→ CEO/VP call with Engenix Energy's Chief Sustainability Officer\n→ Share updated BeZero rating brief\n→ Re-anchor contract timeline to Q3 close\n\nEstimated recovery probability if actioned today: 68%" },
 };
 
 function ReasoningModal({ insight, dark, onClose }) {
@@ -3353,26 +3353,26 @@ function Matchmaking({ t, dark, pipeline, addLead, addProject }) {
 
 // ─── OPPORTUNITIES TAB ───────────────────────────────────────────────────────
 const OPP_BASE = [
-  { id:13, name:"South Barito Kapuas Project",                    type:"REDD+ / Conservation",  quality:94, matches:["Tokyo Gas","Engie","Vitol"],            icon:"🌳", country:"Indonesia",        flag:"🇮🇩", registry:"Verra",        projectId:"4782" },
-  { id:14, name:"Katingan Peatland Restoration & Conservation",   type:"Peatland",               quality:96, matches:["Shell","Tokyo Gas","Volkswagen"],          icon:"🌿", country:"Indonesia",        flag:"🇮🇩", registry:"Verra",        projectId:"1477" },
+  { id:13, name:"South Barito Kapuas Project",                    type:"REDD+ / Conservation",  quality:94, matches:["Japan Gas","Engenix Energy","Vitronix Trading"],            icon:"🌳", country:"Indonesia",        flag:"🇮🇩", registry:"Verra",        projectId:"4782" },
+  { id:14, name:"Katingan Peatland Restoration & Conservation",   type:"Peatland",               quality:96, matches:["Shellion Energy","Japan Gas","Volkswagen"],          icon:"🌿", country:"Indonesia",        flag:"🇮🇩", registry:"Verra",        projectId:"1477" },
   { id:15, name:"V Carbon Nuku Maimai Project",                   type:"Conservation",           quality:88, matches:["Go Net Zero"],                            icon:"🌲", country:"Papua New Guinea",  flag:"🇵🇬", registry:"Verra",        projectId:"5232" },
-  { id:1,  name:"Amazonia Resurrect",                             type:"Reforestation",          quality:93, matches:["Microsoft","Amazon"],           icon:"🌿", country:"Brazil",            flag:"🇧🇷", registry:"Verra",        projectId:"2834" },
-  { id:2,  name:"Nordic DAC Hub",                                 type:"Direct Air Capture",     quality:86, matches:["Shell PLC","BP PLC"],           icon:"⚡", country:"Norway",            flag:"🇳🇴", registry:"Gold Standard", projectId:"9012" },
-  { id:3,  name:"BlueOcean Kelp",                                 type:"Blue Carbon",            quality:92, matches:["Unilever","Microsoft"],         icon:"🌊", country:"International",     flag:"🌐", registry:"Verra",        projectId:"3341" },
+  { id:1,  name:"Amazia Cloudia Resurrect",                             type:"Reforestation",          quality:93, matches:["Microdyne Systems","Amazia Cloud"],           icon:"🌿", country:"Brazil",            flag:"🇧🇷", registry:"Verra",        projectId:"2834" },
+  { id:2,  name:"Nordic DAC Hub",                                 type:"Direct Air Capture",     quality:86, matches:["Shellion Energy PLC","BP PLC"],           icon:"⚡", country:"Norway",            flag:"🇳🇴", registry:"Gold Standard", projectId:"9012" },
+  { id:3,  name:"BlueOcean Kelp",                                 type:"Blue Carbon",            quality:92, matches:["Unilever","Microdyne Systems"],         icon:"🌊", country:"International",     flag:"🌐", registry:"Verra",        projectId:"3341" },
   { id:4,  name:"Sahara Solar Offset",                            type:"Renewable",              quality:71, matches:["BP PLC"],                       icon:"☀️", country:"Morocco",           flag:"🇲🇦", registry:"Gold Standard", projectId:"7765" },
-  { id:5,  name:"Congo Basin Guard",                              type:"Conservation",           quality:89, matches:["Amazon","Apple Inc"],           icon:"🌲", country:"DRC",               flag:"🇨🇩", registry:"Verra",        projectId:"1923" },
-  { id:6,  name:"Bayer Biochar V3",                               type:"Industrial Sink",        quality:80, matches:["Shell PLC","Unilever"],         icon:"🏭", country:"Germany",           flag:"🇩🇪", registry:"Gold Standard", projectId:"8841" },
-  { id:7,  name:"Patagonia Wind Farm",                            type:"Renewable Energy",       quality:85, matches:["BP PLC","Amazon"],              icon:"💨", country:"Argentina",         flag:"🇦🇷", registry:"Gold Standard", projectId:"6623" },
-  { id:8,  name:"Midwest Regenerative",                           type:"Soil Carbon",            quality:88, matches:["Microsoft","Unilever"],         icon:"🌾", country:"USA",               flag:"🇺🇸", registry:"Verra",        projectId:"4410" },
-  { id:9,  name:"Indo Peatland Lock",                             type:"Conservation",           quality:74, matches:["Shell PLC"],                    icon:"🌿", country:"Indonesia",         flag:"🇮🇩", registry:"Verra",        projectId:"2287" },
-  { id:10, name:"Mangrove Guard X",                               type:"Coastal Protection",     quality:91, matches:["Amazon","Apple Inc","BP PLC"],  icon:"🌴", country:"Bangladesh",        flag:"🇧🇩", registry:"Verra",        projectId:"5509" },
-  { id:11, name:"Icelandic Geothermal",                           type:"Energy Efficiency",      quality:83, matches:["Microsoft"],                    icon:"♨️", country:"Iceland",           flag:"🇮🇸", registry:"Gold Standard", projectId:"7731" },
-  { id:12, name:"Urban Methane Capture",                          type:"Industrial Waste",       quality:80, matches:["Shell PLC","BP PLC"],           icon:"🏙", country:"Brazil",            flag:"🇧🇷", registry:"Gold Standard", projectId:"3398" },
+  { id:5,  name:"Congo Basin Guard",                              type:"Conservation",           quality:89, matches:["Amazia Cloud","Apple Inc"],           icon:"🌲", country:"DRC",               flag:"🇨🇩", registry:"Verra",        projectId:"1923" },
+  { id:6,  name:"Bayer Biochar V3",                               type:"Industrial Sink",        quality:80, matches:["Shellion Energy PLC","Unilever"],         icon:"🏭", country:"Germany",           flag:"🇩🇪", registry:"Gold Standard", projectId:"8841" },
+  { id:7,  name:"Patagonia Wind Farm",                            type:"Renewable Energy",       quality:85, matches:["BP PLC","Amazia Cloud"],              icon:"💨", country:"Argentina",         flag:"🇦🇷", registry:"Gold Standard", projectId:"6623" },
+  { id:8,  name:"Midwest Regenerative",                           type:"Soil Carbon",            quality:88, matches:["Microdyne Systems","Unilever"],         icon:"🌾", country:"USA",               flag:"🇺🇸", registry:"Verra",        projectId:"4410" },
+  { id:9,  name:"Indo Peatland Lock",                             type:"Conservation",           quality:74, matches:["Shellion Energy PLC"],                    icon:"🌿", country:"Indonesia",         flag:"🇮🇩", registry:"Verra",        projectId:"2287" },
+  { id:10, name:"Mangrove Guard X",                               type:"Coastal Protection",     quality:91, matches:["Amazia Cloud","Apple Inc","BP PLC"],  icon:"🌴", country:"Bangladesh",        flag:"🇧🇩", registry:"Verra",        projectId:"5509" },
+  { id:11, name:"Icelandic Geothermal",                           type:"Energy Efficiency",      quality:83, matches:["Microdyne Systems"],                    icon:"♨️", country:"Iceland",           flag:"🇮🇸", registry:"Gold Standard", projectId:"7731" },
+  { id:12, name:"Urban Methane Capture",                          type:"Industrial Waste",       quality:80, matches:["Shellion Energy PLC","BP PLC"],           icon:"🏙", country:"Brazil",            flag:"🇧🇷", registry:"Gold Standard", projectId:"3398" },
 ];
 
 // ─── PROJECT EXTRA DETAILS ───────────────────────────────────────────────────
 const PROJECT_EXTRAS = {
-  1:  { code:"AMZ-RF-2024-X",  location:"Amazonas, Brazil",       vintage:"2022–2025", credits:"320,000 tCO₂e", biodiversity:"9.4/10", registry:"Verra",       status:"Verified",   imgGrad:"linear-gradient(160deg,#1a2f18 0%,#2d4a22 50%,#152910 100%)", bidders:14, summary:"This strategic reforestation initiative rehabilitates 45,000 hectares of degraded Amazonian land using AI-driven seed dispersal and real-time Sentinel-2 satellite monitoring to ensure maximum carbon sequestration efficacy." },
+  1:  { code:"AMZ-RF-2024-X",  location:"Amazia Cloudas, Brazil",       vintage:"2022–2025", credits:"320,000 tCO₂e", biodiversity:"9.4/10", registry:"Verra",       status:"Verified",   imgGrad:"linear-gradient(160deg,#1a2f18 0%,#2d4a22 50%,#152910 100%)", bidders:14, summary:"This strategic reforestation initiative rehabilitates 45,000 hectares of degraded Amazia Cloudian land using AI-driven seed dispersal and real-time Sentinel-2 satellite monitoring to ensure maximum carbon sequestration efficacy." },
   2:  { code:"NDC-DAC-2024-B",  location:"Tromsø, Norway",         vintage:"2023–2028", credits:"85,000 tCO₂e",  biodiversity:"6.1/10", registry:"Gold Standard",status:"Verified",   imgGrad:"linear-gradient(160deg,#0d1a2e 0%,#1a2e40 50%,#0a1520 100%)", bidders:6,  summary:"Direct air capture facility powered by 100% renewable geothermal energy. Module-3 phase now operational, targeting 85K tCO₂e annually with mechanical removal verified by third-party auditors." },
   3:  { code:"BOK-BC-2023-K",   location:"North Sea / Kelp Belt",  vintage:"2023–2030", credits:"210,000 tCO₂e", biodiversity:"8.8/10", registry:"Verra",       status:"Verified",   imgGrad:"linear-gradient(160deg,#0a1e2a 0%,#0d2d38 50%,#081520 100%)", bidders:11, summary:"Open-ocean kelp cultivation sequestering carbon as deep-sinking biomass. Dual benefit: ocean carbon sink and marine ecosystem restoration across 12,000 km² of North Atlantic kelp belt." },
   4:  { code:"SSO-RN-2024-M",   location:"Sahara, Morocco/Tunisia",vintage:"2024–2031", credits:"140,000 tCO₂e", biodiversity:"4.2/10", registry:"Gold Standard",status:"Pending",    imgGrad:"linear-gradient(160deg,#2a1e0a 0%,#3a2a10 50%,#1a1205 100%)", bidders:3,  summary:"Utility-scale solar offsetting fossil generation across North African grid. Additionality verified under Grid Emission Factor methodology, with 2,400 local construction jobs created." },
@@ -3422,18 +3422,18 @@ function buildIntelFeed(opp, extra) {
 }
 
 const CORP_TIERS = { 0:"TIER 1 MATCH", 1:"TIER 2 MATCH", 2:"TIER 3 MATCH" };
-const CORP_SCORES = { "Microsoft":98.4,"Amazon":95.1,"Shell PLC":89.2,"BP PLC":82.1,"Unilever":91.7,"Apple Inc":87.3 };
+const CORP_SCORES = { "Microdyne Systems":98.4,"Amazia Cloud":95.1,"Shellion Energy PLC":89.2,"BP PLC":82.1,"Unilever":91.7,"Apple Inc":87.3 };
 const CORP_MANDATE = {
-  "Microsoft": "Required transition to Net Zero 2030 focusing on high-integrity nature-based solutions for Scope 1-3 offset.",
-  "Amazon":    "Climate Pledge signatory — net zero by 2040. Prioritises REDD+ and Blue Carbon with verified additionality.",
-  "Shell PLC": "Net Zero by 2050. Nature-based solutions strategy mandates Verra-certified projects with co-benefit scoring.",
+  "Microdyne Systems": "Required transition to Net Zero 2030 focusing on high-integrity nature-based solutions for Scope 1-3 offset.",
+  "Amazia Cloud":    "Climate Pledge signatory — net zero by 2040. Prioritises REDD+ and Blue Carbon with verified additionality.",
+  "Shellion Energy PLC": "Net Zero by 2050. Nature-based solutions strategy mandates Verra-certified projects with co-benefit scoring.",
   "BP PLC":    "Active offset programme despite capex cuts. Prefers Gold Standard projects with SDG-aligned impact metrics.",
   "Unilever":  "SBTi-validated 2039 net zero target. CTAP 2025 mandates high-permanence removals and nature-based solutions.",
   "Apple Inc": "Carbon Neutral by 2030. Uses credits only as last resort — high quality threshold of 90+ quality score required.",
 };
 const CORP_HOLDING = {
-  "Microsoft":{current:"12k",target:"80k"},"Amazon":{current:"45k",target:"150k"},
-  "Shell PLC":{current:"2.1M",target:"8M"},"BP PLC":{current:"800k",target:"4M"},
+  "Microdyne Systems":{current:"12k",target:"80k"},"Amazia Cloud":{current:"45k",target:"150k"},
+  "Shellion Energy PLC":{current:"2.1M",target:"8M"},"BP PLC":{current:"800k",target:"4M"},
   "Unilever":{current:"180k",target:"600k"},"Apple Inc":{current:"220k",target:"400k"},
 };
 
@@ -3782,7 +3782,7 @@ const REGISTRY_ROWS = [
   { id:8,  name:"Wind Power Project of CLP Wind Farms (India) Private Limited",         registry:"Verra",        regId:"1257",   type:"Energy industries (renewable/non-renewable)",countryCode:"IN", flag:"🇮🇳", methodology:"ACM0002",    article62:[] },
   { id:9,  name:"Reduction of deforestation and degradation in Tambopata",              registry:"Verra",        regId:"1067",   type:"Agriculture Forestry and Other Land Use",   countryCode:"PE", flag:"🇵🇪", methodology:"VM0007",     article62:[{code:"SG",flag:"🇸🇬"},{code:"KR",flag:"🇰🇷"},{code:"CH",flag:"🇨🇭"}] },
   { id:10, name:"Intrinergy Wiggins Fuel Switch from Natural Gas to Biomass for Energy", registry:"Verra",        regId:"317",    type:"Energy industries (renewable/non-renewable)",countryCode:"US", flag:"🇺🇸", methodology:"AMS-I.C.",   article62:[] },
-  { id:11, name:"Amazon Rainforest REDD+ Conservation Project",                         registry:"Verra",        regId:"412",    type:"Agriculture Forestry and Other Land Use",   countryCode:"BR", flag:"🇧🇷", methodology:"VM0015",     article62:[{code:"JP",flag:"🇯🇵"},{code:"SG",flag:"🇸🇬"}] },
+  { id:11, name:"Amazia Cloud Rainforest REDD+ Conservation Project",                         registry:"Verra",        regId:"412",    type:"Agriculture Forestry and Other Land Use",   countryCode:"BR", flag:"🇧🇷", methodology:"VM0015",     article62:[{code:"JP",flag:"🇯🇵"},{code:"SG",flag:"🇸🇬"}] },
   { id:12, name:"Kenya Turkana Wind Energy Project",                                    registry:"Gold Standard", regId:"GS1257", type:"Energy industries (renewable/non-renewable)",countryCode:"KE", flag:"🇰🇪", methodology:"AMS-I.D.",   article62:[] },
   { id:13, name:"Indonesia Blue Carbon Mangrove Restoration",                           registry:"Verra",        regId:"980",    type:"Agriculture Forestry and Other Land Use",   countryCode:"ID", flag:"🇮🇩", methodology:"VM0033",     article62:[{code:"JP",flag:"🇯🇵"},{code:"KR",flag:"🇰🇷"}] },
   { id:14, name:"India Solar Initiative — Rural Distributed Power",                     registry:"Gold Standard", regId:"GS200",  type:"Energy industries (renewable/non-renewable)",countryCode:"IN", flag:"🇮🇳", methodology:"AMS-I.D.",   article62:[] },
@@ -4386,9 +4386,9 @@ function Pipeline({ t, dark, pipeline, setPipeline }) {
 // ─── CAMPAIGNS PAGE ──────────────────────────────────────────────────────────
 
 const ACTIVE_CAMPAIGNS = [
-  { id: 1, name: "Microsoft Q4 Carbon Removal Outreach", strategy: "REDD+ Priority",    volume: 4200,  successRate: 87.3, status: "Active",  target: "Microsoft", contact: "Melanie Nakagawa", steps: 5, completed: 3 },
-  { id: 2, name: "Amazon Climate Pledge — REDD+ Proposal", strategy: "High Volume",      volume: 9800,  successRate: 82.1, status: "Active",  target: "Amazon",    contact: "Kara Hurst",       steps: 4, completed: 2 },
-  { id: 3, name: "Shell NbS Strategy Alignment",           strategy: "Coastal Barrier",  volume: 18000, successRate: 74.5, status: "Paused",  target: "Shell PLC", contact: "Anna Mascolo",     steps: 6, completed: 4 },
+  { id: 1, name: "Microdyne Systems Q4 Carbon Removal Outreach", strategy: "REDD+ Priority",    volume: 4200,  successRate: 87.3, status: "Active",  target: "Microdyne Systems", contact: "Melanie Nakagawa", steps: 5, completed: 3 },
+  { id: 2, name: "Amazia Cloud Climate Pledge — REDD+ Proposal", strategy: "High Volume",      volume: 9800,  successRate: 82.1, status: "Active",  target: "Amazia Cloud",    contact: "Kara Hurst",       steps: 4, completed: 2 },
+  { id: 3, name: "Shellion Energy NbS Strategy Alignment",           strategy: "Coastal Barrier",  volume: 18000, successRate: 74.5, status: "Paused",  target: "Shellion Energy PLC", contact: "Anna Mascolo",     steps: 6, completed: 4 },
   { id: 4, name: "Unilever SBTi Offset Sourcing",          strategy: "Balanced Yield",   volume: 5500,  successRate: 0,    status: "Draft",   target: "Unilever",  contact: "Rebecca Marmot",   steps: 4, completed: 0 },
   { id: 5, name: "BP Scope 3 Offset Programme",            strategy: "Aggressive Cover", volume: 11000, successRate: 68.9, status: "Active",  target: "BP PLC",    contact: "Giulia Chierchia", steps: 3, completed: 1 },
 ];
@@ -4569,7 +4569,7 @@ function CampaignModal({ t, campaign, isNew, readOnly, onClose, onSave }) {
               <div className="col-span-2">
                 <label className="text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5">Campaign Name</label>
                 <input value={form.name} onChange={e => set("name", e.target.value)} disabled={readOnly}
-                  placeholder="e.g. Microsoft Q4 Carbon Removal Outreach"
+                  placeholder="e.g. Microdyne Systems Q4 Carbon Removal Outreach"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]" />
               </div>
 
@@ -5904,7 +5904,7 @@ const DATA_ROOM_FOLDERS = [
     id: 1, name: "Carbon Project Documents", icon: "tree", count: 12, size: "84 MB",
     colorFn: (d) => d ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#364A36]/25 text-[#9EBD9E]",
     files: [
-      { name: "Amazon Rainforest REDD+ — VCS Certificate.pdf", size: "2.4 MB", date: "Mar 12", locked: false },
+      { name: "Amazia Cloud Rainforest REDD+ — VCS Certificate.pdf", size: "2.4 MB", date: "Mar 12", locked: false },
       { name: "Indonesia Blue Carbon — Project Design Document.pdf", size: "8.1 MB", date: "Feb 28", locked: false },
       { name: "Congo Basin REDD+ — Monitoring Report 2024.pdf", size: "5.3 MB", date: "Apr 1", locked: false },
       { name: "Kenya Turkana Wind — Gold Standard Certification.pdf", size: "1.8 MB", date: "Jan 15", locked: true },
@@ -5914,9 +5914,9 @@ const DATA_ROOM_FOLDERS = [
     id: 2, name: "Term Sheets & Agreements", icon: "file", count: 8, size: "12 MB",
     colorFn: (d) => d ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#FF6B35]/10 text-[#FF6B35]",
     files: [
-      { name: "Microsoft × Amazon REDD+ — Draft Term Sheet v2.docx", size: "320 KB", date: "Apr 18", locked: false },
-      { name: "Amazon × Congo Basin — LOI Signed.pdf", size: "180 KB", date: "Apr 10", locked: false },
-      { name: "Shell × Congo Basin — NDA Executed.pdf", size: "95 KB", date: "Mar 22", locked: true },
+      { name: "Microdyne Systems × Amazia Cloud REDD+ — Draft Term Sheet v2.docx", size: "320 KB", date: "Apr 18", locked: false },
+      { name: "Amazia Cloud × Congo Basin — LOI Signed.pdf", size: "180 KB", date: "Apr 10", locked: false },
+      { name: "Shellion Energy × Congo Basin — NDA Executed.pdf", size: "95 KB", date: "Mar 22", locked: true },
     ],
   },
   {
@@ -6047,11 +6047,11 @@ const AGENTS_DATA = [
 
 const AGENT_LOG_TEMPLATES = [
   "[SCAN] Querying Verra registry API — endpoint /issuances",
-  "[MATCH] Counterparty found: Microsoft Corp — confidence 0.94",
+  "[MATCH] Counterparty found: Microdyne Systems Corp — confidence 0.94",
   "[PRICE] Spot price update: VCM nature-based → $18.40/tCO₂e",
   "[ARBIT] Price delta detected: EU_ETS vs ACR — spread +4.2%",
   "[VALID] Additionality check passed for project GAB-442",
-  "[ALERT] New RFP detected: Shell PLC — 800K tCO₂e annual",
+  "[ALERT] New RFP detected: Shellion Energy PLC — 800K tCO₂e annual",
   "[SYNC] Registry sync complete — 1,204 new records ingested",
   "[OPT] Portfolio rebalance triggered — efficiency +0.03 XEF",
 ];
@@ -6335,7 +6335,7 @@ export default function App() {
   const [showNewCampaign, setShowNewCampaign] = useState(false);
   const [campaignTemplate, setCampaignTemplate] = useState(null);
   const [pipeline, setPipeline] = useState(() => {
-    const engie = LEADS.find(l => l.company === "Engie");
+    const engie = LEADS.find(l => l.company === "Engenix Energy");
     return engie ? [{ ...engie, type: "demand", stage: "Client" }] : [];
   });
   const [toast, setToast] = useState(null);

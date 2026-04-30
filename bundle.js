@@ -29,6 +29,277 @@
     mod
   ));
 
+  // node_modules/scheduler/cjs/scheduler.development.js
+  var require_scheduler_development = __commonJS({
+    "node_modules/scheduler/cjs/scheduler.development.js"(exports) {
+      "use strict";
+      (function() {
+        function performWorkUntilDeadline() {
+          needsPaint = false;
+          if (isMessageLoopRunning) {
+            var currentTime = exports.unstable_now();
+            startTime = currentTime;
+            var hasMoreWork = true;
+            try {
+              a: {
+                isHostCallbackScheduled = false;
+                isHostTimeoutScheduled && (isHostTimeoutScheduled = false, localClearTimeout(taskTimeoutID), taskTimeoutID = -1);
+                isPerformingWork = true;
+                var previousPriorityLevel = currentPriorityLevel;
+                try {
+                  b: {
+                    advanceTimers(currentTime);
+                    for (currentTask = peek3(taskQueue); null !== currentTask && !(currentTask.expirationTime > currentTime && shouldYieldToHost()); ) {
+                      var callback = currentTask.callback;
+                      if ("function" === typeof callback) {
+                        currentTask.callback = null;
+                        currentPriorityLevel = currentTask.priorityLevel;
+                        var continuationCallback = callback(
+                          currentTask.expirationTime <= currentTime
+                        );
+                        currentTime = exports.unstable_now();
+                        if ("function" === typeof continuationCallback) {
+                          currentTask.callback = continuationCallback;
+                          advanceTimers(currentTime);
+                          hasMoreWork = true;
+                          break b;
+                        }
+                        currentTask === peek3(taskQueue) && pop(taskQueue);
+                        advanceTimers(currentTime);
+                      } else pop(taskQueue);
+                      currentTask = peek3(taskQueue);
+                    }
+                    if (null !== currentTask) hasMoreWork = true;
+                    else {
+                      var firstTimer = peek3(timerQueue);
+                      null !== firstTimer && requestHostTimeout(
+                        handleTimeout,
+                        firstTimer.startTime - currentTime
+                      );
+                      hasMoreWork = false;
+                    }
+                  }
+                  break a;
+                } finally {
+                  currentTask = null, currentPriorityLevel = previousPriorityLevel, isPerformingWork = false;
+                }
+                hasMoreWork = void 0;
+              }
+            } finally {
+              hasMoreWork ? schedulePerformWorkUntilDeadline() : isMessageLoopRunning = false;
+            }
+          }
+        }
+        function push(heap, node) {
+          var index = heap.length;
+          heap.push(node);
+          a: for (; 0 < index; ) {
+            var parentIndex = index - 1 >>> 1, parent = heap[parentIndex];
+            if (0 < compare(parent, node))
+              heap[parentIndex] = node, heap[index] = parent, index = parentIndex;
+            else break a;
+          }
+        }
+        function peek3(heap) {
+          return 0 === heap.length ? null : heap[0];
+        }
+        function pop(heap) {
+          if (0 === heap.length) return null;
+          var first = heap[0], last = heap.pop();
+          if (last !== first) {
+            heap[0] = last;
+            a: for (var index = 0, length = heap.length, halfLength = length >>> 1; index < halfLength; ) {
+              var leftIndex = 2 * (index + 1) - 1, left = heap[leftIndex], rightIndex = leftIndex + 1, right = heap[rightIndex];
+              if (0 > compare(left, last))
+                rightIndex < length && 0 > compare(right, left) ? (heap[index] = right, heap[rightIndex] = last, index = rightIndex) : (heap[index] = left, heap[leftIndex] = last, index = leftIndex);
+              else if (rightIndex < length && 0 > compare(right, last))
+                heap[index] = right, heap[rightIndex] = last, index = rightIndex;
+              else break a;
+            }
+          }
+          return first;
+        }
+        function compare(a2, b) {
+          var diff = a2.sortIndex - b.sortIndex;
+          return 0 !== diff ? diff : a2.id - b.id;
+        }
+        function advanceTimers(currentTime) {
+          for (var timer = peek3(timerQueue); null !== timer; ) {
+            if (null === timer.callback) pop(timerQueue);
+            else if (timer.startTime <= currentTime)
+              pop(timerQueue), timer.sortIndex = timer.expirationTime, push(taskQueue, timer);
+            else break;
+            timer = peek3(timerQueue);
+          }
+        }
+        function handleTimeout(currentTime) {
+          isHostTimeoutScheduled = false;
+          advanceTimers(currentTime);
+          if (!isHostCallbackScheduled)
+            if (null !== peek3(taskQueue))
+              isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline());
+            else {
+              var firstTimer = peek3(timerQueue);
+              null !== firstTimer && requestHostTimeout(
+                handleTimeout,
+                firstTimer.startTime - currentTime
+              );
+            }
+        }
+        function shouldYieldToHost() {
+          return needsPaint ? true : exports.unstable_now() - startTime < frameInterval ? false : true;
+        }
+        function requestHostTimeout(callback, ms) {
+          taskTimeoutID = localSetTimeout(function() {
+            callback(exports.unstable_now());
+          }, ms);
+        }
+        "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
+        exports.unstable_now = void 0;
+        if ("object" === typeof performance && "function" === typeof performance.now) {
+          var localPerformance = performance;
+          exports.unstable_now = function() {
+            return localPerformance.now();
+          };
+        } else {
+          var localDate2 = Date, initialTime = localDate2.now();
+          exports.unstable_now = function() {
+            return localDate2.now() - initialTime;
+          };
+        }
+        var taskQueue = [], timerQueue = [], taskIdCounter = 1, currentTask = null, currentPriorityLevel = 3, isPerformingWork = false, isHostCallbackScheduled = false, isHostTimeoutScheduled = false, needsPaint = false, localSetTimeout = "function" === typeof setTimeout ? setTimeout : null, localClearTimeout = "function" === typeof clearTimeout ? clearTimeout : null, localSetImmediate = "undefined" !== typeof setImmediate ? setImmediate : null, isMessageLoopRunning = false, taskTimeoutID = -1, frameInterval = 5, startTime = -1;
+        if ("function" === typeof localSetImmediate)
+          var schedulePerformWorkUntilDeadline = function() {
+            localSetImmediate(performWorkUntilDeadline);
+          };
+        else if ("undefined" !== typeof MessageChannel) {
+          var channel = new MessageChannel(), port = channel.port2;
+          channel.port1.onmessage = performWorkUntilDeadline;
+          schedulePerformWorkUntilDeadline = function() {
+            port.postMessage(null);
+          };
+        } else
+          schedulePerformWorkUntilDeadline = function() {
+            localSetTimeout(performWorkUntilDeadline, 0);
+          };
+        exports.unstable_IdlePriority = 5;
+        exports.unstable_ImmediatePriority = 1;
+        exports.unstable_LowPriority = 4;
+        exports.unstable_NormalPriority = 3;
+        exports.unstable_Profiling = null;
+        exports.unstable_UserBlockingPriority = 2;
+        exports.unstable_cancelCallback = function(task2) {
+          task2.callback = null;
+        };
+        exports.unstable_forceFrameRate = function(fps) {
+          0 > fps || 125 < fps ? console.error(
+            "forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported"
+          ) : frameInterval = 0 < fps ? Math.floor(1e3 / fps) : 5;
+        };
+        exports.unstable_getCurrentPriorityLevel = function() {
+          return currentPriorityLevel;
+        };
+        exports.unstable_next = function(eventHandler) {
+          switch (currentPriorityLevel) {
+            case 1:
+            case 2:
+            case 3:
+              var priorityLevel = 3;
+              break;
+            default:
+              priorityLevel = currentPriorityLevel;
+          }
+          var previousPriorityLevel = currentPriorityLevel;
+          currentPriorityLevel = priorityLevel;
+          try {
+            return eventHandler();
+          } finally {
+            currentPriorityLevel = previousPriorityLevel;
+          }
+        };
+        exports.unstable_requestPaint = function() {
+          needsPaint = true;
+        };
+        exports.unstable_runWithPriority = function(priorityLevel, eventHandler) {
+          switch (priorityLevel) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+              break;
+            default:
+              priorityLevel = 3;
+          }
+          var previousPriorityLevel = currentPriorityLevel;
+          currentPriorityLevel = priorityLevel;
+          try {
+            return eventHandler();
+          } finally {
+            currentPriorityLevel = previousPriorityLevel;
+          }
+        };
+        exports.unstable_scheduleCallback = function(priorityLevel, callback, options) {
+          var currentTime = exports.unstable_now();
+          "object" === typeof options && null !== options ? (options = options.delay, options = "number" === typeof options && 0 < options ? currentTime + options : currentTime) : options = currentTime;
+          switch (priorityLevel) {
+            case 1:
+              var timeout = -1;
+              break;
+            case 2:
+              timeout = 250;
+              break;
+            case 5:
+              timeout = 1073741823;
+              break;
+            case 4:
+              timeout = 1e4;
+              break;
+            default:
+              timeout = 5e3;
+          }
+          timeout = options + timeout;
+          priorityLevel = {
+            id: taskIdCounter++,
+            callback,
+            priorityLevel,
+            startTime: options,
+            expirationTime: timeout,
+            sortIndex: -1
+          };
+          options > currentTime ? (priorityLevel.sortIndex = options, push(timerQueue, priorityLevel), null === peek3(taskQueue) && priorityLevel === peek3(timerQueue) && (isHostTimeoutScheduled ? (localClearTimeout(taskTimeoutID), taskTimeoutID = -1) : isHostTimeoutScheduled = true, requestHostTimeout(handleTimeout, options - currentTime))) : (priorityLevel.sortIndex = timeout, push(taskQueue, priorityLevel), isHostCallbackScheduled || isPerformingWork || (isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline())));
+          return priorityLevel;
+        };
+        exports.unstable_shouldYield = shouldYieldToHost;
+        exports.unstable_wrapCallback = function(callback) {
+          var parentPriorityLevel = currentPriorityLevel;
+          return function() {
+            var previousPriorityLevel = currentPriorityLevel;
+            currentPriorityLevel = parentPriorityLevel;
+            try {
+              return callback.apply(this, arguments);
+            } finally {
+              currentPriorityLevel = previousPriorityLevel;
+            }
+          };
+        };
+        "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
+      })();
+    }
+  });
+
+  // node_modules/scheduler/index.js
+  var require_scheduler = __commonJS({
+    "node_modules/scheduler/index.js"(exports, module) {
+      "use strict";
+      if (false) {
+        module.exports = null;
+      } else {
+        module.exports = require_scheduler_development();
+      }
+    }
+  });
+
   // node_modules/react/cjs/react.development.js
   var require_react_development = __commonJS({
     "node_modules/react/cjs/react.development.js"(exports, module) {
@@ -1013,277 +1284,6 @@
     }
   });
 
-  // node_modules/scheduler/cjs/scheduler.development.js
-  var require_scheduler_development = __commonJS({
-    "node_modules/scheduler/cjs/scheduler.development.js"(exports) {
-      "use strict";
-      (function() {
-        function performWorkUntilDeadline() {
-          needsPaint = false;
-          if (isMessageLoopRunning) {
-            var currentTime = exports.unstable_now();
-            startTime = currentTime;
-            var hasMoreWork = true;
-            try {
-              a: {
-                isHostCallbackScheduled = false;
-                isHostTimeoutScheduled && (isHostTimeoutScheduled = false, localClearTimeout(taskTimeoutID), taskTimeoutID = -1);
-                isPerformingWork = true;
-                var previousPriorityLevel = currentPriorityLevel;
-                try {
-                  b: {
-                    advanceTimers(currentTime);
-                    for (currentTask = peek3(taskQueue); null !== currentTask && !(currentTask.expirationTime > currentTime && shouldYieldToHost()); ) {
-                      var callback = currentTask.callback;
-                      if ("function" === typeof callback) {
-                        currentTask.callback = null;
-                        currentPriorityLevel = currentTask.priorityLevel;
-                        var continuationCallback = callback(
-                          currentTask.expirationTime <= currentTime
-                        );
-                        currentTime = exports.unstable_now();
-                        if ("function" === typeof continuationCallback) {
-                          currentTask.callback = continuationCallback;
-                          advanceTimers(currentTime);
-                          hasMoreWork = true;
-                          break b;
-                        }
-                        currentTask === peek3(taskQueue) && pop(taskQueue);
-                        advanceTimers(currentTime);
-                      } else pop(taskQueue);
-                      currentTask = peek3(taskQueue);
-                    }
-                    if (null !== currentTask) hasMoreWork = true;
-                    else {
-                      var firstTimer = peek3(timerQueue);
-                      null !== firstTimer && requestHostTimeout(
-                        handleTimeout,
-                        firstTimer.startTime - currentTime
-                      );
-                      hasMoreWork = false;
-                    }
-                  }
-                  break a;
-                } finally {
-                  currentTask = null, currentPriorityLevel = previousPriorityLevel, isPerformingWork = false;
-                }
-                hasMoreWork = void 0;
-              }
-            } finally {
-              hasMoreWork ? schedulePerformWorkUntilDeadline() : isMessageLoopRunning = false;
-            }
-          }
-        }
-        function push(heap, node) {
-          var index = heap.length;
-          heap.push(node);
-          a: for (; 0 < index; ) {
-            var parentIndex = index - 1 >>> 1, parent = heap[parentIndex];
-            if (0 < compare(parent, node))
-              heap[parentIndex] = node, heap[index] = parent, index = parentIndex;
-            else break a;
-          }
-        }
-        function peek3(heap) {
-          return 0 === heap.length ? null : heap[0];
-        }
-        function pop(heap) {
-          if (0 === heap.length) return null;
-          var first = heap[0], last = heap.pop();
-          if (last !== first) {
-            heap[0] = last;
-            a: for (var index = 0, length = heap.length, halfLength = length >>> 1; index < halfLength; ) {
-              var leftIndex = 2 * (index + 1) - 1, left = heap[leftIndex], rightIndex = leftIndex + 1, right = heap[rightIndex];
-              if (0 > compare(left, last))
-                rightIndex < length && 0 > compare(right, left) ? (heap[index] = right, heap[rightIndex] = last, index = rightIndex) : (heap[index] = left, heap[leftIndex] = last, index = leftIndex);
-              else if (rightIndex < length && 0 > compare(right, last))
-                heap[index] = right, heap[rightIndex] = last, index = rightIndex;
-              else break a;
-            }
-          }
-          return first;
-        }
-        function compare(a2, b) {
-          var diff = a2.sortIndex - b.sortIndex;
-          return 0 !== diff ? diff : a2.id - b.id;
-        }
-        function advanceTimers(currentTime) {
-          for (var timer = peek3(timerQueue); null !== timer; ) {
-            if (null === timer.callback) pop(timerQueue);
-            else if (timer.startTime <= currentTime)
-              pop(timerQueue), timer.sortIndex = timer.expirationTime, push(taskQueue, timer);
-            else break;
-            timer = peek3(timerQueue);
-          }
-        }
-        function handleTimeout(currentTime) {
-          isHostTimeoutScheduled = false;
-          advanceTimers(currentTime);
-          if (!isHostCallbackScheduled)
-            if (null !== peek3(taskQueue))
-              isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline());
-            else {
-              var firstTimer = peek3(timerQueue);
-              null !== firstTimer && requestHostTimeout(
-                handleTimeout,
-                firstTimer.startTime - currentTime
-              );
-            }
-        }
-        function shouldYieldToHost() {
-          return needsPaint ? true : exports.unstable_now() - startTime < frameInterval ? false : true;
-        }
-        function requestHostTimeout(callback, ms) {
-          taskTimeoutID = localSetTimeout(function() {
-            callback(exports.unstable_now());
-          }, ms);
-        }
-        "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        exports.unstable_now = void 0;
-        if ("object" === typeof performance && "function" === typeof performance.now) {
-          var localPerformance = performance;
-          exports.unstable_now = function() {
-            return localPerformance.now();
-          };
-        } else {
-          var localDate2 = Date, initialTime = localDate2.now();
-          exports.unstable_now = function() {
-            return localDate2.now() - initialTime;
-          };
-        }
-        var taskQueue = [], timerQueue = [], taskIdCounter = 1, currentTask = null, currentPriorityLevel = 3, isPerformingWork = false, isHostCallbackScheduled = false, isHostTimeoutScheduled = false, needsPaint = false, localSetTimeout = "function" === typeof setTimeout ? setTimeout : null, localClearTimeout = "function" === typeof clearTimeout ? clearTimeout : null, localSetImmediate = "undefined" !== typeof setImmediate ? setImmediate : null, isMessageLoopRunning = false, taskTimeoutID = -1, frameInterval = 5, startTime = -1;
-        if ("function" === typeof localSetImmediate)
-          var schedulePerformWorkUntilDeadline = function() {
-            localSetImmediate(performWorkUntilDeadline);
-          };
-        else if ("undefined" !== typeof MessageChannel) {
-          var channel = new MessageChannel(), port = channel.port2;
-          channel.port1.onmessage = performWorkUntilDeadline;
-          schedulePerformWorkUntilDeadline = function() {
-            port.postMessage(null);
-          };
-        } else
-          schedulePerformWorkUntilDeadline = function() {
-            localSetTimeout(performWorkUntilDeadline, 0);
-          };
-        exports.unstable_IdlePriority = 5;
-        exports.unstable_ImmediatePriority = 1;
-        exports.unstable_LowPriority = 4;
-        exports.unstable_NormalPriority = 3;
-        exports.unstable_Profiling = null;
-        exports.unstable_UserBlockingPriority = 2;
-        exports.unstable_cancelCallback = function(task2) {
-          task2.callback = null;
-        };
-        exports.unstable_forceFrameRate = function(fps) {
-          0 > fps || 125 < fps ? console.error(
-            "forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported"
-          ) : frameInterval = 0 < fps ? Math.floor(1e3 / fps) : 5;
-        };
-        exports.unstable_getCurrentPriorityLevel = function() {
-          return currentPriorityLevel;
-        };
-        exports.unstable_next = function(eventHandler) {
-          switch (currentPriorityLevel) {
-            case 1:
-            case 2:
-            case 3:
-              var priorityLevel = 3;
-              break;
-            default:
-              priorityLevel = currentPriorityLevel;
-          }
-          var previousPriorityLevel = currentPriorityLevel;
-          currentPriorityLevel = priorityLevel;
-          try {
-            return eventHandler();
-          } finally {
-            currentPriorityLevel = previousPriorityLevel;
-          }
-        };
-        exports.unstable_requestPaint = function() {
-          needsPaint = true;
-        };
-        exports.unstable_runWithPriority = function(priorityLevel, eventHandler) {
-          switch (priorityLevel) {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-              break;
-            default:
-              priorityLevel = 3;
-          }
-          var previousPriorityLevel = currentPriorityLevel;
-          currentPriorityLevel = priorityLevel;
-          try {
-            return eventHandler();
-          } finally {
-            currentPriorityLevel = previousPriorityLevel;
-          }
-        };
-        exports.unstable_scheduleCallback = function(priorityLevel, callback, options) {
-          var currentTime = exports.unstable_now();
-          "object" === typeof options && null !== options ? (options = options.delay, options = "number" === typeof options && 0 < options ? currentTime + options : currentTime) : options = currentTime;
-          switch (priorityLevel) {
-            case 1:
-              var timeout = -1;
-              break;
-            case 2:
-              timeout = 250;
-              break;
-            case 5:
-              timeout = 1073741823;
-              break;
-            case 4:
-              timeout = 1e4;
-              break;
-            default:
-              timeout = 5e3;
-          }
-          timeout = options + timeout;
-          priorityLevel = {
-            id: taskIdCounter++,
-            callback,
-            priorityLevel,
-            startTime: options,
-            expirationTime: timeout,
-            sortIndex: -1
-          };
-          options > currentTime ? (priorityLevel.sortIndex = options, push(timerQueue, priorityLevel), null === peek3(taskQueue) && priorityLevel === peek3(timerQueue) && (isHostTimeoutScheduled ? (localClearTimeout(taskTimeoutID), taskTimeoutID = -1) : isHostTimeoutScheduled = true, requestHostTimeout(handleTimeout, options - currentTime))) : (priorityLevel.sortIndex = timeout, push(taskQueue, priorityLevel), isHostCallbackScheduled || isPerformingWork || (isHostCallbackScheduled = true, isMessageLoopRunning || (isMessageLoopRunning = true, schedulePerformWorkUntilDeadline())));
-          return priorityLevel;
-        };
-        exports.unstable_shouldYield = shouldYieldToHost;
-        exports.unstable_wrapCallback = function(callback) {
-          var parentPriorityLevel = currentPriorityLevel;
-          return function() {
-            var previousPriorityLevel = currentPriorityLevel;
-            currentPriorityLevel = parentPriorityLevel;
-            try {
-              return callback.apply(this, arguments);
-            } finally {
-              currentPriorityLevel = previousPriorityLevel;
-            }
-          };
-        };
-        "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
-      })();
-    }
-  });
-
-  // node_modules/scheduler/index.js
-  var require_scheduler = __commonJS({
-    "node_modules/scheduler/index.js"(exports, module) {
-      "use strict";
-      if (false) {
-        module.exports = null;
-      } else {
-        module.exports = require_scheduler_development();
-      }
-    }
-  });
-
   // node_modules/react-dom/cjs/react-dom.development.js
   var require_react_dom_development = __commonJS({
     "node_modules/react-dom/cjs/react-dom.development.js"(exports) {
@@ -1333,7 +1333,7 @@
           return dispatcher;
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React47 = require_react(), Internals = {
+        var React48 = require_react(), Internals = {
           d: {
             f: noop4,
             r: function() {
@@ -1351,7 +1351,7 @@
           },
           p: 0,
           findDOMNode: null
-        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), ReactSharedInternals = React47.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+        }, REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), ReactSharedInternals = React48.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
         "function" === typeof Map && null != Map.prototype && "function" === typeof Map.prototype.forEach && "function" === typeof Set && null != Set.prototype && "function" === typeof Set.prototype.clear && "function" === typeof Set.prototype.forEach || console.error(
           "React depends on Map and Set built-in types. Make sure that you load a polyfill in older browsers. https://reactjs.org/link/react-polyfills"
         );
@@ -2886,7 +2886,7 @@
           "number" === type && getActiveElement(node.ownerDocument) === node || node.defaultValue === "" + value || (node.defaultValue = "" + value);
         }
         function validateOptionProps(element, props) {
-          null == props.value && ("object" === typeof props.children && null !== props.children ? React47.Children.forEach(props.children, function(child) {
+          null == props.value && ("object" === typeof props.children && null !== props.children ? React48.Children.forEach(props.children, function(child) {
             null == child || "string" === typeof child || "number" === typeof child || "bigint" === typeof child || didWarnInvalidChild || (didWarnInvalidChild = true, console.error(
               "Cannot infer the option value of complex children. Pass a `value` prop or use a plain string as children to <option>."
             ));
@@ -18518,14 +18518,14 @@
           ));
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var Scheduler = require_scheduler(), React47 = require_react(), ReactDOM = require_react_dom(), assign2 = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE2 = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE2 = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
+        var Scheduler = require_scheduler(), React48 = require_react(), ReactDOM = require_react_dom(), assign2 = Object.assign, REACT_LEGACY_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.element"), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE2 = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE2 = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy");
         /* @__PURE__ */ Symbol.for("react.scope");
         var REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity");
         /* @__PURE__ */ Symbol.for("react.legacy_hidden");
         /* @__PURE__ */ Symbol.for("react.tracing_marker");
         var REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel");
         /* @__PURE__ */ Symbol.for("react.view_transition");
-        var MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React47.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
+        var MAYBE_ITERATOR_SYMBOL = Symbol.iterator, REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), isArrayImpl = Array.isArray, ReactSharedInternals = React48.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, NotPending = Object.freeze({
           pending: false,
           data: null,
           method: null,
@@ -21313,7 +21313,7 @@
           }
         };
         (function() {
-          var isomorphicReactPackageVersion = React47.version;
+          var isomorphicReactPackageVersion = React48.version;
           if ("19.2.5" !== isomorphicReactPackageVersion)
             throw Error(
               'Incompatible React versions: The "react" and "react-dom" packages must have the exact same version. Instead got:\n  - react:      ' + (isomorphicReactPackageVersion + "\n  - react-dom:  19.2.5\nLearn more: https://react.dev/warnings/version-mismatch")
@@ -22588,7 +22588,7 @@
           return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
         }
         function useSyncExternalStore$2(subscribe, getSnapshot) {
-          didWarnOld18Alpha || void 0 === React47.startTransition || (didWarnOld18Alpha = true, console.error(
+          didWarnOld18Alpha || void 0 === React48.startTransition || (didWarnOld18Alpha = true, console.error(
             "You are using an outdated, pre-release alpha of React 18 that does not support useSyncExternalStore. The use-sync-external-store shim will not work correctly. Upgrade to a newer pre-release."
           ));
           var value = getSnapshot();
@@ -22636,8 +22636,8 @@
           return getSnapshot();
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React47 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is4, useState17 = React47.useState, useEffect22 = React47.useEffect, useLayoutEffect9 = React47.useLayoutEffect, useDebugValue2 = React47.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
-        exports.useSyncExternalStore = void 0 !== React47.useSyncExternalStore ? React47.useSyncExternalStore : shim;
+        var React48 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is4, useState17 = React48.useState, useEffect22 = React48.useEffect, useLayoutEffect9 = React48.useLayoutEffect, useDebugValue2 = React48.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+        exports.useSyncExternalStore = void 0 !== React48.useSyncExternalStore ? React48.useSyncExternalStore : shim;
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
       })();
     }
@@ -22664,7 +22664,7 @@
           return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React47 = require_react(), shim = require_shim(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = shim.useSyncExternalStore, useRef22 = React47.useRef, useEffect22 = React47.useEffect, useMemo14 = React47.useMemo, useDebugValue2 = React47.useDebugValue;
+        var React48 = require_react(), shim = require_shim(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = shim.useSyncExternalStore, useRef22 = React48.useRef, useEffect22 = React48.useEffect, useMemo14 = React48.useMemo, useDebugValue2 = React48.useDebugValue;
         exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
           var instRef = useRef22(null);
           if (null === instRef.current) {
@@ -23118,7 +23118,7 @@
           return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React47 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = React47.useSyncExternalStore, useRef22 = React47.useRef, useEffect22 = React47.useEffect, useMemo14 = React47.useMemo, useDebugValue2 = React47.useDebugValue;
+        var React48 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is4, useSyncExternalStore2 = React48.useSyncExternalStore, useRef22 = React48.useRef, useEffect22 = React48.useEffect, useMemo14 = React48.useMemo, useDebugValue2 = React48.useDebugValue;
         exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
           var instRef = useRef22(null);
           if (null === instRef.current) {
@@ -24559,274 +24559,8 @@
     }
   });
 
-  // node_modules/react/cjs/react-jsx-runtime.development.js
-  var require_react_jsx_runtime_development = __commonJS({
-    "node_modules/react/cjs/react-jsx-runtime.development.js"(exports) {
-      "use strict";
-      (function() {
-        function getComponentNameFromType(type) {
-          if (null == type) return null;
-          if ("function" === typeof type)
-            return type.$$typeof === REACT_CLIENT_REFERENCE ? null : type.displayName || type.name || null;
-          if ("string" === typeof type) return type;
-          switch (type) {
-            case REACT_FRAGMENT_TYPE:
-              return "Fragment";
-            case REACT_PROFILER_TYPE:
-              return "Profiler";
-            case REACT_STRICT_MODE_TYPE:
-              return "StrictMode";
-            case REACT_SUSPENSE_TYPE:
-              return "Suspense";
-            case REACT_SUSPENSE_LIST_TYPE:
-              return "SuspenseList";
-            case REACT_ACTIVITY_TYPE:
-              return "Activity";
-          }
-          if ("object" === typeof type)
-            switch ("number" === typeof type.tag && console.error(
-              "Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."
-            ), type.$$typeof) {
-              case REACT_PORTAL_TYPE:
-                return "Portal";
-              case REACT_CONTEXT_TYPE:
-                return type.displayName || "Context";
-              case REACT_CONSUMER_TYPE:
-                return (type._context.displayName || "Context") + ".Consumer";
-              case REACT_FORWARD_REF_TYPE2:
-                var innerType = type.render;
-                type = type.displayName;
-                type || (type = innerType.displayName || innerType.name || "", type = "" !== type ? "ForwardRef(" + type + ")" : "ForwardRef");
-                return type;
-              case REACT_MEMO_TYPE2:
-                return innerType = type.displayName || null, null !== innerType ? innerType : getComponentNameFromType(type.type) || "Memo";
-              case REACT_LAZY_TYPE:
-                innerType = type._payload;
-                type = type._init;
-                try {
-                  return getComponentNameFromType(type(innerType));
-                } catch (x2) {
-                }
-            }
-          return null;
-        }
-        function testStringCoercion(value) {
-          return "" + value;
-        }
-        function checkKeyStringCoercion(value) {
-          try {
-            testStringCoercion(value);
-            var JSCompiler_inline_result = false;
-          } catch (e) {
-            JSCompiler_inline_result = true;
-          }
-          if (JSCompiler_inline_result) {
-            JSCompiler_inline_result = console;
-            var JSCompiler_temp_const = JSCompiler_inline_result.error;
-            var JSCompiler_inline_result$jscomp$0 = "function" === typeof Symbol && Symbol.toStringTag && value[Symbol.toStringTag] || value.constructor.name || "Object";
-            JSCompiler_temp_const.call(
-              JSCompiler_inline_result,
-              "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.",
-              JSCompiler_inline_result$jscomp$0
-            );
-            return testStringCoercion(value);
-          }
-        }
-        function getTaskName(type) {
-          if (type === REACT_FRAGMENT_TYPE) return "<>";
-          if ("object" === typeof type && null !== type && type.$$typeof === REACT_LAZY_TYPE)
-            return "<...>";
-          try {
-            var name = getComponentNameFromType(type);
-            return name ? "<" + name + ">" : "<...>";
-          } catch (x2) {
-            return "<...>";
-          }
-        }
-        function getOwner() {
-          var dispatcher = ReactSharedInternals.A;
-          return null === dispatcher ? null : dispatcher.getOwner();
-        }
-        function UnknownOwner() {
-          return Error("react-stack-top-frame");
-        }
-        function hasValidKey(config) {
-          if (hasOwnProperty.call(config, "key")) {
-            var getter = Object.getOwnPropertyDescriptor(config, "key").get;
-            if (getter && getter.isReactWarning) return false;
-          }
-          return void 0 !== config.key;
-        }
-        function defineKeyPropWarningGetter(props, displayName) {
-          function warnAboutAccessingKey() {
-            specialPropKeyWarningShown || (specialPropKeyWarningShown = true, console.error(
-              "%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)",
-              displayName
-            ));
-          }
-          warnAboutAccessingKey.isReactWarning = true;
-          Object.defineProperty(props, "key", {
-            get: warnAboutAccessingKey,
-            configurable: true
-          });
-        }
-        function elementRefGetterWithDeprecationWarning() {
-          var componentName = getComponentNameFromType(this.type);
-          didWarnAboutElementRef[componentName] || (didWarnAboutElementRef[componentName] = true, console.error(
-            "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."
-          ));
-          componentName = this.props.ref;
-          return void 0 !== componentName ? componentName : null;
-        }
-        function ReactElement(type, key, props, owner, debugStack, debugTask) {
-          var refProp = props.ref;
-          type = {
-            $$typeof: REACT_ELEMENT_TYPE,
-            type,
-            key,
-            props,
-            _owner: owner
-          };
-          null !== (void 0 !== refProp ? refProp : null) ? Object.defineProperty(type, "ref", {
-            enumerable: false,
-            get: elementRefGetterWithDeprecationWarning
-          }) : Object.defineProperty(type, "ref", { enumerable: false, value: null });
-          type._store = {};
-          Object.defineProperty(type._store, "validated", {
-            configurable: false,
-            enumerable: false,
-            writable: true,
-            value: 0
-          });
-          Object.defineProperty(type, "_debugInfo", {
-            configurable: false,
-            enumerable: false,
-            writable: true,
-            value: null
-          });
-          Object.defineProperty(type, "_debugStack", {
-            configurable: false,
-            enumerable: false,
-            writable: true,
-            value: debugStack
-          });
-          Object.defineProperty(type, "_debugTask", {
-            configurable: false,
-            enumerable: false,
-            writable: true,
-            value: debugTask
-          });
-          Object.freeze && (Object.freeze(type.props), Object.freeze(type));
-          return type;
-        }
-        function jsxDEVImpl(type, config, maybeKey, isStaticChildren, debugStack, debugTask) {
-          var children = config.children;
-          if (void 0 !== children)
-            if (isStaticChildren)
-              if (isArrayImpl(children)) {
-                for (isStaticChildren = 0; isStaticChildren < children.length; isStaticChildren++)
-                  validateChildKeys(children[isStaticChildren]);
-                Object.freeze && Object.freeze(children);
-              } else
-                console.error(
-                  "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
-                );
-            else validateChildKeys(children);
-          if (hasOwnProperty.call(config, "key")) {
-            children = getComponentNameFromType(type);
-            var keys = Object.keys(config).filter(function(k2) {
-              return "key" !== k2;
-            });
-            isStaticChildren = 0 < keys.length ? "{key: someKey, " + keys.join(": ..., ") + ": ...}" : "{key: someKey}";
-            didWarnAboutKeySpread[children + isStaticChildren] || (keys = 0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}", console.error(
-              'A props object containing a "key" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />',
-              isStaticChildren,
-              children,
-              keys,
-              children
-            ), didWarnAboutKeySpread[children + isStaticChildren] = true);
-          }
-          children = null;
-          void 0 !== maybeKey && (checkKeyStringCoercion(maybeKey), children = "" + maybeKey);
-          hasValidKey(config) && (checkKeyStringCoercion(config.key), children = "" + config.key);
-          if ("key" in config) {
-            maybeKey = {};
-            for (var propName in config)
-              "key" !== propName && (maybeKey[propName] = config[propName]);
-          } else maybeKey = config;
-          children && defineKeyPropWarningGetter(
-            maybeKey,
-            "function" === typeof type ? type.displayName || type.name || "Unknown" : type
-          );
-          return ReactElement(
-            type,
-            children,
-            maybeKey,
-            getOwner(),
-            debugStack,
-            debugTask
-          );
-        }
-        function validateChildKeys(node) {
-          isValidElement16(node) ? node._store && (node._store.validated = 1) : "object" === typeof node && null !== node && node.$$typeof === REACT_LAZY_TYPE && ("fulfilled" === node._payload.status ? isValidElement16(node._payload.value) && node._payload.value._store && (node._payload.value._store.validated = 1) : node._store && (node._store.validated = 1));
-        }
-        function isValidElement16(object) {
-          return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE;
-        }
-        var React47 = require_react(), REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE2 = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE2 = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for("react.client.reference"), ReactSharedInternals = React47.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
-          return null;
-        };
-        React47 = {
-          react_stack_bottom_frame: function(callStackForError) {
-            return callStackForError();
-          }
-        };
-        var specialPropKeyWarningShown;
-        var didWarnAboutElementRef = {};
-        var unknownOwnerDebugStack = React47.react_stack_bottom_frame.bind(
-          React47,
-          UnknownOwner
-        )();
-        var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
-        var didWarnAboutKeySpread = {};
-        exports.Fragment = REACT_FRAGMENT_TYPE;
-        exports.jsx = function(type, config, maybeKey) {
-          var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
-          return jsxDEVImpl(
-            type,
-            config,
-            maybeKey,
-            false,
-            trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack,
-            trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
-          );
-        };
-        exports.jsxs = function(type, config, maybeKey) {
-          var trackActualOwner = 1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
-          return jsxDEVImpl(
-            type,
-            config,
-            maybeKey,
-            true,
-            trackActualOwner ? Error("react-stack-top-frame") : unknownOwnerDebugStack,
-            trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
-          );
-        };
-      })();
-    }
-  });
-
-  // node_modules/react/jsx-runtime.js
-  var require_jsx_runtime = __commonJS({
-    "node_modules/react/jsx-runtime.js"(exports, module) {
-      "use strict";
-      if (false) {
-        module.exports = null;
-      } else {
-        module.exports = require_react_jsx_runtime_development();
-      }
-    }
-  });
+  // entry.jsx
+  var import_client2 = __toESM(require_client());
 
   // qatalyst.jsx
   var import_react60 = __toESM(require_react());
@@ -25383,7 +25117,7 @@
   var Users = createLucideIcon("users", __iconNode42);
 
   // node_modules/recharts/es6/container/Surface.js
-  var React = __toESM(require_react());
+  var React2 = __toESM(require_react());
   var import_react6 = __toESM(require_react());
 
   // node_modules/clsx/dist/clsx.mjs
@@ -25836,18 +25570,18 @@
       y: 0
     };
     var layerClass = clsx("recharts-surface", className);
-    return /* @__PURE__ */ React.createElement("svg", _extends({}, svgPropertiesAndEvents(others), {
+    return /* @__PURE__ */ React2.createElement("svg", _extends({}, svgPropertiesAndEvents(others), {
       className: layerClass,
       width,
       height,
       style,
       viewBox: "".concat(svgView.x, " ").concat(svgView.y, " ").concat(svgView.width, " ").concat(svgView.height),
       ref
-    }), /* @__PURE__ */ React.createElement("title", null, title), /* @__PURE__ */ React.createElement("desc", null, desc), children);
+    }), /* @__PURE__ */ React2.createElement("title", null, title), /* @__PURE__ */ React2.createElement("desc", null, desc), children);
   });
 
   // node_modules/recharts/es6/container/Layer.js
-  var React2 = __toESM(require_react());
+  var React3 = __toESM(require_react());
   var _excluded2 = ["children", "className"];
   function _extends2() {
     return _extends2 = Object.assign ? Object.assign.bind() : function(n) {
@@ -25876,13 +25610,13 @@
     }
     return t;
   }
-  var Layer = /* @__PURE__ */ React2.forwardRef((props, ref) => {
+  var Layer = /* @__PURE__ */ React3.forwardRef((props, ref) => {
     var {
       children,
       className
     } = props, others = _objectWithoutProperties2(props, _excluded2);
     var layerClass = clsx("recharts-layer", className);
-    return /* @__PURE__ */ React2.createElement("g", _extends2({
+    return /* @__PURE__ */ React3.createElement("g", _extends2({
       className: layerClass
     }, svgPropertiesAndEvents(others), {
       ref
@@ -25894,7 +25628,7 @@
   var LegendPortalContext = /* @__PURE__ */ (0, import_react7.createContext)(null);
 
   // node_modules/recharts/es6/shape/Symbols.js
-  var React3 = __toESM(require_react());
+  var React4 = __toESM(require_react());
 
   // node_modules/d3-shape/src/constant.js
   function constant_default(x2) {
@@ -27120,7 +26854,7 @@
     } = props;
     var filteredProps = svgPropertiesAndEvents(props);
     if (isNumber(cx) && isNumber(cy) && isNumber(size)) {
-      return /* @__PURE__ */ React3.createElement("path", _extends3({}, filteredProps, {
+      return /* @__PURE__ */ React4.createElement("path", _extends3({}, filteredProps, {
         className: clsx("recharts-symbols", className),
         transform: "translate(".concat(cx, ", ").concat(cy, ")"),
         d: getPath3()
@@ -31020,7 +30754,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }));
 
   // node_modules/recharts/es6/context/PanoramaContext.js
-  var React4 = __toESM(require_react());
+  var React5 = __toESM(require_react());
   var import_react12 = __toESM(require_react());
   var PanoramaContext = /* @__PURE__ */ (0, import_react12.createContext)(null);
   var useIsPanorama = () => (0, import_react12.useContext)(PanoramaContext) != null;
@@ -31035,7 +30769,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }));
 
   // node_modules/recharts/es6/component/ResponsiveContainer.js
-  var React5 = __toESM(require_react());
+  var React6 = __toESM(require_react());
   var import_react13 = __toESM(require_react());
   var import_throttle = __toESM(require_throttle2());
 
@@ -31214,7 +30948,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (!isAcceptableSize(size)) {
       return null;
     }
-    return /* @__PURE__ */ React5.createElement(ResponsiveContainerContext.Provider, {
+    return /* @__PURE__ */ React6.createElement(ResponsiveContainerContext.Provider, {
       value: size
     }, children);
   }
@@ -31309,7 +31043,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       maxHeight
     });
     warn(calculatedWidth != null && calculatedWidth > 0 || calculatedHeight != null && calculatedHeight > 0, "The width(%s) and height(%s) of chart should be greater than 0,\n       please check the style of container, or the props width(%s) and height(%s),\n       or add a minWidth(%s) or minHeight(%s) or use aspect(%s) to control the\n       height and width.", calculatedWidth, calculatedHeight, width, height, minWidth, minHeight, aspect);
-    return /* @__PURE__ */ React5.createElement("div", {
+    return /* @__PURE__ */ React6.createElement("div", {
       id: id ? "".concat(id) : void 0,
       className: clsx("recharts-responsive-container", className),
       style: _objectSpread5(_objectSpread5({}, style), {}, {
@@ -31320,12 +31054,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         maxHeight
       }),
       ref: containerRef
-    }, /* @__PURE__ */ React5.createElement("div", {
+    }, /* @__PURE__ */ React6.createElement("div", {
       style: getInnerDivStyle({
         width,
         height
       })
-    }, /* @__PURE__ */ React5.createElement(ResponsiveContainerContextProvider, {
+    }, /* @__PURE__ */ React6.createElement(ResponsiveContainerContextProvider, {
       width: calculatedWidth,
       height: calculatedHeight
     }, children)));
@@ -31353,12 +31087,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       maxHeight: props.maxHeight
     });
     if (isNumber(calculatedWidth) && isNumber(calculatedHeight)) {
-      return /* @__PURE__ */ React5.createElement(ResponsiveContainerContextProvider, {
+      return /* @__PURE__ */ React6.createElement(ResponsiveContainerContextProvider, {
         width: calculatedWidth,
         height: calculatedHeight
       }, props.children);
     }
-    return /* @__PURE__ */ React5.createElement(SizeDetectorContainer, _extends4({}, props, {
+    return /* @__PURE__ */ React6.createElement(SizeDetectorContainer, _extends4({}, props, {
       width,
       height,
       ref
@@ -32254,7 +31988,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   var legendReducer = legendSlice.reducer;
 
   // node_modules/react-redux/dist/react-redux.mjs
-  var React6 = __toESM(require_react(), 1);
+  var React7 = __toESM(require_react(), 1);
   var import_with_selector2 = __toESM(require_with_selector2(), 1);
   var REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref");
   var REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo");
@@ -32394,7 +32128,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   var isDOM = /* @__PURE__ */ canUseDOM();
   var isRunningInReactNative = () => typeof navigator !== "undefined" && navigator.product === "ReactNative";
   var isReactNative = /* @__PURE__ */ isRunningInReactNative();
-  var getUseIsomorphicLayoutEffect = () => isDOM || isReactNative ? React6.useLayoutEffect : React6.useEffect;
+  var getUseIsomorphicLayoutEffect = () => isDOM || isReactNative ? React7.useLayoutEffect : React7.useEffect;
   var useIsomorphicLayoutEffect = /* @__PURE__ */ getUseIsomorphicLayoutEffect();
   function is3(x2, y2) {
     if (x2 === y2) {
@@ -32444,24 +32178,24 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     {}
   );
   function getContext() {
-    if (!React6.createContext) return {};
+    if (!React7.createContext) return {};
     const contextMap = gT[ContextKey] ??= /* @__PURE__ */ new Map();
-    let realContext = contextMap.get(React6.createContext);
+    let realContext = contextMap.get(React7.createContext);
     if (!realContext) {
-      realContext = React6.createContext(
+      realContext = React7.createContext(
         null
       );
       if (true) {
         realContext.displayName = "ReactRedux";
       }
-      contextMap.set(React6.createContext, realContext);
+      contextMap.set(React7.createContext, realContext);
     }
     return realContext;
   }
   var ReactReduxContext = /* @__PURE__ */ getContext();
   function Provider(providerProps) {
     const { children, context, serverState, store } = providerProps;
-    const contextValue = React6.useMemo(() => {
+    const contextValue = React7.useMemo(() => {
       const subscription = createSubscription(store);
       const baseContextValue = {
         store,
@@ -32478,7 +32212,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         });
       }
     }, [store, serverState]);
-    const previousState = React6.useMemo(() => store.getState(), [store]);
+    const previousState = React7.useMemo(() => store.getState(), [store]);
     useIsomorphicLayoutEffect(() => {
       const { subscription } = contextValue;
       subscription.onStateChange = subscription.notifyNestedSubs;
@@ -32492,7 +32226,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       };
     }, [contextValue, previousState]);
     const Context = context || ReactReduxContext;
-    return /* @__PURE__ */ React6.createElement(Context.Provider, { value: contextValue }, children);
+    return /* @__PURE__ */ React7.createElement(Context.Provider, { value: contextValue }, children);
   }
   var Provider_default = Provider;
 
@@ -32548,12 +32282,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
 
   // node_modules/recharts/es6/component/Tooltip.js
-  var React14 = __toESM(require_react());
+  var React15 = __toESM(require_react());
   var import_react24 = __toESM(require_react());
   var import_react_dom2 = __toESM(require_react_dom());
 
   // node_modules/recharts/es6/component/DefaultTooltipContent.js
-  var React7 = __toESM(require_react());
+  var React8 = __toESM(require_react());
   var import_sortBy3 = __toESM(require_sortBy2());
   function _extends5() {
     return _extends5 = Object.assign ? Object.assign.bind() : function(n) {
@@ -32675,21 +32409,21 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
           var finalItemStyle = _objectSpread6(_objectSpread6({}, defaultDefaultTooltipContentProps.itemStyle), {}, {
             color: entry.color || defaultDefaultTooltipContentProps.itemStyle.color
           }, itemStyle);
-          return /* @__PURE__ */ React7.createElement("li", {
+          return /* @__PURE__ */ React8.createElement("li", {
             className: "recharts-tooltip-item",
             key: "tooltip-item-".concat(i),
             style: finalItemStyle
-          }, isNumOrStr(finalName) ? /* @__PURE__ */ React7.createElement("span", {
+          }, isNumOrStr(finalName) ? /* @__PURE__ */ React8.createElement("span", {
             className: "recharts-tooltip-item-name"
-          }, finalName) : null, isNumOrStr(finalName) ? /* @__PURE__ */ React7.createElement("span", {
+          }, finalName) : null, isNumOrStr(finalName) ? /* @__PURE__ */ React8.createElement("span", {
             className: "recharts-tooltip-item-separator"
-          }, separator) : null, /* @__PURE__ */ React7.createElement("span", {
+          }, separator) : null, /* @__PURE__ */ React8.createElement("span", {
             className: "recharts-tooltip-item-value"
-          }, finalValue), /* @__PURE__ */ React7.createElement("span", {
+          }, finalValue), /* @__PURE__ */ React8.createElement("span", {
             className: "recharts-tooltip-item-unit"
           }, entry.unit || ""));
         });
-        return /* @__PURE__ */ React7.createElement("ul", {
+        return /* @__PURE__ */ React8.createElement("ul", {
           className: "recharts-tooltip-item-list",
           style: listStyle
         }, items);
@@ -32711,17 +32445,17 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       role: "status",
       "aria-live": "assertive"
     } : {};
-    return /* @__PURE__ */ React7.createElement("div", _extends5({
+    return /* @__PURE__ */ React8.createElement("div", _extends5({
       className: wrapperCN,
       style: finalStyle
-    }, accessibilityAttributes), /* @__PURE__ */ React7.createElement("p", {
+    }, accessibilityAttributes), /* @__PURE__ */ React8.createElement("p", {
       className: labelCN,
       style: finalLabelStyle
-    }, /* @__PURE__ */ React7.isValidElement(finalLabel) ? finalLabel : "".concat(finalLabel)), renderContent2());
+    }, /* @__PURE__ */ React8.isValidElement(finalLabel) ? finalLabel : "".concat(finalLabel)), renderContent2());
   };
 
   // node_modules/recharts/es6/component/TooltipBoundingBox.js
-  var React8 = __toESM(require_react());
+  var React9 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/tooltip/translate.js
   var CSS_CLASS_PREFIX = "recharts-tooltip-wrapper";
@@ -32935,14 +32669,14 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   function TooltipBoundingBoxImpl(props) {
     var _props$coordinate3, _props$coordinate4, _props$coordinate$x2, _props$coordinate5, _props$coordinate$y2, _props$coordinate6;
     var prefersReducedMotion = usePrefersReducedMotion();
-    var [state, setState] = React8.useState(() => ({
+    var [state, setState] = React9.useState(() => ({
       dismissed: false,
       dismissedAtCoordinate: {
         x: 0,
         y: 0
       }
     }));
-    React8.useEffect(() => {
+    React9.useEffect(() => {
       var handleKeyDown = (event) => {
         if (event.key === "Escape") {
           var _props$coordinate$x, _props$coordinate, _props$coordinate$y, _props$coordinate2;
@@ -32999,7 +32733,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var outerStyle = _objectSpread7(_objectSpread7({}, positionStyle), {}, {
       visibility: !state.dismissed && props.active && props.hasPayload ? "visible" : "hidden"
     }, props.wrapperStyle);
-    return /* @__PURE__ */ React8.createElement("div", {
+    return /* @__PURE__ */ React9.createElement("div", {
       // @ts-expect-error typescript library does not recognize xmlns attribute, but it's required for an HTML chunk inside SVG.
       xmlns: "http://www.w3.org/1999/xhtml",
       tabIndex: -1,
@@ -33008,7 +32742,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       ref: props.innerRef
     }, props.children);
   }
-  var TooltipBoundingBox = /* @__PURE__ */ React8.memo(TooltipBoundingBoxImpl);
+  var TooltipBoundingBox = /* @__PURE__ */ React9.memo(TooltipBoundingBoxImpl);
 
   // node_modules/recharts/es6/context/accessibilityContext.js
   var useAccessibilityLayer = () => {
@@ -33017,11 +32751,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   };
 
   // node_modules/recharts/es6/component/Cursor.js
-  var React13 = __toESM(require_react());
+  var React14 = __toESM(require_react());
   var import_react21 = __toESM(require_react());
 
   // node_modules/recharts/es6/shape/Curve.js
-  var React9 = __toESM(require_react());
+  var React10 = __toESM(require_react());
   function _extends6() {
     return _extends6 = Object.assign ? Object.assign.bind() : function(n) {
       for (var e = 1; e < arguments.length; e++) {
@@ -33159,7 +32893,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       connectNulls: props.connectNulls
     };
     var realPath = points && points.length ? getPath(getPathInput) : path2;
-    return /* @__PURE__ */ React9.createElement("path", _extends6({}, svgPropertiesNoEvents(props), adaptEventHandlers(props), {
+    return /* @__PURE__ */ React10.createElement("path", _extends6({}, svgPropertiesNoEvents(props), adaptEventHandlers(props), {
       className: clsx("recharts-curve", className),
       d: realPath === null ? void 0 : realPath,
       ref: pathRef
@@ -33167,7 +32901,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   };
 
   // node_modules/recharts/es6/shape/Cross.js
-  var React10 = __toESM(require_react());
+  var React11 = __toESM(require_react());
   var _excluded4 = ["x", "y", "top", "left", "width", "height", "className"];
   function _extends7() {
     return _extends7 = Object.assign ? Object.assign.bind() : function(n) {
@@ -33258,7 +32992,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (!isNumber(x2) || !isNumber(y2) || !isNumber(width) || !isNumber(height) || !isNumber(top) || !isNumber(left)) {
       return null;
     }
-    return /* @__PURE__ */ React10.createElement("path", _extends7({}, svgPropertiesAndEvents(props), {
+    return /* @__PURE__ */ React11.createElement("path", _extends7({}, svgPropertiesAndEvents(props), {
       className: clsx("recharts-cross", className),
       d: getPath2(x2, y2, width, height, top, left)
     }));
@@ -33278,7 +33012,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
 
   // node_modules/recharts/es6/shape/Rectangle.js
-  var React11 = __toESM(require_react());
+  var React12 = __toESM(require_react());
   var import_react19 = __toESM(require_react());
 
   // node_modules/recharts/es6/animation/JavascriptAnimate.js
@@ -33963,7 +33697,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var _svgPropertiesAndEven = svgPropertiesAndEvents(props), {
         radius: _
       } = _svgPropertiesAndEven, otherPathProps = _objectWithoutProperties5(_svgPropertiesAndEven, _excluded5);
-      return /* @__PURE__ */ React11.createElement("path", _extends8({}, otherPathProps, {
+      return /* @__PURE__ */ React12.createElement("path", _extends8({}, otherPathProps, {
         x: round(x2),
         y: round(y2),
         width: round(width),
@@ -33980,7 +33714,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var from2 = "0px ".concat(totalLength === -1 ? 1 : totalLength, "px");
     var to2 = "".concat(totalLength, "px ").concat(totalLength, "px");
     var transition = getTransitionVal(["strokeDasharray"], animationDuration, typeof animationEasing === "string" ? animationEasing : defaultRectangleProps.animationEasing);
-    return /* @__PURE__ */ React11.createElement(JavascriptAnimate, {
+    return /* @__PURE__ */ React12.createElement(JavascriptAnimate, {
       animationId,
       key: animationId,
       canBegin: totalLength > 0,
@@ -34017,7 +33751,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var _svgPropertiesAndEven2 = svgPropertiesAndEvents(props), {
         radius: _2
       } = _svgPropertiesAndEven2, otherPathProps2 = _objectWithoutProperties5(_svgPropertiesAndEven2, _excluded22);
-      return /* @__PURE__ */ React11.createElement("path", _extends8({}, otherPathProps2, {
+      return /* @__PURE__ */ React12.createElement("path", _extends8({}, otherPathProps2, {
         radius: typeof radius === "number" ? radius : void 0,
         className: layerClass,
         d: getRectanglePath(currX, currY, currWidth, currHeight, radius),
@@ -34227,7 +33961,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
 
   // node_modules/recharts/es6/shape/Sector.js
-  var React12 = __toESM(require_react());
+  var React13 = __toESM(require_react());
   var _templateObject10;
   var _templateObject22;
   var _templateObject32;
@@ -34447,7 +34181,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         endAngle
       });
     }
-    return /* @__PURE__ */ React12.createElement("path", _extends9({}, svgPropertiesAndEvents(props), {
+    return /* @__PURE__ */ React13.createElement("path", _extends9({}, svgPropertiesAndEvents(props), {
       className: layerClass,
       d: path2
     }));
@@ -40929,9 +40663,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       payloadIndex: activeTooltipIndex,
       className: clsx("recharts-tooltip-cursor", extraClassName)
     });
-    return /* @__PURE__ */ React13.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React14.createElement(ZIndexLayer, {
       zIndex: (_props$zIndex = props.zIndex) !== null && _props$zIndex !== void 0 ? _props$zIndex : preferredZIndex
-    }, /* @__PURE__ */ React13.createElement(RenderCursor, {
+    }, /* @__PURE__ */ React14.createElement(RenderCursor, {
       cursor,
       cursorComp,
       cursorProps
@@ -40945,7 +40679,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (tooltipAxisBandSize == null || offset == null || layout == null || chartName == null) {
       return null;
     }
-    return /* @__PURE__ */ React13.createElement(CursorInternal, _extends10({}, props, {
+    return /* @__PURE__ */ React14.createElement(CursorInternal, _extends10({}, props, {
       offset,
       layout,
       tooltipAxisBandSize,
@@ -41347,13 +41081,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     return entry.dataKey;
   }
   function renderContent(content, props) {
-    if (/* @__PURE__ */ React14.isValidElement(content)) {
-      return /* @__PURE__ */ React14.cloneElement(content, props);
+    if (/* @__PURE__ */ React15.isValidElement(content)) {
+      return /* @__PURE__ */ React15.cloneElement(content, props);
     }
     if (typeof content === "function") {
-      return /* @__PURE__ */ React14.createElement(content, props);
+      return /* @__PURE__ */ React15.createElement(content, props);
     }
-    return /* @__PURE__ */ React14.createElement(DefaultTooltipContent, props);
+    return /* @__PURE__ */ React15.createElement(DefaultTooltipContent, props);
   }
   var emptyPayload = [];
   var defaultTooltipProps = {
@@ -41453,7 +41187,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       coordinate,
       accessibilityLayer
     });
-    var tooltipElement = /* @__PURE__ */ React14.createElement(TooltipBoundingBox, {
+    var tooltipElement = /* @__PURE__ */ React15.createElement(TooltipBoundingBox, {
       allowEscapeViewBox,
       animationDuration,
       animationEasing,
@@ -41471,7 +41205,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       innerRef: updateBoundingBox,
       hasPortalFromProps: Boolean(portalFromProps)
     }, renderContent(content, tooltipContentProps));
-    return /* @__PURE__ */ React14.createElement(React14.Fragment, null, /* @__PURE__ */ (0, import_react_dom2.createPortal)(tooltipElement, tooltipPortal), finalIsActive && /* @__PURE__ */ React14.createElement(Cursor, {
+    return /* @__PURE__ */ React15.createElement(React15.Fragment, null, /* @__PURE__ */ (0, import_react_dom2.createPortal)(tooltipElement, tooltipPortal), finalIsActive && /* @__PURE__ */ React15.createElement(Cursor, {
       cursor,
       tooltipEventType,
       coordinate,
@@ -41485,7 +41219,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   Cell.displayName = "Cell";
 
   // node_modules/recharts/es6/component/Text.js
-  var React15 = __toESM(require_react());
+  var React16 = __toESM(require_react());
   var import_react25 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/LRUCache.js
@@ -42064,7 +41798,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (transforms.length) {
       textProps.transform = transforms.join(" ");
     }
-    return /* @__PURE__ */ React15.createElement("text", _extends11({}, svgPropertiesAndEvents(textProps), {
+    return /* @__PURE__ */ React16.createElement("text", _extends11({}, svgPropertiesAndEvents(textProps), {
       ref,
       x: x2,
       y: y2,
@@ -42075,7 +41809,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var words = line.words.join(breakAll ? "" : " ");
       return (
         // duplicate words will cause duplicate keys which is why we add the array index here
-        /* @__PURE__ */ React15.createElement("tspan", {
+        /* @__PURE__ */ React16.createElement("tspan", {
           x: x2,
           dy: index === 0 ? startDy : lineHeight,
           key: "".concat(words, "-").concat(index)
@@ -42086,7 +41820,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   Text.displayName = "Text";
 
   // node_modules/recharts/es6/component/Label.js
-  var React16 = __toESM(require_react());
+  var React17 = __toESM(require_react());
   var import_react26 = __toESM(require_react());
 
   // node_modules/recharts/es6/cartesian/getCartesianPosition.js
@@ -42380,7 +42114,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       width,
       height
     }), [x2, y2, upperWidth, lowerWidth, width, height]);
-    return /* @__PURE__ */ React16.createElement(CartesianLabelContext.Provider, {
+    return /* @__PURE__ */ React17.createElement(CartesianLabelContext.Provider, {
       value: viewBox
     }, children);
   };
@@ -42453,13 +42187,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var endPoint = polarToCartesian(cx, cy, radius, labelAngle + (direction ? 1 : -1) * 359);
     var path2 = "M".concat(startPoint.x, ",").concat(startPoint.y, "\n    A").concat(radius, ",").concat(radius, ",0,1,").concat(direction ? 0 : 1, ",\n    ").concat(endPoint.x, ",").concat(endPoint.y);
     var id = isNullish(labelProps.id) ? uniqueId("recharts-radial-line-") : labelProps.id;
-    return /* @__PURE__ */ React16.createElement("text", _extends12({}, attrs, {
+    return /* @__PURE__ */ React17.createElement("text", _extends12({}, attrs, {
       dominantBaseline: "central",
       className: clsx("recharts-radial-bar-label", className)
-    }), /* @__PURE__ */ React16.createElement("defs", null, /* @__PURE__ */ React16.createElement("path", {
+    }), /* @__PURE__ */ React17.createElement("defs", null, /* @__PURE__ */ React17.createElement("path", {
       id,
       d: path2
-    })), /* @__PURE__ */ React16.createElement("textPath", {
+    })), /* @__PURE__ */ React17.createElement("textPath", {
       xlinkHref: "#".concat(id)
     }, label));
   };
@@ -42624,9 +42358,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         height: cartesianResult.height
       } : {});
     }
-    return /* @__PURE__ */ React16.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React17.createElement(ZIndexLayer, {
       zIndex: props.zIndex
-    }, /* @__PURE__ */ React16.createElement(Text, _extends12({
+    }, /* @__PURE__ */ React17.createElement(Text, _extends12({
       ref: labelRef,
       className: clsx("recharts-label", className)
     }, attrs, positionAttrs, {
@@ -42648,12 +42382,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       labelRef
     };
     if (label === true) {
-      return /* @__PURE__ */ React16.createElement(Label, _extends12({
+      return /* @__PURE__ */ React17.createElement(Label, _extends12({
         key: "label-implicit"
       }, commonProps));
     }
     if (isNumOrStr(label)) {
-      return /* @__PURE__ */ React16.createElement(Label, _extends12({
+      return /* @__PURE__ */ React17.createElement(Label, _extends12({
         key: "label-implicit",
         value: label
       }, commonProps));
@@ -42664,19 +42398,19 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
           key: "label-implicit"
         }, commonProps));
       }
-      return /* @__PURE__ */ React16.createElement(Label, _extends12({
+      return /* @__PURE__ */ React17.createElement(Label, _extends12({
         key: "label-implicit",
         content: label
       }, commonProps));
     }
     if (isLabelContentAFunction(label)) {
-      return /* @__PURE__ */ React16.createElement(Label, _extends12({
+      return /* @__PURE__ */ React17.createElement(Label, _extends12({
         key: "label-implicit",
         content: label
       }, commonProps));
     }
     if (label && typeof label === "object") {
-      return /* @__PURE__ */ React16.createElement(Label, _extends12({}, label, {
+      return /* @__PURE__ */ React17.createElement(Label, _extends12({}, label, {
         key: "label-implicit"
       }, commonProps));
     }
@@ -42692,7 +42426,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
 
   // node_modules/recharts/es6/component/LabelList.js
-  var React17 = __toESM(require_react());
+  var React18 = __toESM(require_react());
   var import_react27 = __toESM(require_react());
   var _excluded9 = ["valueAccessor"];
   var _excluded25 = ["dataKey", "clockWise", "id", "textBreakAll", "zIndex"];
@@ -42757,9 +42491,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (!data || !data.length) {
       return null;
     }
-    return /* @__PURE__ */ React17.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React18.createElement(ZIndexLayer, {
       zIndex: zIndex !== null && zIndex !== void 0 ? zIndex : DefaultZIndexes.label
-    }, /* @__PURE__ */ React17.createElement(Layer, {
+    }, /* @__PURE__ */ React18.createElement(Layer, {
       className: "recharts-label-list"
     }, data.map((entry, index) => {
       var _restProps$fill;
@@ -42767,7 +42501,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var idProps = isNullish(id) ? {} : {
         id: "".concat(id, "-").concat(index)
       };
-      return /* @__PURE__ */ React17.createElement(Label, _extends13({
+      return /* @__PURE__ */ React18.createElement(Label, _extends13({
         key: "label-".concat(index)
       }, svgPropertiesAndEvents(entry), others, idProps, {
         /*
@@ -42795,18 +42529,18 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       return null;
     }
     if (label === true) {
-      return /* @__PURE__ */ React17.createElement(LabelList, {
+      return /* @__PURE__ */ React18.createElement(LabelList, {
         key: "labelList-implicit"
       });
     }
-    if (/* @__PURE__ */ React17.isValidElement(label) || isLabelContentAFunction(label)) {
-      return /* @__PURE__ */ React17.createElement(LabelList, {
+    if (/* @__PURE__ */ React18.isValidElement(label) || isLabelContentAFunction(label)) {
+      return /* @__PURE__ */ React18.createElement(LabelList, {
         key: "labelList-implicit",
         content: label
       });
     }
     if (typeof label === "object") {
-      return /* @__PURE__ */ React17.createElement(LabelList, _extends13({
+      return /* @__PURE__ */ React18.createElement(LabelList, _extends13({
         key: "labelList-implicit"
       }, label, {
         type: String(label.type)
@@ -42816,7 +42550,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
 
   // node_modules/recharts/es6/shape/Dot.js
-  var React18 = __toESM(require_react());
+  var React19 = __toESM(require_react());
   function _extends14() {
     return _extends14 = Object.assign ? Object.assign.bind() : function(n) {
       for (var e = 1; e < arguments.length; e++) {
@@ -42835,7 +42569,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = props;
     var layerClass = clsx("recharts-dot", className);
     if (isNumber(cx) && isNumber(cy) && isNumber(r2)) {
-      return /* @__PURE__ */ React18.createElement("circle", _extends14({}, svgPropertiesNoEvents(props), adaptEventHandlers(props), {
+      return /* @__PURE__ */ React19.createElement("circle", _extends14({}, svgPropertiesNoEvents(props), adaptEventHandlers(props), {
         className: layerClass,
         cx,
         cy,
@@ -42940,12 +42674,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   };
 
   // node_modules/recharts/es6/util/ActiveShapeUtils.js
-  var React20 = __toESM(require_react());
+  var React21 = __toESM(require_react());
   var import_react30 = __toESM(require_react());
   var import_isPlainObject = __toESM(require_isPlainObject2());
 
   // node_modules/recharts/es6/shape/Trapezoid.js
-  var React19 = __toESM(require_react());
+  var React20 = __toESM(require_react());
   var import_react29 = __toESM(require_react());
   var _templateObject11;
   var _templateObject23;
@@ -43063,7 +42797,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     }
     var layerClass = clsx("recharts-trapezoid", className);
     if (!isUpdateAnimationActive) {
-      return /* @__PURE__ */ React19.createElement("g", null, /* @__PURE__ */ React19.createElement("path", _extends15({}, svgPropertiesAndEvents(trapezoidProps), {
+      return /* @__PURE__ */ React20.createElement("g", null, /* @__PURE__ */ React20.createElement("path", _extends15({}, svgPropertiesAndEvents(trapezoidProps), {
         className: layerClass,
         d: getTrapezoidPath(x2, y2, upperWidth, lowerWidth, height)
       })));
@@ -43076,7 +42810,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var from2 = "0px ".concat(totalLength === -1 ? 1 : totalLength, "px");
     var to2 = "".concat(totalLength, "px ").concat(totalLength, "px");
     var transition = getTransitionVal(["strokeDasharray"], animationDuration, animationEasing);
-    return /* @__PURE__ */ React19.createElement(JavascriptAnimate, {
+    return /* @__PURE__ */ React20.createElement(JavascriptAnimate, {
       animationId,
       key: animationId,
       canBegin: totalLength > 0,
@@ -43103,7 +42837,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       } : {
         strokeDasharray: from2
       };
-      return /* @__PURE__ */ React19.createElement("path", _extends15({}, svgPropertiesAndEvents(trapezoidProps), {
+      return /* @__PURE__ */ React20.createElement("path", _extends15({}, svgPropertiesAndEvents(trapezoidProps), {
         className: layerClass,
         d: getTrapezoidPath(currX, currY, currUpperWidth, currLowerWidth, currHeight),
         ref: pathRef,
@@ -43183,18 +42917,18 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = _ref2;
     switch (shapeType) {
       case "rectangle":
-        return /* @__PURE__ */ React20.createElement(Rectangle, elementProps);
+        return /* @__PURE__ */ React21.createElement(Rectangle, elementProps);
       case "trapezoid":
-        return /* @__PURE__ */ React20.createElement(Trapezoid, elementProps);
+        return /* @__PURE__ */ React21.createElement(Trapezoid, elementProps);
       case "sector":
-        return /* @__PURE__ */ React20.createElement(Sector, elementProps);
+        return /* @__PURE__ */ React21.createElement(Sector, elementProps);
       case "symbols":
         if (isSymbolsProps(shapeType, elementProps)) {
-          return /* @__PURE__ */ React20.createElement(Symbols, elementProps);
+          return /* @__PURE__ */ React21.createElement(Symbols, elementProps);
         }
         break;
       case "curve":
-        return /* @__PURE__ */ React20.createElement(Curve, elementProps);
+        return /* @__PURE__ */ React21.createElement(Curve, elementProps);
       default:
         return null;
     }
@@ -43219,23 +42953,23 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       shape = option(props, props.index);
     } else if ((0, import_isPlainObject.default)(option) && typeof option !== "boolean") {
       var nextProps = defaultPropTransformer(option, props);
-      shape = /* @__PURE__ */ React20.createElement(ShapeSelector, {
+      shape = /* @__PURE__ */ React21.createElement(ShapeSelector, {
         shapeType,
         elementProps: nextProps
       });
     } else {
       var elementProps = props;
-      shape = /* @__PURE__ */ React20.createElement(ShapeSelector, {
+      shape = /* @__PURE__ */ React21.createElement(ShapeSelector, {
         shapeType,
         elementProps
       });
     }
     if (props.isActive) {
-      return /* @__PURE__ */ React20.createElement(Layer, {
+      return /* @__PURE__ */ React21.createElement(Layer, {
         className: activeClassName
       }, shape);
     }
-    return /* @__PURE__ */ React20.createElement(Layer, {
+    return /* @__PURE__ */ React21.createElement(Layer, {
       className: inActiveClassName
     }, shape);
   }
@@ -43342,17 +43076,17 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
 
   // node_modules/recharts/es6/context/RegisterGraphicalItemId.js
-  var React22 = __toESM(require_react());
+  var React23 = __toESM(require_react());
   var import_react33 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/useId.js
-  var React21 = __toESM(require_react());
+  var React22 = __toESM(require_react());
   var _ref;
   var useIdFallback = () => {
-    var [id] = React21.useState(() => uniqueId("uid-"));
+    var [id] = React22.useState(() => uniqueId("uid-"));
     return id;
   };
-  var useId = (_ref = React21["useId".toString()]) !== null && _ref !== void 0 ? _ref : useIdFallback;
+  var useId = (_ref = React22["useId".toString()]) !== null && _ref !== void 0 ? _ref : useIdFallback;
 
   // node_modules/recharts/es6/util/useUniqueId.js
   function useUniqueId(prefix2, customId) {
@@ -43372,7 +43106,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       children
     } = _ref2;
     var resolvedId = useUniqueId("recharts-".concat(type), id);
-    return /* @__PURE__ */ React22.createElement(GraphicalItemIdContext.Provider, {
+    return /* @__PURE__ */ React23.createElement(GraphicalItemIdContext.Provider, {
       value: resolvedId
     }, children(resolvedId));
   };
@@ -43485,7 +43219,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   var SetCartesianGraphicalItem = /* @__PURE__ */ (0, import_react34.memo)(SetCartesianGraphicalItemImpl);
 
   // node_modules/recharts/es6/component/Dots.js
-  var React23 = __toESM(require_react());
+  var React24 = __toESM(require_react());
   var import_react35 = __toESM(require_react());
   var _excluded11 = ["points"];
   function ownKeys29(e, r2) {
@@ -43569,7 +43303,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var _ref22 = dotProps !== null && dotProps !== void 0 ? dotProps : {}, {
       points
     } = _ref22, props = _objectWithoutProperties11(_ref22, _excluded11);
-    return /* @__PURE__ */ React23.createElement(Dot, _extends16({}, props, {
+    return /* @__PURE__ */ React24.createElement(Dot, _extends16({}, props, {
       className: finalClassName
     }));
   }
@@ -43612,7 +43346,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         payload: entry.payload,
         points
       });
-      return /* @__PURE__ */ React23.createElement(DotItem, {
+      return /* @__PURE__ */ React24.createElement(DotItem, {
         key: "dot-".concat(i),
         option: dot,
         dotProps,
@@ -43623,15 +43357,15 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (needClip && clipPathId != null) {
       layerProps.clipPath = "url(#clipPath-".concat(clipDot ? "" : "dots-").concat(clipPathId, ")");
     }
-    return /* @__PURE__ */ React23.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React24.createElement(ZIndexLayer, {
       zIndex
-    }, /* @__PURE__ */ React23.createElement(Layer, _extends16({
+    }, /* @__PURE__ */ React24.createElement(Layer, _extends16({
       className
     }, layerProps), dots));
   }
 
   // node_modules/recharts/es6/component/ActivePoints.js
-  var React24 = __toESM(require_react());
+  var React25 = __toESM(require_react());
   var import_react36 = __toESM(require_react());
 
   // node_modules/recharts/es6/state/cartesianAxisSlice.js
@@ -43900,9 +43634,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } else if (typeof activeDot === "function") {
       dot = activeDot(dotProps);
     } else {
-      dot = /* @__PURE__ */ React24.createElement(Dot, dotProps);
+      dot = /* @__PURE__ */ React25.createElement(Dot, dotProps);
     }
-    return /* @__PURE__ */ React24.createElement(Layer, {
+    return /* @__PURE__ */ React25.createElement(Layer, {
       className: "recharts-active-dot",
       clipPath
     }, dot);
@@ -43925,9 +43659,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (isNullish(activePoint)) {
       return null;
     }
-    return /* @__PURE__ */ React24.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React25.createElement(ZIndexLayer, {
       zIndex
-    }, /* @__PURE__ */ React24.createElement(ActivePoint, {
+    }, /* @__PURE__ */ React25.createElement(ActivePoint, {
       point: activePoint,
       childIndex: Number(activeTooltipIndex),
       mainColor,
@@ -44193,7 +43927,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   var brushReducer = brushSlice.reducer;
 
   // node_modules/recharts/es6/cartesian/ReferenceLine.js
-  var React26 = __toESM(require_react());
+  var React27 = __toESM(require_react());
   var import_react39 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/CartesianUtils.js
@@ -44294,7 +44028,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   var referenceElementsReducer = referenceElementsSlice.reducer;
 
   // node_modules/recharts/es6/container/ClipPathProvider.js
-  var React25 = __toESM(require_react());
+  var React26 = __toESM(require_react());
   var import_react38 = __toESM(require_react());
   var ClipPathIdContext = /* @__PURE__ */ (0, import_react38.createContext)(void 0);
   var ClipPathProvider = (_ref2) => {
@@ -44312,11 +44046,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       width,
       height
     } = plotArea;
-    return /* @__PURE__ */ React25.createElement(ClipPathIdContext.Provider, {
+    return /* @__PURE__ */ React26.createElement(ClipPathIdContext.Provider, {
       value: clipPathId
-    }, /* @__PURE__ */ React25.createElement("defs", null, /* @__PURE__ */ React25.createElement("clipPath", {
+    }, /* @__PURE__ */ React26.createElement("defs", null, /* @__PURE__ */ React26.createElement("clipPath", {
       id: clipPathId
-    }, /* @__PURE__ */ React25.createElement("rect", {
+    }, /* @__PURE__ */ React26.createElement("rect", {
       x: x2,
       y: y2,
       height,
@@ -44442,15 +44176,15 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   }
   var renderLine = (option, props) => {
     var line;
-    if (/* @__PURE__ */ React26.isValidElement(option)) {
-      line = /* @__PURE__ */ React26.cloneElement(option, props);
+    if (/* @__PURE__ */ React27.isValidElement(option)) {
+      line = /* @__PURE__ */ React27.cloneElement(option, props);
     } else if (typeof option === "function") {
       line = option(props);
     } else {
       if (!isWellBehavedNumber(props.x1) || !isWellBehavedNumber(props.y1) || !isWellBehavedNumber(props.x2) || !isWellBehavedNumber(props.y2)) {
         return null;
       }
-      line = /* @__PURE__ */ React26.createElement("line", _extends17({}, props, {
+      line = /* @__PURE__ */ React27.createElement("line", _extends17({}, props, {
         className: "recharts-reference-line-line"
       }));
     }
@@ -44598,14 +44332,14 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       x2,
       y2
     });
-    return /* @__PURE__ */ React26.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React27.createElement(ZIndexLayer, {
       zIndex: props.zIndex
-    }, /* @__PURE__ */ React26.createElement(Layer, {
+    }, /* @__PURE__ */ React27.createElement(Layer, {
       className: clsx("recharts-reference-line", className)
-    }, renderLine(shape, lineProps), /* @__PURE__ */ React26.createElement(CartesianLabelContextProvider, _extends17({}, rect, {
+    }, renderLine(shape, lineProps), /* @__PURE__ */ React27.createElement(CartesianLabelContextProvider, _extends17({}, rect, {
       lowerWidth: rect.width,
       upperWidth: rect.width
-    }), /* @__PURE__ */ React26.createElement(CartesianLabelFromLabelProp, {
+    }), /* @__PURE__ */ React27.createElement(CartesianLabelFromLabelProp, {
       label: props.label
     }), props.children)));
   }
@@ -44623,19 +44357,19 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   };
   function ReferenceLine(outsideProps) {
     var props = resolveDefaultProps(outsideProps, referenceLineDefaultProps);
-    return /* @__PURE__ */ React26.createElement(React26.Fragment, null, /* @__PURE__ */ React26.createElement(ReportReferenceLine, {
+    return /* @__PURE__ */ React27.createElement(React27.Fragment, null, /* @__PURE__ */ React27.createElement(ReportReferenceLine, {
       yAxisId: props.yAxisId,
       xAxisId: props.xAxisId,
       ifOverflow: props.ifOverflow,
       x: props.x,
       y: props.y,
       segment: props.segment
-    }), /* @__PURE__ */ React26.createElement(ReferenceLineImpl, props));
+    }), /* @__PURE__ */ React27.createElement(ReferenceLineImpl, props));
   }
   ReferenceLine.displayName = "ReferenceLine";
 
   // node_modules/recharts/es6/cartesian/CartesianAxis.js
-  var React27 = __toESM(require_react());
+  var React28 = __toESM(require_react());
   var import_react40 = __toESM(require_react());
   var import_get4 = __toESM(require_get2());
 
@@ -45189,7 +44923,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         y2: y2 + height
       });
     }
-    return /* @__PURE__ */ React27.createElement("line", _extends18({}, props, {
+    return /* @__PURE__ */ React28.createElement("line", _extends18({}, props, {
       className: clsx("recharts-cartesian-axis-line", (0, import_get4.default)(axisLine, "className"))
     }));
   }
@@ -45270,8 +45004,8 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = props;
     var tickItem;
     var combinedClassName = clsx(tickProps.className, "recharts-cartesian-axis-tick-value");
-    if (/* @__PURE__ */ React27.isValidElement(option)) {
-      tickItem = /* @__PURE__ */ React27.cloneElement(option, _objectSpread35(_objectSpread35({}, tickProps), {}, {
+    if (/* @__PURE__ */ React28.isValidElement(option)) {
+      tickItem = /* @__PURE__ */ React28.cloneElement(option, _objectSpread35(_objectSpread35({}, tickProps), {}, {
         className: combinedClassName
       }));
     } else if (typeof option === "function") {
@@ -45283,7 +45017,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       if (typeof option !== "boolean") {
         className = clsx(className, getClassNameFromUnknown(option));
       }
-      tickItem = /* @__PURE__ */ React27.createElement(Text, _extends18({}, tickProps, {
+      tickItem = /* @__PURE__ */ React28.createElement(Text, _extends18({}, tickProps, {
         className
       }), value);
     }
@@ -45367,10 +45101,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         entry,
         line: lineCoord
       } = _ref2;
-      return /* @__PURE__ */ React27.createElement(Layer, {
+      return /* @__PURE__ */ React28.createElement(Layer, {
         className: "recharts-cartesian-axis-tick",
         key: "tick-".concat(entry.value, "-").concat(entry.coordinate, "-").concat(entry.tickCoord)
-      }, tickLine && /* @__PURE__ */ React27.createElement("line", _extends18({}, tickLineProps, lineCoord, {
+      }, tickLine && /* @__PURE__ */ React28.createElement("line", _extends18({}, tickLineProps, lineCoord, {
         className: clsx("recharts-cartesian-axis-tick-line", (0, import_get4.default)(tickLine, "className"))
       })));
     });
@@ -45396,27 +45130,27 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         angle: (_ref4 = (_tickTextProps$angle = tickTextProps === null || tickTextProps === void 0 ? void 0 : tickTextProps.angle) !== null && _tickTextProps$angle !== void 0 ? _tickTextProps$angle : axisProps.angle) !== null && _ref4 !== void 0 ? _ref4 : 0
       });
       var finalTickProps = _objectSpread35(_objectSpread35({}, tickProps), customTickProps);
-      return /* @__PURE__ */ React27.createElement(Layer, _extends18({
+      return /* @__PURE__ */ React28.createElement(Layer, _extends18({
         className: "recharts-cartesian-axis-tick-label",
         key: "tick-label-".concat(entry.value, "-").concat(entry.coordinate, "-").concat(entry.tickCoord)
-      }, adaptEventsOfChild(events, entry, i)), tick && /* @__PURE__ */ React27.createElement(TickItem, {
+      }, adaptEventsOfChild(events, entry, i)), tick && /* @__PURE__ */ React28.createElement(TickItem, {
         option: tick,
         tickProps: finalTickProps,
         value: "".concat(typeof tickFormatter === "function" ? tickFormatter(entry.value, i) : entry.value).concat(unit2 || "")
       }));
     });
-    return /* @__PURE__ */ React27.createElement("g", {
+    return /* @__PURE__ */ React28.createElement("g", {
       className: "recharts-cartesian-axis-ticks recharts-".concat(axisType, "-ticks")
-    }, /* @__PURE__ */ React27.createElement(RenderedTicksReporter, {
+    }, /* @__PURE__ */ React28.createElement(RenderedTicksReporter, {
       ticks: finalTicks,
       axisId,
       axisType
-    }), tickLabels.length > 0 && /* @__PURE__ */ React27.createElement(ZIndexLayer, {
+    }), tickLabels.length > 0 && /* @__PURE__ */ React28.createElement(ZIndexLayer, {
       zIndex: DefaultZIndexes.label
-    }, /* @__PURE__ */ React27.createElement("g", {
+    }, /* @__PURE__ */ React28.createElement("g", {
       className: "recharts-cartesian-axis-tick-labels recharts-".concat(axisType, "-tick-labels"),
       ref
-    }, tickLabels)), tickLines.length > 0 && /* @__PURE__ */ React27.createElement("g", {
+    }, tickLabels)), tickLines.length > 0 && /* @__PURE__ */ React28.createElement("g", {
       className: "recharts-cartesian-axis-tick-lines recharts-".concat(axisType, "-tick-lines")
     }, tickLines));
   });
@@ -45468,11 +45202,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (width != null && width <= 0 || height != null && height <= 0) {
       return null;
     }
-    return /* @__PURE__ */ React27.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React28.createElement(ZIndexLayer, {
       zIndex: props.zIndex
-    }, /* @__PURE__ */ React27.createElement(Layer, {
+    }, /* @__PURE__ */ React28.createElement(Layer, {
       className: clsx("recharts-cartesian-axis", className)
-    }, /* @__PURE__ */ React27.createElement(AxisLine, {
+    }, /* @__PURE__ */ React28.createElement(AxisLine, {
       x: props.x,
       y: props.y,
       width,
@@ -45481,7 +45215,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       mirror: props.mirror,
       axisLine,
       otherSvgProps: svgPropertiesNoEvents(props)
-    }), /* @__PURE__ */ React27.createElement(Ticks, {
+    }), /* @__PURE__ */ React28.createElement(Ticks, {
       ref: layerRef,
       axisType,
       events: rest,
@@ -45505,28 +45239,28 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       x: props.x,
       y: props.y,
       axisId
-    }), /* @__PURE__ */ React27.createElement(CartesianLabelContextProvider, {
+    }), /* @__PURE__ */ React28.createElement(CartesianLabelContextProvider, {
       x: props.x,
       y: props.y,
       width: props.width,
       height: props.height,
       lowerWidth: props.width,
       upperWidth: props.width
-    }, /* @__PURE__ */ React27.createElement(CartesianLabelFromLabelProp, {
+    }, /* @__PURE__ */ React28.createElement(CartesianLabelFromLabelProp, {
       label: props.label,
       labelRef: props.labelRef
     }), props.children)));
   });
-  var CartesianAxis = /* @__PURE__ */ React27.forwardRef((outsideProps, ref) => {
+  var CartesianAxis = /* @__PURE__ */ React28.forwardRef((outsideProps, ref) => {
     var props = resolveDefaultProps(outsideProps, defaultCartesianAxisProps);
-    return /* @__PURE__ */ React27.createElement(CartesianAxisComponent, _extends18({}, props, {
+    return /* @__PURE__ */ React28.createElement(CartesianAxisComponent, _extends18({}, props, {
       ref
     }));
   });
   CartesianAxis.displayName = "CartesianAxis";
 
   // node_modules/recharts/es6/cartesian/CartesianGrid.js
-  var React28 = __toESM(require_react());
+  var React29 = __toESM(require_react());
   var _excluded13 = ["x1", "y1", "x2", "y2", "key"];
   var _excluded26 = ["offset"];
   var _excluded32 = ["xAxisId", "yAxisId"];
@@ -45611,7 +45345,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       height,
       ry
     } = props;
-    return /* @__PURE__ */ React28.createElement("rect", {
+    return /* @__PURE__ */ React29.createElement("rect", {
       x: x2,
       y: y2,
       ry,
@@ -45629,8 +45363,8 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       lineItemProps
     } = _ref2;
     var lineItem;
-    if (/* @__PURE__ */ React28.isValidElement(option)) {
-      lineItem = /* @__PURE__ */ React28.cloneElement(option, lineItemProps);
+    if (/* @__PURE__ */ React29.isValidElement(option)) {
+      lineItem = /* @__PURE__ */ React29.cloneElement(option, lineItemProps);
     } else if (typeof option === "function") {
       lineItem = option(lineItemProps);
     } else {
@@ -45645,7 +45379,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var _ref22 = (_svgPropertiesNoEvent = svgPropertiesNoEvents(others)) !== null && _svgPropertiesNoEvent !== void 0 ? _svgPropertiesNoEvent : {}, {
         offset: __
       } = _ref22, restOfFilteredProps = _objectWithoutProperties13(_ref22, _excluded26);
-      lineItem = /* @__PURE__ */ React28.createElement("line", _extends19({}, restOfFilteredProps, {
+      lineItem = /* @__PURE__ */ React29.createElement("line", _extends19({}, restOfFilteredProps, {
         x1,
         y1,
         x2,
@@ -45679,13 +45413,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         key: "line-".concat(i),
         index: i
       });
-      return /* @__PURE__ */ React28.createElement(LineItem, {
+      return /* @__PURE__ */ React29.createElement(LineItem, {
         key: "line-".concat(i),
         option: horizontal,
         lineItemProps
       });
     });
-    return /* @__PURE__ */ React28.createElement("g", {
+    return /* @__PURE__ */ React29.createElement("g", {
       className: "recharts-cartesian-grid-horizontal"
     }, items);
   }
@@ -45712,13 +45446,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         key: "line-".concat(i),
         index: i
       });
-      return /* @__PURE__ */ React28.createElement(LineItem, {
+      return /* @__PURE__ */ React29.createElement(LineItem, {
         option: vertical,
         lineItemProps,
         key: "line-".concat(i)
       });
     });
-    return /* @__PURE__ */ React28.createElement("g", {
+    return /* @__PURE__ */ React29.createElement("g", {
       className: "recharts-cartesian-grid-vertical"
     }, items);
   }
@@ -45748,7 +45482,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         return null;
       }
       var colorIndex = i % horizontalFill.length;
-      return /* @__PURE__ */ React28.createElement("rect", {
+      return /* @__PURE__ */ React29.createElement("rect", {
         key: "react-".concat(i),
         y: entry,
         x: x2,
@@ -45760,7 +45494,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         className: "recharts-cartesian-grid-bg"
       });
     });
-    return /* @__PURE__ */ React28.createElement("g", {
+    return /* @__PURE__ */ React29.createElement("g", {
       className: "recharts-cartesian-gridstripes-horizontal"
     }, items);
   }
@@ -45790,7 +45524,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         return null;
       }
       var colorIndex = i % verticalFill.length;
-      return /* @__PURE__ */ React28.createElement("rect", {
+      return /* @__PURE__ */ React29.createElement("rect", {
         key: "react-".concat(i),
         x: entry,
         y: y2,
@@ -45802,7 +45536,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         className: "recharts-cartesian-grid-bg"
       });
     });
-    return /* @__PURE__ */ React28.createElement("g", {
+    return /* @__PURE__ */ React29.createElement("g", {
       className: "recharts-cartesian-gridstripes-vertical"
     }, items);
   }
@@ -45920,11 +45654,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         verticalPoints = _generatorResult;
       }
     }
-    return /* @__PURE__ */ React28.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React29.createElement(ZIndexLayer, {
       zIndex: propsIncludingDefaults.zIndex
-    }, /* @__PURE__ */ React28.createElement("g", {
+    }, /* @__PURE__ */ React29.createElement("g", {
       className: "recharts-cartesian-grid"
-    }, /* @__PURE__ */ React28.createElement(Background, {
+    }, /* @__PURE__ */ React29.createElement(Background, {
       fill: propsIncludingDefaults.fill,
       fillOpacity: propsIncludingDefaults.fillOpacity,
       x: propsIncludingDefaults.x,
@@ -45932,16 +45666,16 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       width: propsIncludingDefaults.width,
       height: propsIncludingDefaults.height,
       ry: propsIncludingDefaults.ry
-    }), /* @__PURE__ */ React28.createElement(HorizontalStripes, _extends19({}, propsIncludingDefaults, {
+    }), /* @__PURE__ */ React29.createElement(HorizontalStripes, _extends19({}, propsIncludingDefaults, {
       horizontalPoints
-    })), /* @__PURE__ */ React28.createElement(VerticalStripes, _extends19({}, propsIncludingDefaults, {
+    })), /* @__PURE__ */ React29.createElement(VerticalStripes, _extends19({}, propsIncludingDefaults, {
       verticalPoints
-    })), /* @__PURE__ */ React28.createElement(HorizontalGridLines, _extends19({}, propsIncludingDefaults, {
+    })), /* @__PURE__ */ React29.createElement(HorizontalGridLines, _extends19({}, propsIncludingDefaults, {
       offset,
       horizontalPoints,
       xAxis,
       yAxis
-    })), /* @__PURE__ */ React28.createElement(VerticalGridLines, _extends19({}, propsIncludingDefaults, {
+    })), /* @__PURE__ */ React29.createElement(VerticalGridLines, _extends19({}, propsIncludingDefaults, {
       offset,
       verticalPoints,
       xAxis,
@@ -45951,11 +45685,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   CartesianGrid.displayName = "CartesianGrid";
 
   // node_modules/recharts/es6/cartesian/Line.js
-  var React31 = __toESM(require_react());
+  var React32 = __toESM(require_react());
   var import_react42 = __toESM(require_react());
 
   // node_modules/recharts/es6/context/ErrorBarContext.js
-  var React29 = __toESM(require_react());
+  var React30 = __toESM(require_react());
   var import_react41 = __toESM(require_react());
 
   // node_modules/recharts/es6/state/errorBarSlice.js
@@ -46038,13 +45772,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var {
       children
     } = props, rest = _objectWithoutProperties14(props, _excluded14);
-    return /* @__PURE__ */ React29.createElement(ErrorBarContext.Provider, {
+    return /* @__PURE__ */ React30.createElement(ErrorBarContext.Provider, {
       value: rest
     }, children);
   }
 
   // node_modules/recharts/es6/cartesian/GraphicalItemClipPath.js
-  var React30 = __toESM(require_react());
+  var React31 = __toESM(require_react());
   function useNeedsClip(xAxisId, yAxisId) {
     var _xAxis$allowDataOverf, _yAxis$allowDataOverf;
     var xAxis = useAppSelector((state) => selectXAxisSettings(state, xAxisId));
@@ -46079,9 +45813,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       width,
       height
     } = plotArea;
-    return /* @__PURE__ */ React30.createElement("clipPath", {
+    return /* @__PURE__ */ React31.createElement("clipPath", {
       id: "clipPath-".concat(clipPathId)
-    }, /* @__PURE__ */ React30.createElement("rect", {
+    }, /* @__PURE__ */ React31.createElement("rect", {
       x: needClipX ? x2 : x2 - width / 2,
       y: needClipY ? y2 : y2 - height / 2,
       width: needClipX ? width : width * 2,
@@ -46254,7 +45988,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       payload: props
     }];
   };
-  var SetLineTooltipEntrySettings = /* @__PURE__ */ React31.memo((_ref2) => {
+  var SetLineTooltipEntrySettings = /* @__PURE__ */ React32.memo((_ref2) => {
     var {
       dataKey,
       data,
@@ -46284,7 +46018,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         graphicalItemId: id
       }
     };
-    return /* @__PURE__ */ React31.createElement(SetTooltipEntrySettings, {
+    return /* @__PURE__ */ React32.createElement(SetTooltipEntrySettings, {
       tooltipEntrySettings
     });
   });
@@ -46333,7 +46067,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       id
     } = props, propsWithoutId = _objectWithoutProperties15(props, _excluded15);
     var lineProps = svgPropertiesNoEvents(propsWithoutId);
-    return /* @__PURE__ */ React31.createElement(Dots, {
+    return /* @__PURE__ */ React32.createElement(Dots, {
       points,
       dot,
       className: "recharts-line-dots",
@@ -46374,7 +46108,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         });
       });
     }, [points]);
-    return /* @__PURE__ */ React31.createElement(CartesianLabelListContextProvider, {
+    return /* @__PURE__ */ React32.createElement(CartesianLabelListContextProvider, {
       value: showLabels ? labelListEntries : void 0
     }, children);
   }
@@ -46403,12 +46137,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       connectNulls,
       strokeDasharray: strokeDasharray !== null && strokeDasharray !== void 0 ? strokeDasharray : props.strokeDasharray
     });
-    return /* @__PURE__ */ React31.createElement(React31.Fragment, null, (points === null || points === void 0 ? void 0 : points.length) > 1 && /* @__PURE__ */ React31.createElement(Shape, _extends20({
+    return /* @__PURE__ */ React32.createElement(React32.Fragment, null, (points === null || points === void 0 ? void 0 : points.length) > 1 && /* @__PURE__ */ React32.createElement(Shape, _extends20({
       shapeType: "curve",
       option: shape
     }, curveProps, {
       pathRef
-    })), /* @__PURE__ */ React31.createElement(LineDotsWrapper, {
+    })), /* @__PURE__ */ React32.createElement(LineDotsWrapper, {
       points,
       clipPathId,
       props
@@ -46466,10 +46200,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       animationIdRef.current = animationId;
     }
     var startingPoint = startingPointRef.current;
-    return /* @__PURE__ */ React31.createElement(LineLabelListProvider, {
+    return /* @__PURE__ */ React32.createElement(LineLabelListProvider, {
       points,
       showLabels
-    }, props.children, /* @__PURE__ */ React31.createElement(JavascriptAnimate, {
+    }, props.children, /* @__PURE__ */ React32.createElement(JavascriptAnimate, {
       animationId,
       begin: animationBegin,
       duration: animationDuration,
@@ -46519,7 +46253,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
           });
         });
         previousPointsRef.current = stepData;
-        return /* @__PURE__ */ React31.createElement(StaticCurve, {
+        return /* @__PURE__ */ React32.createElement(StaticCurve, {
           props,
           points: stepData,
           clipPathId,
@@ -46527,14 +46261,14 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
           strokeDasharray: currentStrokeDasharray
         });
       }
-      return /* @__PURE__ */ React31.createElement(StaticCurve, {
+      return /* @__PURE__ */ React32.createElement(StaticCurve, {
         props,
         points,
         clipPathId,
         pathRef,
         strokeDasharray: currentStrokeDasharray
       });
-    }), /* @__PURE__ */ React31.createElement(LabelListFromLabelProp, {
+    }), /* @__PURE__ */ React32.createElement(LabelListFromLabelProp, {
       label: props.label
     }));
   }
@@ -46546,7 +46280,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var previousPointsRef = (0, import_react42.useRef)(null);
     var longestAnimatedLengthRef = (0, import_react42.useRef)(0);
     var pathRef = (0, import_react42.useRef)(null);
-    return /* @__PURE__ */ React31.createElement(CurveWithAnimation, {
+    return /* @__PURE__ */ React32.createElement(CurveWithAnimation, {
       props,
       clipPathId,
       previousPointsRef,
@@ -46593,31 +46327,31 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var clipDot = isClipDot(dot);
       var dotSize = r2 * 2 + strokeWidth;
       var activePointsClipPath = needClip ? "url(#clipPath-".concat(clipDot ? "" : "dots-").concat(clipPathId, ")") : void 0;
-      return /* @__PURE__ */ React31.createElement(ZIndexLayer, {
+      return /* @__PURE__ */ React32.createElement(ZIndexLayer, {
         zIndex
-      }, /* @__PURE__ */ React31.createElement(Layer, {
+      }, /* @__PURE__ */ React32.createElement(Layer, {
         className: layerClass
-      }, needClip && /* @__PURE__ */ React31.createElement("defs", null, /* @__PURE__ */ React31.createElement(GraphicalItemClipPath, {
+      }, needClip && /* @__PURE__ */ React32.createElement("defs", null, /* @__PURE__ */ React32.createElement(GraphicalItemClipPath, {
         clipPathId,
         xAxisId,
         yAxisId
-      }), !clipDot && /* @__PURE__ */ React31.createElement("clipPath", {
+      }), !clipDot && /* @__PURE__ */ React32.createElement("clipPath", {
         id: "clipPath-dots-".concat(clipPathId)
-      }, /* @__PURE__ */ React31.createElement("rect", {
+      }, /* @__PURE__ */ React32.createElement("rect", {
         x: left - dotSize / 2,
         y: top - dotSize / 2,
         width: width + dotSize,
         height: height + dotSize
-      }))), /* @__PURE__ */ React31.createElement(SetErrorBarContext, {
+      }))), /* @__PURE__ */ React32.createElement(SetErrorBarContext, {
         xAxisId,
         yAxisId,
         data: points,
         dataPointFormatter: errorBarDataPointFormatter,
         errorBarOffset: 0
-      }, /* @__PURE__ */ React31.createElement(RenderCurve, {
+      }, /* @__PURE__ */ React32.createElement(RenderCurve, {
         props: this.props,
         clipPathId
-      }))), /* @__PURE__ */ React31.createElement(ActivePoints, {
+      }))), /* @__PURE__ */ React32.createElement(ActivePoints, {
         activeDot: this.props.activeDot,
         points,
         mainColor: this.props.stroke,
@@ -46679,7 +46413,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       x: left,
       y: top
     } = plotArea;
-    return /* @__PURE__ */ React31.createElement(LineWithState, _extends20({}, everythingElse, {
+    return /* @__PURE__ */ React32.createElement(LineWithState, _extends20({}, everythingElse, {
       id,
       connectNulls,
       dot,
@@ -46754,12 +46488,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   function LineFn(outsideProps) {
     var props = resolveDefaultProps(outsideProps, defaultLineProps);
     var isPanorama = useIsPanorama();
-    return /* @__PURE__ */ React31.createElement(RegisterGraphicalItemId, {
+    return /* @__PURE__ */ React32.createElement(RegisterGraphicalItemId, {
       id: props.id,
       type: "line"
-    }, (id) => /* @__PURE__ */ React31.createElement(React31.Fragment, null, /* @__PURE__ */ React31.createElement(SetLegendPayload, {
+    }, (id) => /* @__PURE__ */ React32.createElement(React32.Fragment, null, /* @__PURE__ */ React32.createElement(SetLegendPayload, {
       legendPayload: computeLegendPayloadFromAreaData(props)
-    }), /* @__PURE__ */ React31.createElement(SetLineTooltipEntrySettings, {
+    }), /* @__PURE__ */ React32.createElement(SetLineTooltipEntrySettings, {
       dataKey: props.dataKey,
       data: props.data,
       stroke: props.stroke,
@@ -46770,7 +46504,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       unit: props.unit,
       tooltipType: props.tooltipType,
       id
-    }), /* @__PURE__ */ React31.createElement(SetCartesianGraphicalItem, {
+    }), /* @__PURE__ */ React32.createElement(SetCartesianGraphicalItem, {
       type: "line",
       id,
       data: props.data,
@@ -46780,15 +46514,15 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       dataKey: props.dataKey,
       hide: props.hide,
       isPanorama
-    }), /* @__PURE__ */ React31.createElement(LineImpl, _extends20({}, props, {
+    }), /* @__PURE__ */ React32.createElement(LineImpl, _extends20({}, props, {
       id
     }))));
   }
-  var Line = /* @__PURE__ */ React31.memo(LineFn, propsAreEqual);
+  var Line = /* @__PURE__ */ React32.memo(LineFn, propsAreEqual);
   Line.displayName = "Line";
 
   // node_modules/recharts/es6/cartesian/Area.js
-  var React32 = __toESM(require_react());
+  var React33 = __toESM(require_react());
   var import_react43 = __toESM(require_react());
 
   // node_modules/recharts/es6/state/selectors/graphicalItemSelectors.js
@@ -46971,7 +46705,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       payload: props
     }];
   };
-  var SetAreaTooltipEntrySettings = /* @__PURE__ */ React32.memo((_ref2) => {
+  var SetAreaTooltipEntrySettings = /* @__PURE__ */ React33.memo((_ref2) => {
     var {
       dataKey,
       data,
@@ -47001,7 +46735,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         graphicalItemId: id
       }
     };
-    return /* @__PURE__ */ React32.createElement(SetTooltipEntrySettings, {
+    return /* @__PURE__ */ React33.createElement(SetTooltipEntrySettings, {
       tooltipEntrySettings
     });
   });
@@ -47017,7 +46751,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       dataKey
     } = props;
     var areaProps = svgPropertiesNoEvents(props);
-    return /* @__PURE__ */ React32.createElement(Dots, {
+    return /* @__PURE__ */ React33.createElement(Dots, {
       points,
       dot,
       className: "recharts-area-dots",
@@ -47052,7 +46786,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         fill: void 0
       });
     });
-    return /* @__PURE__ */ React32.createElement(CartesianLabelListContextProvider, {
+    return /* @__PURE__ */ React33.createElement(CartesianLabelListContextProvider, {
       value: showLabels ? labelListEntries : void 0
     }, children);
   }
@@ -47076,9 +46810,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = props, propsWithoutId = _objectWithoutProperties16(props, _excluded16);
     var allOtherProps = svgPropertiesNoEvents(propsWithoutId);
     var propsWithEvents = svgPropertiesAndEvents(propsWithoutId);
-    return /* @__PURE__ */ React32.createElement(React32.Fragment, null, (points === null || points === void 0 ? void 0 : points.length) > 1 && /* @__PURE__ */ React32.createElement(Layer, {
+    return /* @__PURE__ */ React33.createElement(React33.Fragment, null, (points === null || points === void 0 ? void 0 : points.length) > 1 && /* @__PURE__ */ React33.createElement(Layer, {
       clipPath: needClip ? "url(#clipPath-".concat(clipPathId, ")") : void 0
-    }, /* @__PURE__ */ React32.createElement(Curve, _extends21({}, propsWithEvents, {
+    }, /* @__PURE__ */ React33.createElement(Curve, _extends21({}, propsWithEvents, {
       id,
       points,
       connectNulls,
@@ -47087,21 +46821,21 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       layout,
       stroke: "none",
       className: "recharts-area-area"
-    })), stroke !== "none" && /* @__PURE__ */ React32.createElement(Curve, _extends21({}, allOtherProps, {
+    })), stroke !== "none" && /* @__PURE__ */ React33.createElement(Curve, _extends21({}, allOtherProps, {
       className: "recharts-area-curve",
       layout,
       type,
       connectNulls,
       fill: "none",
       points
-    })), stroke !== "none" && isRange && Array.isArray(baseLine) && /* @__PURE__ */ React32.createElement(Curve, _extends21({}, allOtherProps, {
+    })), stroke !== "none" && isRange && Array.isArray(baseLine) && /* @__PURE__ */ React33.createElement(Curve, _extends21({}, allOtherProps, {
       className: "recharts-area-curve",
       layout,
       type,
       connectNulls,
       fill: "none",
       points: baseLine
-    }))), /* @__PURE__ */ React32.createElement(AreaDotsWrapper, {
+    }))), /* @__PURE__ */ React33.createElement(AreaDotsWrapper, {
       points,
       props: propsWithoutId,
       clipPathId
@@ -47128,7 +46862,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       maxX = Math.max(...baseLine.map((entry) => entry.x || 0), maxX);
     }
     if (isNumber(maxX)) {
-      return /* @__PURE__ */ React32.createElement("rect", {
+      return /* @__PURE__ */ React33.createElement("rect", {
         x: 0,
         y: startY < endY ? startY : startY - height,
         width: maxX + (strokeWidth ? parseInt("".concat(strokeWidth), 10) : 1),
@@ -47158,7 +46892,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       maxY = Math.max(...baseLine.map((entry) => entry.y || 0), maxY);
     }
     if (isNumber(maxY)) {
-      return /* @__PURE__ */ React32.createElement("rect", {
+      return /* @__PURE__ */ React33.createElement("rect", {
         x: startX < endX ? startX : startX - width,
         y: 0,
         width,
@@ -47176,14 +46910,14 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       strokeWidth
     } = _ref7;
     if (layout === "vertical") {
-      return /* @__PURE__ */ React32.createElement(VerticalRect, {
+      return /* @__PURE__ */ React33.createElement(VerticalRect, {
         alpha: alpha2,
         points,
         baseLine,
         strokeWidth
       });
     }
-    return /* @__PURE__ */ React32.createElement(HorizontalRect, {
+    return /* @__PURE__ */ React33.createElement(HorizontalRect, {
       alpha: alpha2,
       points,
       baseLine,
@@ -47233,10 +46967,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     }
     var prevPoints = previousPointsRef.current;
     var prevBaseLine = previousBaselineRef.current;
-    return /* @__PURE__ */ React32.createElement(AreaLabelListProvider, {
+    return /* @__PURE__ */ React33.createElement(AreaLabelListProvider, {
       showLabels,
       points
-    }, props.children, /* @__PURE__ */ React32.createElement(JavascriptAnimate, {
+    }, props.children, /* @__PURE__ */ React33.createElement(JavascriptAnimate, {
       animationId,
       begin: animationBegin,
       duration: animationDuration,
@@ -47290,7 +47024,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
           previousPointsRef.current = stepPoints;
           previousBaselineRef.current = stepBaseLine;
         }
-        return /* @__PURE__ */ React32.createElement(StaticArea, {
+        return /* @__PURE__ */ React33.createElement(StaticArea, {
           points: stepPoints,
           baseLine: stepBaseLine,
           needClip,
@@ -47302,24 +47036,24 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         previousPointsRef.current = points;
         previousBaselineRef.current = baseLine;
       }
-      return /* @__PURE__ */ React32.createElement(Layer, null, isAnimationActive && /* @__PURE__ */ React32.createElement("defs", null, /* @__PURE__ */ React32.createElement("clipPath", {
+      return /* @__PURE__ */ React33.createElement(Layer, null, isAnimationActive && /* @__PURE__ */ React33.createElement("defs", null, /* @__PURE__ */ React33.createElement("clipPath", {
         id: "animationClipPath-".concat(clipPathId)
-      }, /* @__PURE__ */ React32.createElement(ClipRect, {
+      }, /* @__PURE__ */ React33.createElement(ClipRect, {
         alpha: t,
         points,
         baseLine,
         layout,
         strokeWidth: props.strokeWidth
-      }))), /* @__PURE__ */ React32.createElement(Layer, {
+      }))), /* @__PURE__ */ React33.createElement(Layer, {
         clipPath: "url(#animationClipPath-".concat(clipPathId, ")")
-      }, /* @__PURE__ */ React32.createElement(StaticArea, {
+      }, /* @__PURE__ */ React33.createElement(StaticArea, {
         points,
         baseLine,
         needClip,
         clipPathId,
         props
       })));
-    }), /* @__PURE__ */ React32.createElement(LabelListFromLabelProp, {
+    }), /* @__PURE__ */ React33.createElement(LabelListFromLabelProp, {
       label: props.label
     }));
   }
@@ -47331,7 +47065,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = _ref9;
     var previousPointsRef = (0, import_react43.useRef)(null);
     var previousBaselineRef = (0, import_react43.useRef)();
-    return /* @__PURE__ */ React32.createElement(AreaWithAnimation, {
+    return /* @__PURE__ */ React33.createElement(AreaWithAnimation, {
       needClip,
       clipPathId,
       props,
@@ -47369,32 +47103,32 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       var clipDot = isClipDot(dot);
       var dotSize = r2 * 2 + strokeWidth;
       var activePointsClipPath = needClip ? "url(#clipPath-".concat(clipDot ? "" : "dots-").concat(clipPathId, ")") : void 0;
-      return /* @__PURE__ */ React32.createElement(ZIndexLayer, {
+      return /* @__PURE__ */ React33.createElement(ZIndexLayer, {
         zIndex
-      }, /* @__PURE__ */ React32.createElement(Layer, {
+      }, /* @__PURE__ */ React33.createElement(Layer, {
         className: layerClass
-      }, needClip && /* @__PURE__ */ React32.createElement("defs", null, /* @__PURE__ */ React32.createElement(GraphicalItemClipPath, {
+      }, needClip && /* @__PURE__ */ React33.createElement("defs", null, /* @__PURE__ */ React33.createElement(GraphicalItemClipPath, {
         clipPathId,
         xAxisId,
         yAxisId
-      }), !clipDot && /* @__PURE__ */ React32.createElement("clipPath", {
+      }), !clipDot && /* @__PURE__ */ React33.createElement("clipPath", {
         id: "clipPath-dots-".concat(clipPathId)
-      }, /* @__PURE__ */ React32.createElement("rect", {
+      }, /* @__PURE__ */ React33.createElement("rect", {
         x: left - dotSize / 2,
         y: top - dotSize / 2,
         width: width + dotSize,
         height: height + dotSize
-      }))), /* @__PURE__ */ React32.createElement(RenderArea, {
+      }))), /* @__PURE__ */ React33.createElement(RenderArea, {
         needClip,
         clipPathId,
         props: this.props
-      })), /* @__PURE__ */ React32.createElement(ActivePoints, {
+      })), /* @__PURE__ */ React33.createElement(ActivePoints, {
         points,
         mainColor: getLegendItemColor(this.props.stroke, this.props.fill),
         itemDataKey: this.props.dataKey,
         activeDot: this.props.activeDot,
         clipPath: activePointsClipPath
-      }), this.props.isRange && Array.isArray(baseLine) && /* @__PURE__ */ React32.createElement(ActivePoints, {
+      }), this.props.isRange && Array.isArray(baseLine) && /* @__PURE__ */ React33.createElement(ActivePoints, {
         points: baseLine,
         mainColor: getLegendItemColor(this.props.stroke, this.props.fill),
         itemDataKey: this.props.dataKey,
@@ -47468,7 +47202,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (!points || !points.length) {
       return null;
     }
-    return /* @__PURE__ */ React32.createElement(AreaWithState, _extends21({}, everythingElse, {
+    return /* @__PURE__ */ React33.createElement(AreaWithState, _extends21({}, everythingElse, {
       activeDot,
       animationBegin,
       animationDuration,
@@ -47617,12 +47351,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   function AreaFn(outsideProps) {
     var props = resolveDefaultProps(outsideProps, defaultAreaProps);
     var isPanorama = useIsPanorama();
-    return /* @__PURE__ */ React32.createElement(RegisterGraphicalItemId, {
+    return /* @__PURE__ */ React33.createElement(RegisterGraphicalItemId, {
       id: props.id,
       type: "area"
-    }, (id) => /* @__PURE__ */ React32.createElement(React32.Fragment, null, /* @__PURE__ */ React32.createElement(SetLegendPayload, {
+    }, (id) => /* @__PURE__ */ React33.createElement(React33.Fragment, null, /* @__PURE__ */ React33.createElement(SetLegendPayload, {
       legendPayload: computeLegendPayloadFromAreaData2(props)
-    }), /* @__PURE__ */ React32.createElement(SetAreaTooltipEntrySettings, {
+    }), /* @__PURE__ */ React33.createElement(SetAreaTooltipEntrySettings, {
       dataKey: props.dataKey,
       data: props.data,
       stroke: props.stroke,
@@ -47633,7 +47367,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       unit: props.unit,
       tooltipType: props.tooltipType,
       id
-    }), /* @__PURE__ */ React32.createElement(SetCartesianGraphicalItem, {
+    }), /* @__PURE__ */ React33.createElement(SetCartesianGraphicalItem, {
       type: "area",
       id,
       data: props.data,
@@ -47647,19 +47381,19 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       baseValue: props.baseValue,
       isPanorama,
       connectNulls: props.connectNulls
-    }), /* @__PURE__ */ React32.createElement(AreaImpl, _extends21({}, props, {
+    }), /* @__PURE__ */ React33.createElement(AreaImpl, _extends21({}, props, {
       id
     }))));
   }
-  var Area = /* @__PURE__ */ React32.memo(AreaFn, propsAreEqual);
+  var Area = /* @__PURE__ */ React33.memo(AreaFn, propsAreEqual);
   Area.displayName = "Area";
 
   // node_modules/recharts/es6/cartesian/Bar.js
-  var React35 = __toESM(require_react());
+  var React36 = __toESM(require_react());
   var import_react45 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/BarUtils.js
-  var React33 = __toESM(require_react());
+  var React34 = __toESM(require_react());
 
   // node_modules/tiny-invariant/dist/esm/tiny-invariant.js
   var isProduction = false;
@@ -47687,7 +47421,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     }, _extends22.apply(null, arguments);
   }
   function BarRectangle(props) {
-    return /* @__PURE__ */ React33.createElement(Shape, _extends22({
+    return /* @__PURE__ */ React34.createElement(Shape, _extends22({
       shapeType: "rectangle",
       activeClassName: "recharts-active-bar",
       inActiveClassName: "recharts-inactive-bar"
@@ -47858,7 +47592,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   });
 
   // node_modules/recharts/es6/cartesian/BarStack.js
-  var React34 = __toESM(require_react());
+  var React35 = __toESM(require_react());
   var import_react44 = __toESM(require_react());
   var _excluded17 = ["index"];
   function _extends23() {
@@ -47917,7 +47651,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       index
     } = _ref2, rest = _objectWithoutProperties17(_ref2, _excluded17);
     var clipPathUrl = useBarStackClipPathUrl(index);
-    return /* @__PURE__ */ React34.createElement(Layer, _extends23({
+    return /* @__PURE__ */ React35.createElement(Layer, _extends23({
       className: "recharts-bar-stack-layer",
       clipPath: clipPathUrl
     }, rest));
@@ -48010,7 +47744,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       payload: props
     }];
   };
-  var SetBarTooltipEntrySettings = /* @__PURE__ */ React35.memo((_ref2) => {
+  var SetBarTooltipEntrySettings = /* @__PURE__ */ React36.memo((_ref2) => {
     var {
       dataKey,
       stroke,
@@ -48039,7 +47773,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         graphicalItemId: id
       }
     };
-    return /* @__PURE__ */ React35.createElement(SetTooltipEntrySettings, {
+    return /* @__PURE__ */ React36.createElement(SetTooltipEntrySettings, {
       tooltipEntrySettings
     });
   });
@@ -48063,7 +47797,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       return null;
     }
     var backgroundProps = svgPropertiesNoEventsFromUnknown(backgroundFromProps);
-    return /* @__PURE__ */ React35.createElement(ZIndexLayer, {
+    return /* @__PURE__ */ React36.createElement(ZIndexLayer, {
       zIndex: getZIndexFromUnknown(backgroundFromProps, DefaultZIndexes.barBackground)
     }, data.map((entry, i) => {
       var {
@@ -48091,7 +47825,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         index: i,
         className: "recharts-bar-background-rectangle"
       });
-      return /* @__PURE__ */ React35.createElement(BarRectangle, _extends24({
+      return /* @__PURE__ */ React36.createElement(BarRectangle, _extends24({
         key: "background-bar-".concat(i)
       }, barRectangleProps));
     }));
@@ -48119,7 +47853,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         fill: entry.fill
       });
     });
-    return /* @__PURE__ */ React35.createElement(CartesianLabelListContextProvider, {
+    return /* @__PURE__ */ React36.createElement(CartesianLabelListContextProvider, {
       value: showLabels ? labelListEntries : void 0
     }, children);
   }
@@ -48168,7 +47902,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } else {
       option = shape;
     }
-    var content = /* @__PURE__ */ React35.createElement(BarRectangle, _extends24({}, baseProps, {
+    var content = /* @__PURE__ */ React36.createElement(BarRectangle, _extends24({}, baseProps, {
       name: String(baseProps.name)
     }, entry, {
       isActive: isVisuallyActive,
@@ -48178,9 +47912,9 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       onTransitionEnd: handleTransitionEnd
     }));
     if (shouldRenderInLayer) {
-      return /* @__PURE__ */ React35.createElement(ZIndexLayer, {
+      return /* @__PURE__ */ React36.createElement(ZIndexLayer, {
         zIndex: DefaultZIndexes.activeBar
-      }, /* @__PURE__ */ React35.createElement(BarStackClipLayer, {
+      }, /* @__PURE__ */ React36.createElement(BarStackClipLayer, {
         index: entry.originalDataIndex
       }, content));
     }
@@ -48194,7 +47928,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       index,
       dataKey
     } = props;
-    return /* @__PURE__ */ React35.createElement(BarRectangle, _extends24({}, baseProps, {
+    return /* @__PURE__ */ React36.createElement(BarRectangle, _extends24({}, baseProps, {
       name: String(baseProps.name)
     }, entry, {
       isActive: false,
@@ -48228,8 +47962,8 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     if (!data) {
       return null;
     }
-    return /* @__PURE__ */ React35.createElement(React35.Fragment, null, data.map((entry, i) => {
-      return /* @__PURE__ */ React35.createElement(BarStackClipLayer, _extends24({
+    return /* @__PURE__ */ React36.createElement(React36.Fragment, null, data.map((entry, i) => {
+      return /* @__PURE__ */ React36.createElement(BarStackClipLayer, _extends24({
         index: entry.originalDataIndex,
         key: "rectangle-".concat(entry === null || entry === void 0 ? void 0 : entry.x, "-").concat(entry === null || entry === void 0 ? void 0 : entry.y, "-").concat(entry === null || entry === void 0 ? void 0 : entry.value, "-").concat(i),
         className: "recharts-bar-rectangle"
@@ -48237,7 +47971,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         onMouseEnter: onMouseEnterFromContext(entry, i),
         onMouseLeave: onMouseLeaveFromContext(entry, i),
         onClick: onClickFromContext(entry, i)
-      }), activeBar ? /* @__PURE__ */ React35.createElement(BarRectangleWithActiveState, {
+      }), activeBar ? /* @__PURE__ */ React36.createElement(BarRectangleWithActiveState, {
         shape,
         activeBar,
         baseProps,
@@ -48254,7 +47988,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
          * and can skip the tree reconciliation for its children too.
          * Because we can't call hooks conditionally, we need to have a separate component for that.
          */
-        /* @__PURE__ */ React35.createElement(BarRectangleNeverActive, {
+        /* @__PURE__ */ React36.createElement(BarRectangleNeverActive, {
           shape,
           baseProps,
           entry,
@@ -48295,10 +48029,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       }
       setIsAnimating(true);
     }, [onAnimationStart]);
-    return /* @__PURE__ */ React35.createElement(BarLabelListProvider, {
+    return /* @__PURE__ */ React36.createElement(BarLabelListProvider, {
       showLabels,
       rects: data
-    }, /* @__PURE__ */ React35.createElement(JavascriptAnimate, {
+    }, /* @__PURE__ */ React36.createElement(JavascriptAnimate, {
       animationId,
       begin: animationBegin,
       duration: animationDuration,
@@ -48339,17 +48073,17 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       if (stepData == null) {
         return null;
       }
-      return /* @__PURE__ */ React35.createElement(Layer, null, /* @__PURE__ */ React35.createElement(BarRectangles, {
+      return /* @__PURE__ */ React36.createElement(Layer, null, /* @__PURE__ */ React36.createElement(BarRectangles, {
         props,
         data: stepData
       }));
-    }), /* @__PURE__ */ React35.createElement(LabelListFromLabelProp, {
+    }), /* @__PURE__ */ React36.createElement(LabelListFromLabelProp, {
       label: props.label
     }), props.children);
   }
   function RenderRectangles(props) {
     var previousRectanglesRef = (0, import_react45.useRef)(null);
-    return /* @__PURE__ */ React35.createElement(RectanglesWithAnimation, {
+    return /* @__PURE__ */ React36.createElement(RectanglesWithAnimation, {
       previousRectanglesRef,
       props
     });
@@ -48383,22 +48117,22 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       }
       var layerClass = clsx("recharts-bar", className);
       var clipPathId = id;
-      return /* @__PURE__ */ React35.createElement(Layer, {
+      return /* @__PURE__ */ React36.createElement(Layer, {
         className: layerClass,
         id
-      }, needClip && /* @__PURE__ */ React35.createElement("defs", null, /* @__PURE__ */ React35.createElement(GraphicalItemClipPath, {
+      }, needClip && /* @__PURE__ */ React36.createElement("defs", null, /* @__PURE__ */ React36.createElement(GraphicalItemClipPath, {
         clipPathId,
         xAxisId,
         yAxisId
-      })), /* @__PURE__ */ React35.createElement(Layer, {
+      })), /* @__PURE__ */ React36.createElement(Layer, {
         className: "recharts-bar-rectangles",
         clipPath: needClip ? "url(#clipPath-".concat(clipPathId, ")") : void 0
-      }, /* @__PURE__ */ React35.createElement(BarBackground, {
+      }, /* @__PURE__ */ React36.createElement(BarBackground, {
         data,
         dataKey,
         background,
         allOtherBarProps: this.props
-      }), /* @__PURE__ */ React35.createElement(RenderRectangles, this.props)));
+      }), /* @__PURE__ */ React36.createElement(RenderRectangles, this.props)));
     }
   };
   var defaultBarProps = {
@@ -48446,13 +48180,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } else {
       errorBarOffset = layout === "vertical" ? firstDataPoint.height / 2 : firstDataPoint.width / 2;
     }
-    return /* @__PURE__ */ React35.createElement(SetErrorBarContext, {
+    return /* @__PURE__ */ React36.createElement(SetErrorBarContext, {
       xAxisId,
       yAxisId,
       data: rects,
       dataPointFormatter: errorBarDataPointFormatter2,
       errorBarOffset
-    }, /* @__PURE__ */ React35.createElement(BarWithState, _extends24({}, props, {
+    }, /* @__PURE__ */ React36.createElement(BarWithState, _extends24({}, props, {
       layout,
       needClip,
       data: rects,
@@ -48594,12 +48328,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     var props = resolveDefaultProps(outsideProps, defaultBarProps);
     var stackId = useStackId(props.stackId);
     var isPanorama = useIsPanorama();
-    return /* @__PURE__ */ React35.createElement(RegisterGraphicalItemId, {
+    return /* @__PURE__ */ React36.createElement(RegisterGraphicalItemId, {
       id: props.id,
       type: "bar"
-    }, (id) => /* @__PURE__ */ React35.createElement(React35.Fragment, null, /* @__PURE__ */ React35.createElement(SetLegendPayload, {
+    }, (id) => /* @__PURE__ */ React36.createElement(React36.Fragment, null, /* @__PURE__ */ React36.createElement(SetLegendPayload, {
       legendPayload: computeLegendPayloadFromBarData(props)
-    }), /* @__PURE__ */ React35.createElement(SetBarTooltipEntrySettings, {
+    }), /* @__PURE__ */ React36.createElement(SetBarTooltipEntrySettings, {
       dataKey: props.dataKey,
       stroke: props.stroke,
       strokeWidth: props.strokeWidth,
@@ -48609,7 +48343,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       unit: props.unit,
       tooltipType: props.tooltipType,
       id
-    }), /* @__PURE__ */ React35.createElement(SetCartesianGraphicalItem, {
+    }), /* @__PURE__ */ React36.createElement(SetCartesianGraphicalItem, {
       type: "bar",
       id,
       data: void 0,
@@ -48624,17 +48358,17 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       maxBarSize: props.maxBarSize,
       isPanorama,
       hasCustomShape: props.shape != null
-    }), /* @__PURE__ */ React35.createElement(ZIndexLayer, {
+    }), /* @__PURE__ */ React36.createElement(ZIndexLayer, {
       zIndex: props.zIndex
-    }, /* @__PURE__ */ React35.createElement(BarImpl, _extends24({}, props, {
+    }, /* @__PURE__ */ React36.createElement(BarImpl, _extends24({}, props, {
       id
     })))));
   }
-  var Bar = /* @__PURE__ */ React35.memo(BarFn, propsAreEqual);
+  var Bar = /* @__PURE__ */ React36.memo(BarFn, propsAreEqual);
   Bar.displayName = "Bar";
 
   // node_modules/recharts/es6/cartesian/XAxis.js
-  var React36 = __toESM(require_react());
+  var React37 = __toESM(require_react());
   var import_react46 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/axisPropsAreEqual.js
@@ -48821,7 +48555,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       id,
       scale: del2
     } = synchronizedSettings, restSynchronizedSettings = _objectWithoutProperties20(synchronizedSettings, _excluded35);
-    return /* @__PURE__ */ React36.createElement(CartesianAxis, _extends25({}, allOtherProps, restSynchronizedSettings, {
+    return /* @__PURE__ */ React37.createElement(CartesianAxis, _extends25({}, allOtherProps, restSynchronizedSettings, {
       x: position.x,
       y: position.y,
       width: axisSize.width,
@@ -48860,7 +48594,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   };
   var XAxisSettingsDispatcher = (outsideProps) => {
     var props = resolveDefaultProps(outsideProps, xAxisDefaultProps);
-    return /* @__PURE__ */ React36.createElement(React36.Fragment, null, /* @__PURE__ */ React36.createElement(SetXAxisSettings, {
+    return /* @__PURE__ */ React37.createElement(React37.Fragment, null, /* @__PURE__ */ React37.createElement(SetXAxisSettings, {
       allowDataOverflow: props.allowDataOverflow,
       allowDecimals: props.allowDecimals,
       allowDuplicatedCategory: props.allowDuplicatedCategory,
@@ -48886,13 +48620,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       type: props.type,
       unit: props.unit,
       niceTicks: props.niceTicks
-    }), /* @__PURE__ */ React36.createElement(XAxisImpl, props));
+    }), /* @__PURE__ */ React37.createElement(XAxisImpl, props));
   };
-  var XAxis = /* @__PURE__ */ React36.memo(XAxisSettingsDispatcher, axisPropsAreEqual);
+  var XAxis = /* @__PURE__ */ React37.memo(XAxisSettingsDispatcher, axisPropsAreEqual);
   XAxis.displayName = "XAxis";
 
   // node_modules/recharts/es6/cartesian/YAxis.js
-  var React37 = __toESM(require_react());
+  var React38 = __toESM(require_react());
   var import_react47 = __toESM(require_react());
   var _excluded21 = ["type"];
   var _excluded212 = ["dangerouslySetInnerHTML", "ticks", "scale"];
@@ -49058,7 +48792,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       id,
       scale: del2
     } = synchronizedSettings, restSynchronizedSettings = _objectWithoutProperties21(synchronizedSettings, _excluded36);
-    return /* @__PURE__ */ React37.createElement(CartesianAxis, _extends26({}, allOtherProps, restSynchronizedSettings, {
+    return /* @__PURE__ */ React38.createElement(CartesianAxis, _extends26({}, allOtherProps, restSynchronizedSettings, {
       ref: cartesianAxisRef,
       labelRef,
       x: position.x,
@@ -49104,7 +48838,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   };
   var YAxisSettingsDispatcher = (outsideProps) => {
     var props = resolveDefaultProps(outsideProps, yAxisDefaultProps);
-    return /* @__PURE__ */ React37.createElement(React37.Fragment, null, /* @__PURE__ */ React37.createElement(SetYAxisSettings, {
+    return /* @__PURE__ */ React38.createElement(React38.Fragment, null, /* @__PURE__ */ React38.createElement(SetYAxisSettings, {
       interval: props.interval,
       id: props.yAxisId,
       scale: props.scale,
@@ -49130,17 +48864,17 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       tick: props.tick,
       tickFormatter: props.tickFormatter,
       niceTicks: props.niceTicks
-    }), /* @__PURE__ */ React37.createElement(YAxisImpl, props));
+    }), /* @__PURE__ */ React38.createElement(YAxisImpl, props));
   };
-  var YAxis = /* @__PURE__ */ React37.memo(YAxisSettingsDispatcher, axisPropsAreEqual);
+  var YAxis = /* @__PURE__ */ React38.memo(YAxisSettingsDispatcher, axisPropsAreEqual);
   YAxis.displayName = "YAxis";
 
   // node_modules/recharts/es6/chart/CartesianChart.js
-  var React43 = __toESM(require_react());
+  var React44 = __toESM(require_react());
   var import_react57 = __toESM(require_react());
 
   // node_modules/recharts/es6/state/RechartsStoreProvider.js
-  var React38 = __toESM(require_react());
+  var React39 = __toESM(require_react());
   var import_react48 = __toESM(require_react());
 
   // node_modules/recharts/es6/state/selectors/selectActivePropsFromChartPointer.js
@@ -49854,7 +49588,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       storeRef.current = createRechartsStore(preloadedState, reduxStoreName);
     }
     var nonNullContext = RechartsReduxContext;
-    return /* @__PURE__ */ React38.createElement(Provider_default, {
+    return /* @__PURE__ */ React39.createElement(Provider_default, {
       context: nonNullContext,
       store: storeRef.current
     }, children);
@@ -49901,15 +49635,15 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   var ReportEventSettings = /* @__PURE__ */ (0, import_react51.memo)(ReportEventSettingsImpl, propsAreEqual);
 
   // node_modules/recharts/es6/chart/CategoricalChart.js
-  var React42 = __toESM(require_react());
+  var React43 = __toESM(require_react());
   var import_react56 = __toESM(require_react());
 
   // node_modules/recharts/es6/container/RootSurface.js
-  var React40 = __toESM(require_react());
+  var React41 = __toESM(require_react());
   var import_react53 = __toESM(require_react());
 
   // node_modules/recharts/es6/zIndex/ZIndexPortal.js
-  var React39 = __toESM(require_react());
+  var React40 = __toESM(require_react());
   var import_react52 = __toESM(require_react());
   function ZIndexSvgPortal(_ref2) {
     var {
@@ -49933,7 +49667,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         }));
       };
     }, [dispatch, zIndex, isPanorama]);
-    return /* @__PURE__ */ React39.createElement("g", {
+    return /* @__PURE__ */ React40.createElement("g", {
       tabIndex: -1,
       ref,
       className: "recharts-zIndex-layer_".concat(zIndex)
@@ -49950,11 +49684,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     }
     var allNegativeZIndexes = allRegisteredZIndexes.filter((zIndex) => zIndex < 0);
     var allPositiveZIndexes = allRegisteredZIndexes.filter((zIndex) => zIndex > 0);
-    return /* @__PURE__ */ React39.createElement(React39.Fragment, null, allNegativeZIndexes.map((zIndex) => /* @__PURE__ */ React39.createElement(ZIndexSvgPortal, {
+    return /* @__PURE__ */ React40.createElement(React40.Fragment, null, allNegativeZIndexes.map((zIndex) => /* @__PURE__ */ React40.createElement(ZIndexSvgPortal, {
       key: zIndex,
       zIndex,
       isPanorama
-    })), children, allPositiveZIndexes.map((zIndex) => /* @__PURE__ */ React39.createElement(ZIndexSvgPortal, {
+    })), children, allPositiveZIndexes.map((zIndex) => /* @__PURE__ */ React40.createElement(ZIndexSvgPortal, {
       key: zIndex,
       zIndex,
       isPanorama
@@ -50030,7 +49764,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         role = hasAccessibilityLayer ? "application" : void 0;
       }
     }
-    return /* @__PURE__ */ React40.createElement(Surface, _extends27({}, otherAttributes, {
+    return /* @__PURE__ */ React41.createElement(Surface, _extends27({}, otherAttributes, {
       title,
       desc,
       role,
@@ -50055,7 +49789,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       y: y2,
       x: x2
     } = brushDimensions;
-    return /* @__PURE__ */ React40.createElement(Surface, {
+    return /* @__PURE__ */ React41.createElement(Surface, {
       width,
       height,
       x: x2,
@@ -50068,19 +49802,19 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = _ref2, rest = _objectWithoutProperties22(_ref2, _excluded30);
     var isPanorama = useIsPanorama();
     if (isPanorama) {
-      return /* @__PURE__ */ React40.createElement(BrushPanoramaSurface, null, /* @__PURE__ */ React40.createElement(AllZIndexPortals, {
+      return /* @__PURE__ */ React41.createElement(BrushPanoramaSurface, null, /* @__PURE__ */ React41.createElement(AllZIndexPortals, {
         isPanorama: true
       }, children));
     }
-    return /* @__PURE__ */ React40.createElement(MainChartSurface, _extends27({
+    return /* @__PURE__ */ React41.createElement(MainChartSurface, _extends27({
       ref
-    }, rest), /* @__PURE__ */ React40.createElement(AllZIndexPortals, {
+    }, rest), /* @__PURE__ */ React41.createElement(AllZIndexPortals, {
       isPanorama: false
     }, children));
   });
 
   // node_modules/recharts/es6/chart/RechartsWrapper.js
-  var React41 = __toESM(require_react());
+  var React42 = __toESM(require_react());
   var import_react55 = __toESM(require_react());
 
   // node_modules/recharts/es6/util/useReportScale.js
@@ -50224,10 +49958,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         }
       };
     }, [setContainerSize]);
-    return /* @__PURE__ */ React41.createElement(React41.Fragment, null, /* @__PURE__ */ React41.createElement(ReportChartSize, {
+    return /* @__PURE__ */ React42.createElement(React42.Fragment, null, /* @__PURE__ */ React42.createElement(ReportChartSize, {
       width: sizes.containerWidth,
       height: sizes.containerHeight
-    }), /* @__PURE__ */ React41.createElement("div", _extends28({
+    }), /* @__PURE__ */ React42.createElement("div", _extends28({
       ref: innerRef
     }, props)));
   });
@@ -50265,10 +49999,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         setContainerSize(containerWidth, containerHeight);
       }
     }, [ref, setContainerSize]);
-    return /* @__PURE__ */ React41.createElement(React41.Fragment, null, /* @__PURE__ */ React41.createElement(ReportChartSize, {
+    return /* @__PURE__ */ React42.createElement(React42.Fragment, null, /* @__PURE__ */ React42.createElement(ReportChartSize, {
       width: sizes.containerWidth,
       height: sizes.containerHeight
-    }), /* @__PURE__ */ React41.createElement("div", _extends28({
+    }), /* @__PURE__ */ React42.createElement("div", _extends28({
       ref: innerRef
     }, props)));
   });
@@ -50277,10 +50011,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       width,
       height
     } = props;
-    return /* @__PURE__ */ React41.createElement(React41.Fragment, null, /* @__PURE__ */ React41.createElement(ReportChartSize, {
+    return /* @__PURE__ */ React42.createElement(React42.Fragment, null, /* @__PURE__ */ React42.createElement(ReportChartSize, {
       width,
       height
-    }), /* @__PURE__ */ React41.createElement("div", _extends28({
+    }), /* @__PURE__ */ React42.createElement("div", _extends28({
       ref
     }, props)));
   });
@@ -50290,21 +50024,21 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       height
     } = props;
     if (typeof width === "string" || typeof height === "string") {
-      return /* @__PURE__ */ React41.createElement(ReadSizeOnceDiv, _extends28({}, props, {
+      return /* @__PURE__ */ React42.createElement(ReadSizeOnceDiv, _extends28({}, props, {
         ref
       }));
     }
     if (typeof width === "number" && typeof height === "number") {
-      return /* @__PURE__ */ React41.createElement(StaticDiv, _extends28({}, props, {
+      return /* @__PURE__ */ React42.createElement(StaticDiv, _extends28({}, props, {
         width,
         height,
         ref
       }));
     }
-    return /* @__PURE__ */ React41.createElement(React41.Fragment, null, /* @__PURE__ */ React41.createElement(ReportChartSize, {
+    return /* @__PURE__ */ React42.createElement(React42.Fragment, null, /* @__PURE__ */ React42.createElement(ReportChartSize, {
       width,
       height
-    }), /* @__PURE__ */ React41.createElement("div", _extends28({
+    }), /* @__PURE__ */ React42.createElement("div", _extends28({
       ref
     }, props)));
   });
@@ -50434,11 +50168,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       }));
     }, [dispatch, onTouchEnd]);
     var WrapperDiv = getWrapperDivComponent(responsive);
-    return /* @__PURE__ */ React41.createElement(TooltipPortalContext.Provider, {
+    return /* @__PURE__ */ React42.createElement(TooltipPortalContext.Provider, {
       value: tooltipPortal
-    }, /* @__PURE__ */ React41.createElement(LegendPortalContext.Provider, {
+    }, /* @__PURE__ */ React42.createElement(LegendPortalContext.Provider, {
       value: legendPortal
-    }, /* @__PURE__ */ React41.createElement(WrapperDiv, {
+    }, /* @__PURE__ */ React42.createElement(WrapperDiv, {
       width: width !== null && width !== void 0 ? width : style === null || style === void 0 ? void 0 : style.width,
       height: height !== null && height !== void 0 ? height : style === null || style === void 0 ? void 0 : style.height,
       className: clsx("recharts-wrapper", className),
@@ -50463,7 +50197,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       onTouchMove: myOnTouchMove,
       onTouchStart: myOnTouchStart,
       ref: innerRef
-    }, /* @__PURE__ */ React41.createElement(EventSynchronizer, null), children)));
+    }, /* @__PURE__ */ React42.createElement(EventSynchronizer, null), children)));
   });
 
   // node_modules/recharts/es6/chart/CategoricalChart.js
@@ -50500,16 +50234,16 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     } = props, others = _objectWithoutProperties23(props, _excluded31);
     var attrs = svgPropertiesNoEvents(others);
     if (compact) {
-      return /* @__PURE__ */ React42.createElement(React42.Fragment, null, /* @__PURE__ */ React42.createElement(ReportChartSize, {
+      return /* @__PURE__ */ React43.createElement(React43.Fragment, null, /* @__PURE__ */ React43.createElement(ReportChartSize, {
         width,
         height
-      }), /* @__PURE__ */ React42.createElement(RootSurface, {
+      }), /* @__PURE__ */ React43.createElement(RootSurface, {
         otherAttributes: attrs,
         title,
         desc
       }, children));
     }
-    return /* @__PURE__ */ React42.createElement(RechartsWrapper, {
+    return /* @__PURE__ */ React43.createElement(RechartsWrapper, {
       className,
       style,
       width,
@@ -50526,12 +50260,12 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       onTouchStart: props.onTouchStart,
       onTouchMove: props.onTouchMove,
       onTouchEnd: props.onTouchEnd
-    }, /* @__PURE__ */ React42.createElement(RootSurface, {
+    }, /* @__PURE__ */ React43.createElement(RootSurface, {
       otherAttributes: attrs,
       title,
       desc,
       ref
-    }, /* @__PURE__ */ React42.createElement(ClipPathProvider, null, children)));
+    }, /* @__PURE__ */ React43.createElement(ClipPathProvider, null, children)));
   });
 
   // node_modules/recharts/es6/chart/CartesianChart.js
@@ -50616,20 +50350,20 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       tooltipPayloadSearcher,
       eventEmitter: void 0
     };
-    return /* @__PURE__ */ React43.createElement(RechartsStoreProvider, {
+    return /* @__PURE__ */ React44.createElement(RechartsStoreProvider, {
       preloadedState: {
         options
       },
       reduxStoreName: (_categoricalChartProp = categoricalChartProps.id) !== null && _categoricalChartProp !== void 0 ? _categoricalChartProp : chartName
-    }, /* @__PURE__ */ React43.createElement(ChartDataContextProvider, {
+    }, /* @__PURE__ */ React44.createElement(ChartDataContextProvider, {
       chartData: categoricalChartProps.data
-    }), /* @__PURE__ */ React43.createElement(ReportMainChartProps, {
+    }), /* @__PURE__ */ React44.createElement(ReportMainChartProps, {
       layout: rootChartProps.layout,
       margin: rootChartProps.margin
-    }), /* @__PURE__ */ React43.createElement(ReportEventSettings, {
+    }), /* @__PURE__ */ React44.createElement(ReportEventSettings, {
       throttleDelay: rootChartProps.throttleDelay,
       throttledEvents: rootChartProps.throttledEvents
-    }), /* @__PURE__ */ React43.createElement(ReportChartProps, {
+    }), /* @__PURE__ */ React44.createElement(ReportChartProps, {
       baseValue: rootChartProps.baseValue,
       accessibilityLayer: rootChartProps.accessibilityLayer,
       barCategoryGap: rootChartProps.barCategoryGap,
@@ -50641,17 +50375,17 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       syncMethod: rootChartProps.syncMethod,
       className: rootChartProps.className,
       reverseStackOrder: rootChartProps.reverseStackOrder
-    }), /* @__PURE__ */ React43.createElement(CategoricalChart, _extends29({}, rootChartProps, {
+    }), /* @__PURE__ */ React44.createElement(CategoricalChart, _extends29({}, rootChartProps, {
       ref
     })));
   });
 
   // node_modules/recharts/es6/chart/BarChart.js
-  var React44 = __toESM(require_react());
+  var React45 = __toESM(require_react());
   var import_react58 = __toESM(require_react());
   var allowedTooltipTypes = ["axis", "item"];
   var BarChart = /* @__PURE__ */ (0, import_react58.forwardRef)((props, ref) => {
-    return /* @__PURE__ */ React44.createElement(CartesianChart, {
+    return /* @__PURE__ */ React45.createElement(CartesianChart, {
       chartName: "BarChart",
       defaultTooltipEventType: "axis",
       validateTooltipEventTypes: allowedTooltipTypes,
@@ -50662,11 +50396,11 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
   });
 
   // node_modules/recharts/es6/chart/AreaChart.js
-  var React45 = __toESM(require_react());
+  var React46 = __toESM(require_react());
   var import_react59 = __toESM(require_react());
   var allowedTooltipTypes2 = ["axis"];
   var AreaChart = /* @__PURE__ */ (0, import_react59.forwardRef)((props, ref) => {
-    return /* @__PURE__ */ React45.createElement(CartesianChart, {
+    return /* @__PURE__ */ React46.createElement(CartesianChart, {
       chartName: "AreaChart",
       defaultTooltipEventType: "axis",
       validateTooltipEventTypes: allowedTooltipTypes2,
@@ -50678,11 +50412,10 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
 
   // qatalyst.jsx
   var import_react61 = __toESM(require_react());
-  var import_jsx_runtime = __toESM(require_jsx_runtime());
   var LEADS = [
     {
       id: 1,
-      company: "Microsoft",
+      company: "Microdyne Systems",
       ticker: "MSFT",
       industry: "Technology",
       flag: "\u{1F1FA}\u{1F1F8}",
@@ -50692,13 +50425,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       esg: 94,
       warmth: "hot",
       rationale: "Announced $1B Climate Innovation Fund; Q4 ESG report shows 23% reduction gap requiring offsets",
-      signals: ["Microsoft doubles carbon removal commitment for FY2025", "CFO confirms Q4 budget for carbon credit procurement", "Climate team expanding \u2014 3 new sustainability hires announced"],
+      signals: ["Microdyne Systems doubles carbon removal commitment for FY2025", "CFO confirms Q4 budget for carbon credit procurement", "Climate team expanding \u2014 3 new sustainability hires announced"],
       contact: { name: "Melanie Nakagawa", title: "Chief Sustainability Officer", url: "https://linkedin.com/in/melanienakagawa" },
       score: 96
     },
     {
       id: 2,
-      company: "Shell PLC",
+      company: "Shellion Energy PLC",
       ticker: "SHEL",
       industry: "Oil & Gas",
       flag: "\u{1F1F3}\u{1F1F1}",
@@ -50708,13 +50441,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       esg: 71,
       warmth: "warm",
       rationale: "Activist pressure on Scope 3; recently retired 8.5M Verra credits; Nature-based Solutions strategy published",
-      signals: ["Shell NbS report targets 120M offsets by 2030", "Activist Motion 29 forces Scope 3 emissions disclosure", "Shell exploring direct investment in REDD+ projects"],
+      signals: ["Shellion Energy NbS report targets 120M offsets by 2030", "Activist Motion 29 forces Scope 3 emissions disclosure", "Shellion Energy exploring direct investment in REDD+ projects"],
       contact: { name: "Anna Mascolo", title: "President \u2013 Nature-Based Solutions", url: "https://linkedin.com/in/annamascolo" },
       score: 88
     },
     {
       id: 3,
-      company: "Amazon",
+      company: "Amazia Cloud",
       ticker: "AMZN",
       industry: "E-Commerce / Cloud",
       flag: "\u{1F1FA}\u{1F1F8}",
@@ -50724,7 +50457,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       esg: 78,
       warmth: "hot",
       rationale: "Climate Pledge signatories ramping; logistics electrification behind schedule; active procurement RFP open",
-      signals: ["Amazon Climate Pledge Fund reaches $2B", "Logistics fleet electrification 4 years behind schedule", "Issued carbon credit RFP with Q1 close deadline"],
+      signals: ["Amazia Cloud Climate Pledge Fund reaches $2B", "Logistics fleet electrification 4 years behind schedule", "Issued carbon credit RFP with Q1 close deadline"],
       contact: { name: "Kara Hurst", title: "VP Worldwide Sustainability", url: "https://linkedin.com/in/karahurst" },
       score: 93
     },
@@ -50778,7 +50511,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     },
     {
       id: 7,
-      company: "Tokyo Gas",
+      company: "Japan Gas",
       ticker: "9531.T",
       industry: "Utilities / Energy",
       flag: "\u{1F1EF}\u{1F1F5}",
@@ -50788,13 +50521,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       esg: 82,
       warmth: "hot",
       rationale: "Actively scaling voluntary carbon credit procurement as part of Japan's GX strategy; strong appetite for high-integrity nature-based credits from Asia-Pacific",
-      signals: ["Tokyo Gas joins Japan GX League with mandatory offset targets", "Carbon procurement team expanded to 12 specialists", "Published 2030 interim target requiring 4M tCO\u2082e in offsets"],
+      signals: ["Japan Gas joins Japan GX League with mandatory offset targets", "Carbon procurement team expanded to 12 specialists", "Published 2030 interim target requiring 4M tCO\u2082e in offsets"],
       contact: { name: "Takeshi Sato", title: "General Manager, Carbon Strategy", url: "https://linkedin.com/in/takeshisato" },
       score: 91
     },
     {
       id: 8,
-      company: "Engie",
+      company: "Engenix Energy",
       ticker: "ENGI.PA",
       industry: "Energy & Utilities",
       flag: "\u{1F1EB}\u{1F1F7}",
@@ -50804,13 +50537,13 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       esg: 79,
       warmth: "hot",
       rationale: "European utility with active nature-based solutions strategy; targeting high-integrity REDD+ in SE Asia to meet SBTi-validated targets",
-      signals: ["Engie NBS strategy targets 10M tCO\u2082e by 2030", "SE Asia peatland credits shortlisted in procurement RFP", "Partnership with BeZero Carbon for rating-gated procurement"],
+      signals: ["Engenix Energy NBS strategy targets 10M tCO\u2082e by 2030", "SE Asia peatland credits shortlisted in procurement RFP", "Partnership with BeZero Carbon for rating-gated procurement"],
       contact: { name: "Isabelle Kocher", title: "Chief Sustainability Officer", url: "https://linkedin.com/in/isabellekocher" },
       score: 88
     },
     {
       id: 9,
-      company: "Vitol",
+      company: "Vitronix Trading",
       ticker: "PRIVATE",
       industry: "Commodity Trading",
       flag: "\u{1F1F3}\u{1F1F1}",
@@ -50820,15 +50553,15 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       esg: 74,
       warmth: "warm",
       rationale: "Global commodity trader building voluntary carbon credit book; prefers BeZero A-rated projects with verified additionality in developing markets",
-      signals: ["Vitol launches voluntary carbon desk with $200M mandate", "BeZero A-rated projects prioritised for 2025 procurement", "Indonesia peatland corridor identified as strategic focus region"],
-      contact: { name: "Chris Bake", title: "Head of Carbon, Vitol", url: "https://linkedin.com/in/chrisbake" },
+      signals: ["Vitronix Trading launches voluntary carbon desk with $200M mandate", "BeZero A-rated projects prioritised for 2025 procurement", "Indonesia peatland corridor identified as strategic focus region"],
+      contact: { name: "Chris Bake", title: "Head of Carbon, Vitronix Trading", url: "https://linkedin.com/in/chrisbake" },
       score: 85
     }
   ];
   var PROJECTS = [
     {
       id: 1,
-      name: "Amazon Rainforest REDD+",
+      name: "Amazia Cloud Rainforest REDD+",
       subtitle: "Primary forest conservation",
       country: "Brazil",
       flag: "\u{1F1E7}\u{1F1F7}",
@@ -50841,7 +50574,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       price: "$12\u201318",
       quality: 97,
       cobenefits: ["Biodiversity", "Indigenous Rights", "Water Security"],
-      description: "Protects primary Amazon rainforest with CCBS gold-level community & biodiversity certification."
+      description: "Protects primary Amazia Cloud rainforest with CCBS gold-level community & biodiversity certification."
     },
     {
       id: 2,
@@ -50941,7 +50674,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     }
     if (q.includes("match") || q.includes("matchmak")) {
       setTimeout(() => setPage2("discovery"), 400);
-      return "Opening the Agents view \u2192 Matchmaking column. Generated 6 high-confidence matches. Top match: Microsoft \xD7 Amazon REDD+ at 97% confidence.";
+      return "Opening the Agents view \u2192 Matchmaking column. Generated 6 high-confidence matches. Top match: Microdyne Systems \xD7 Amazia Cloud REDD+ at 97% confidence.";
     }
     if (q.includes("pipeline") || q.includes("deals")) {
       setTimeout(() => setPage2("pipeline"), 400);
@@ -50965,16 +50698,16 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     }
     if (q.includes("hot lead") || q.includes("best lead") || q.includes("top lead")) {
       setTimeout(() => setPage2("demand"), 400);
-      return "The 2 hottest leads are Microsoft (score 96 \u2014 budget confirmed for Q4) and Amazon (score 93 \u2014 active RFP open with Q1 deadline). Both have verified carbon procurement mandates.";
+      return "The 2 hottest leads are Microdyne Systems (score 96 \u2014 budget confirmed for Q4) and Amazia Cloud (score 93 \u2014 active RFP open with Q1 deadline). Both have verified carbon procurement mandates.";
     }
     if (q.includes("microsoft") || q.includes("msft")) {
-      return "Microsoft: Carbon Negative by 2030. Needs 2\u20135M credits/yr. ESG 94/100. HOT lead \u{1F534}\nContact: Melanie Nakagawa (CSO). $1B Climate Innovation Fund announced. Q4 budget confirmed.";
+      return "Microdyne Systems: Carbon Negative by 2030. Needs 2\u20135M credits/yr. ESG 94/100. HOT lead \u{1F534}\nContact: Melanie Nakagawa (CSO). $1B Climate Innovation Fund announced. Q4 budget confirmed.";
     }
-    if (q.includes("amazon") || q.includes("amzn")) {
-      return "Amazon: Net Zero by 2040 via The Climate Pledge. Needs 5\u201315M credits/yr. ESG 78/100. HOT lead \u{1F534}\nContact: Kara Hurst (VP Sustainability). Active RFP open \u2014 Q1 close deadline.";
+    if (q.includes("Amazia Cloud") || q.includes("amzn")) {
+      return "Amazia Cloud: Net Zero by 2040 via The Climate Pledge. Needs 5\u201315M credits/yr. ESG 78/100. HOT lead \u{1F534}\nContact: Kara Hurst (VP Sustainability). Active RFP open \u2014 Q1 close deadline.";
     }
     if (q.includes("shell") || q.includes("shel")) {
-      return "Shell PLC: Net Zero by 2050. Needs 10\u201320M credits/yr. ESG 71/100. WARM lead \u{1F7E1}\nContact: Anna Mascolo (President, NbS). Recently retired 8.5M Verra credits. NbS strategy published.";
+      return "Shellion Energy PLC: Net Zero by 2050. Needs 10\u201320M credits/yr. ESG 71/100. WARM lead \u{1F7E1}\nContact: Anna Mascolo (President, NbS). Recently retired 8.5M Verra credits. NbS strategy published.";
     }
     if (q.includes(" bp ") || q.includes("bp plc") || q.startsWith("bp")) {
       return "BP PLC: Net Zero by 2050. Needs 8\u201312M credits/yr. ESG 67/100. WARM lead \u{1F7E1}\nContact: Giulia Chierchia (EVP Strategy). Active offset program despite 40% capex cuts.";
@@ -50986,7 +50719,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       return "Apple Inc: Carbon Neutral by 2030. Needs 1\u20133M credits/yr. ESG 90/100. COLD lead \u{1F535}\nContact: Lisa Jackson (VP Environment). Uses credits only as last resort \u2014 engagement window in Q4 2025.";
     }
     if (q.includes("redd") || q.includes("forest") || q.includes("forestry")) {
-      return "Top REDD+ projects:\n\u2022 Amazon Rainforest, Brazil \u2014 2.4M t/yr, Quality 97, Verra\n\u2022 Congo Basin, DRC \u2014 3.1M t/yr, Quality 89, Verra\nBoth have CCBS certification and strong additionality.";
+      return "Top REDD+ projects:\n\u2022 Amazia Cloud Rainforest, Brazil \u2014 2.4M t/yr, Quality 97, Verra\n\u2022 Congo Basin, DRC \u2014 3.1M t/yr, Quality 89, Verra\nBoth have CCBS certification and strong additionality.";
     }
     if (q.includes("blue carbon") || q.includes("mangrove")) {
       return "Indonesia Blue Carbon (Kalimantan): 1.2M tCO\u2082e/yr, Quality 95/100, Verra. Premium pricing $22\u201335/t. 3x demand surge in Q1. Highest carbon density per hectare in SE Asia.";
@@ -50995,31 +50728,31 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       return "Renewable projects:\n\u2022 Kenya Turkana Wind \u2014 850K t/yr, Q91, Gold Standard\n\u2022 Morocco Noor Solar \u2014 750K t/yr, Q88, Gold Standard\n\u2022 India Solar Initiative \u2014 500K t/yr, Q84, Gold Standard";
     }
     if (q.includes("verra")) {
-      return "Verra-certified projects: Amazon REDD+ (Q97), Indonesia Blue Carbon (Q95), Congo Basin (Q89). New VM0048 methodology approved this week for tropical forests.";
+      return "Verra-certified projects: Amazia Cloud REDD+ (Q97), Indonesia Blue Carbon (Q95), Congo Basin (Q89). New VM0048 methodology approved this week for tropical forests.";
     }
     if (q.includes("gold standard")) {
       return "Gold Standard projects: Kenya Wind (Q91), Morocco Solar (Q88), India Solar (Q84). Enhanced SDG verification framework just launched this week.";
     }
     if (q.includes("best match") || q.includes("top match") || q.includes("highest match")) {
       setTimeout(() => setPage2("matching"), 400);
-      return "Best match: Microsoft \xD7 Amazon Rainforest REDD+ at 97% confidence. Nature-based preference aligns perfectly, volume matches 2\u20135M need, and CCB Gold meets their internal policy requirements.";
+      return "Best match: Microdyne Systems \xD7 Amazia Cloud Rainforest REDD+ at 97% confidence. Nature-based preference aligns perfectly, volume matches 2\u20135M need, and CCB Gold meets their internal policy requirements.";
     }
     if (q.includes("add microsoft") || q.includes("pipeline microsoft")) {
-      const lead = LEADS.find((l) => l.company === "Microsoft");
+      const lead = LEADS.find((l) => l.company === "Microdyne Systems");
       addLead(lead);
-      return "Added Microsoft to your pipeline as a Prospect. Navigate to the Pipeline view to advance them through stages.";
+      return "Added Microdyne Systems to your pipeline as a Prospect. Navigate to the Pipeline view to advance them through stages.";
     }
-    if (q.includes("add amazon") || q.includes("pipeline amazon")) {
-      const lead = LEADS.find((l) => l.company === "Amazon");
+    if (q.includes("add Amazia Cloud") || q.includes("pipeline Amazia Cloud")) {
+      const lead = LEADS.find((l) => l.company === "Amazia Cloud");
       addLead(lead);
-      return "Added Amazon to your pipeline as a Prospect. They have an active RFP \u2014 move to Qualified quickly.";
+      return "Added Amazia Cloud to your pipeline as a Prospect. They have an active RFP \u2014 move to Qualified quickly.";
     }
     if (q.includes("run all") || q.includes("run agents") || q.includes("start agents")) {
       setTimeout(() => setPage2("discovery"), 400);
       return "Opening the unified Agents view. Demand, Supply, and Matchmaking are all running side by side \u2014 use the Refresh buttons to re-scan each column.";
     }
     if (q.includes("help") || q.includes("what can") || q.includes("commands")) {
-      return "I can help you:\n\u2022 Run agents: 'Run demand agent', 'Open supply agent'\n\u2022 Find leads: 'Show hot leads', 'Tell me about Microsoft'\n\u2022 Find projects: 'Show REDD+ projects', 'Verra projects'\n\u2022 Matchmaking: 'Show best match', 'Run matching'\n\u2022 Pipeline: 'Add Microsoft to pipeline'\n\u2022 Navigate: 'Show dashboard'";
+      return "I can help you:\n\u2022 Run agents: 'Run demand agent', 'Open supply agent'\n\u2022 Find leads: 'Show hot leads', 'Tell me about Microdyne Systems'\n\u2022 Find projects: 'Show REDD+ projects', 'Verra projects'\n\u2022 Matchmaking: 'Show best match', 'Run matching'\n\u2022 Pipeline: 'Add Microdyne Systems to pipeline'\n\u2022 Navigate: 'Show dashboard'";
     }
     return "Got it. You can ask me to run agents, find specific leads or projects, show matches, or navigate to any section. Type 'help' to see all commands.";
   }
@@ -51161,160 +50894,100 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       opacity: phaseVis ? 1 : 0
     };
     const lbl = { fontSize: 9, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.10em", color: "#6B7F6B", marginBottom: 5, textTransform: "uppercase" };
-    const row = (Icon2, iconColor, text, sub) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { style: { width: 11, height: 11, color: iconColor, flexShrink: 0, marginTop: 2 } }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontWeight: 500, color: dark ? "rgba(255,255,255,0.82)" : "#1F2937", lineHeight: 1.35 }, children: text }),
-        sub && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: dark ? "rgba(248,250,252,0.45)" : "#64748B", lineHeight: 1.4, marginTop: 1 }, children: sub })
-      ] })
-    ] });
+    const row = (Icon2, iconColor, text, sub) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6 } }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { style: { width: 11, height: 11, color: iconColor, flexShrink: 0, marginTop: 2 } }), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontWeight: 500, color: dark ? "rgba(255,255,255,0.82)" : "#1F2937", lineHeight: 1.35 } }, text), sub && /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: dark ? "rgba(248,250,252,0.45)" : "#64748B", lineHeight: 1.4, marginTop: 1 } }, sub)));
     if (phase === 0) {
       const step = STEPS[Math.min(stepIdx, STEPS.length - 1)];
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: card, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Target, { style: { width: 12, height: 12, color: "#6B7F6B", animation: "qBlink 1.2s ease-in-out infinite", flexShrink: 0 } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#111827", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" }, children: "NEXUS" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          fontSize: 10,
-          color: dark ? "rgba(248,250,252,0.55)" : "rgba(0,0,0,0.55)",
-          lineHeight: 1.55,
-          display: "flex",
-          gap: 5,
-          alignItems: "flex-start",
-          opacity: stepVis ? 1 : 0,
-          transition: "opacity 0.25s ease"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            width: 5,
-            height: 5,
-            borderRadius: "50%",
-            background: "#6B7F6B",
-            flexShrink: 0,
-            marginTop: 3,
-            display: "inline-block",
-            animation: "qDotPulse 1s ease-in-out infinite"
-          } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: CHAT_SCAN_MSGS[Math.min(stepIdx, CHAT_SCAN_MSGS.length - 1)], speed: 20, color: dark ? "rgba(248,250,252,0.60)" : "rgba(0,0,0,0.60)" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 3, marginTop: 8 }, children: STEPS.map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          height: 3,
-          borderRadius: 999,
-          display: "inline-block",
-          transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
-          width: i === stepIdx ? 12 : 4,
-          background: i < stepIdx ? "#6B7F6B" : i === stepIdx ? "#6B7F6B" : dark ? "rgba(107,127,107,0.18)" : "rgba(107,127,107,0.22)"
-        } }, i)) })
-      ] });
+      return /* @__PURE__ */ import_react61.default.createElement("div", { style: card }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 7 } }, /* @__PURE__ */ import_react61.default.createElement(Target, { style: { width: 12, height: 12, color: "#6B7F6B", animation: "qBlink 1.2s ease-in-out infinite", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#111827", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" } }, "NEXUS")), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        fontSize: 10,
+        color: dark ? "rgba(248,250,252,0.55)" : "rgba(0,0,0,0.55)",
+        lineHeight: 1.55,
+        display: "flex",
+        gap: 5,
+        alignItems: "flex-start",
+        opacity: stepVis ? 1 : 0,
+        transition: "opacity 0.25s ease"
+      } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        width: 5,
+        height: 5,
+        borderRadius: "50%",
+        background: "#6B7F6B",
+        flexShrink: 0,
+        marginTop: 3,
+        display: "inline-block",
+        animation: "qDotPulse 1s ease-in-out infinite"
+      } }), /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: CHAT_SCAN_MSGS[Math.min(stepIdx, CHAT_SCAN_MSGS.length - 1)], speed: 20, color: dark ? "rgba(248,250,252,0.60)" : "rgba(0,0,0,0.60)" })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 3, marginTop: 8 } }, STEPS.map((_, i) => /* @__PURE__ */ import_react61.default.createElement("span", { key: i, style: {
+        height: 3,
+        borderRadius: 999,
+        display: "inline-block",
+        transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
+        width: i === stepIdx ? 12 : 4,
+        background: i < stepIdx ? "#6B7F6B" : i === stepIdx ? "#6B7F6B" : dark ? "rgba(107,127,107,0.18)" : "rgba(107,127,107,0.22)"
+      } }))));
     }
     if (phase === 1) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: card, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { style: { width: 12, height: 12, color: "#6B7F6B", flexShrink: 0 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#111827", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" }, children: "PREPARING BRIEF" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { display: "flex", gap: 3, marginLeft: 4, alignItems: "center" }, children: [0, 150, 300].map((d) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "#6B7F6B",
-          display: "inline-block",
-          animation: "qDotPulse 0.9s ease-in-out infinite",
-          animationDelay: `${d}ms`
-        } }, d)) })
-      ] }) });
+      return /* @__PURE__ */ import_react61.default.createElement("div", { style: card }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ import_react61.default.createElement(Brain, { style: { width: 12, height: 12, color: "#6B7F6B", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#111827", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" } }, "PREPARING BRIEF"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { display: "flex", gap: 3, marginLeft: 4, alignItems: "center" } }, [0, 150, 300].map((d) => /* @__PURE__ */ import_react61.default.createElement("span", { key: d, style: {
+        width: 4,
+        height: 4,
+        borderRadius: "50%",
+        background: "#6B7F6B",
+        display: "inline-block",
+        animation: "qDotPulse 0.9s ease-in-out infinite",
+        animationDelay: `${d}ms`
+      } })))));
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { ...card, padding: "12px 14px" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 7,
-        marginBottom: 10,
-        paddingBottom: 8,
-        borderBottom: `1px solid ${dark ? "rgba(107,127,107,0.18)" : "rgba(107,127,107,0.16)"}`
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Target, { style: { width: 13, height: 13, color: "#6B7F6B", flexShrink: 0 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 800, color: dark ? "rgba(248,250,252,0.90)" : "#111827", lineHeight: 1.2 }, children: "Lead Handoff Complete" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: "#6B7F6B", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em" }, children: project.name })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          marginLeft: "auto",
-          fontSize: 8,
-          fontWeight: 700,
-          padding: "2px 7px",
-          borderRadius: 3,
-          background: "rgba(107,127,107,0.15)",
-          color: "#6B7F6B",
-          border: "1px solid rgba(107,127,107,0.30)",
-          fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: "0.10em",
-          flexShrink: 0
-        }, children: "PROSPECT" })
-      ] }),
-      matchNames.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginBottom: 9 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: lbl, children: "Matched Corporates" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: matchNames.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          fontSize: 9,
-          fontWeight: 600,
-          padding: "2px 8px",
-          borderRadius: 5,
-          background: "rgba(107,127,107,0.10)",
-          color: "#8FAD8F",
-          border: "1px solid rgba(107,127,107,0.28)"
-        }, children: m }, m)) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginBottom: 9 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: lbl, children: "Lead Management" }),
-        row(ExternalLink, "#6B7F6B", "LinkedIn Outreach", `Contact sustainability lead at ${matchNames[0] || "matched corporates"}`),
-        row(Globe, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Country Intelligence", `${project.country || "Project region"} \u2014 carbon market & regulatory news review`),
-        row(Newspaper, "#CC5A25", "Market News Scan", "Latest VCM pricing, registry updates, and buyer sentiment"),
-        row(Search, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Name Screening", "Refinitiv World-Check \u2014 no adverse media, sanctions, or PEP flags"),
-        row(FileText, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Mandate Review", "Align project attributes to corporate ESG procurement criteria")
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "6px 9px",
-        borderRadius: 7,
-        marginBottom: 9,
-        background: "rgba(143,173,143,0.08)",
-        border: "1px solid rgba(143,173,143,0.22)"
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 10, height: 10, color: "#7EB87E", flexShrink: 0 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, color: "#7EB87E", letterSpacing: "0.04em" }, children: "Name screening cleared \u2014 no issues detected" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: lbl, children: "Client Onboarding" }),
-        row(File2, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Document Checklist", "VCS cert, CCBS report, BeZero rating brief, MRV summary"),
-        row(Mail, "#6B7F6B", "Send NDA", "Non-Disclosure Agreement sent for client review and sign-off \u2014 awaiting countersignature"),
-        row(FileText, dark ? "rgba(248,250,252,0.48)" : "#64748B", "MOU Pre-fill", "Auto-drafted from registry data and corporate mandate"),
-        row(Users, "#FF6B35", "Handoff to Qatalyst Agent", "Monitoring deal progress and document compliance")
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        marginTop: 9,
-        padding: "7px 10px",
-        borderRadius: 7,
-        background: "rgba(255,107,53,0.08)",
-        border: "1px solid rgba(255,107,53,0.20)"
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, color: "#FF6B35", letterSpacing: "0.04em" }, children: "\u26A1 NEXT STEP \u2014 " }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, color: dark ? "rgba(248,250,252,0.65)" : "#64748B" }, children: [
-          "Send NDA to ",
-          matchNames[0] || "client",
-          " for review and sign-off"
-        ] })
-      ] })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { ...card, padding: "12px 14px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 7,
+      marginBottom: 10,
+      paddingBottom: 8,
+      borderBottom: `1px solid ${dark ? "rgba(107,127,107,0.18)" : "rgba(107,127,107,0.16)"}`
+    } }, /* @__PURE__ */ import_react61.default.createElement(Target, { style: { width: 13, height: 13, color: "#6B7F6B", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: dark ? "rgba(248,250,252,0.90)" : "#111827", lineHeight: 1.2 } }, "Lead Handoff Complete"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: "#6B7F6B", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em" } }, project.name)), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      marginLeft: "auto",
+      fontSize: 8,
+      fontWeight: 700,
+      padding: "2px 7px",
+      borderRadius: 3,
+      background: "rgba(107,127,107,0.15)",
+      color: "#6B7F6B",
+      border: "1px solid rgba(107,127,107,0.30)",
+      fontFamily: "'JetBrains Mono', monospace",
+      letterSpacing: "0.10em",
+      flexShrink: 0
+    } }, "PROSPECT")), matchNames.length > 0 && /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginBottom: 9 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: lbl }, "Matched Corporates"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 } }, matchNames.map((m) => /* @__PURE__ */ import_react61.default.createElement("span", { key: m, style: {
+      fontSize: 9,
+      fontWeight: 600,
+      padding: "2px 8px",
+      borderRadius: 5,
+      background: "rgba(107,127,107,0.10)",
+      color: "#8FAD8F",
+      border: "1px solid rgba(107,127,107,0.28)"
+    } }, m)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginBottom: 9 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: lbl }, "Lead Management"), row(ExternalLink, "#6B7F6B", "LinkedIn Outreach", `Contact sustainability lead at ${matchNames[0] || "matched corporates"}`), row(Globe, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Country Intelligence", `${project.country || "Project region"} \u2014 carbon market & regulatory news review`), row(Newspaper, "#CC5A25", "Market News Scan", "Latest VCM pricing, registry updates, and buyer sentiment"), row(Search, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Name Screening", "Refinitiv World-Check \u2014 no adverse media, sanctions, or PEP flags"), row(FileText, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Mandate Review", "Align project attributes to corporate ESG procurement criteria")), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "6px 9px",
+      borderRadius: 7,
+      marginBottom: 9,
+      background: "rgba(143,173,143,0.08)",
+      border: "1px solid rgba(143,173,143,0.22)"
+    } }, /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 10, height: 10, color: "#7EB87E", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, color: "#7EB87E", letterSpacing: "0.04em" } }, "Name screening cleared \u2014 no issues detected")), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: lbl }, "Client Onboarding"), row(File2, dark ? "rgba(248,250,252,0.48)" : "#64748B", "Document Checklist", "VCS cert, CCBS report, BeZero rating brief, MRV summary"), row(Mail, "#6B7F6B", "Send NDA", "Non-Disclosure Agreement sent for client review and sign-off \u2014 awaiting countersignature"), row(FileText, dark ? "rgba(248,250,252,0.48)" : "#64748B", "MOU Pre-fill", "Auto-drafted from registry data and corporate mandate"), row(Users, "#FF6B35", "Handoff to Qatalyst Agent", "Monitoring deal progress and document compliance")), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      marginTop: 9,
+      padding: "7px 10px",
+      borderRadius: 7,
+      background: "rgba(255,107,53,0.08)",
+      border: "1px solid rgba(255,107,53,0.20)"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, color: "#FF6B35", letterSpacing: "0.04em" } }, "\u26A1 NEXT STEP \u2014 "), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: dark ? "rgba(248,250,252,0.65)" : "#64748B" } }, "Send NDA to ", matchNames[0] || "client", " for review and sign-off")));
   }
   function ResizeHandle({ onMouseDown, t, vertical = false }) {
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    return /* @__PURE__ */ import_react61.default.createElement(
       "div",
       {
         onMouseDown,
         className: `${vertical ? "h-1 w-full cursor-row-resize" : "w-1 h-full cursor-col-resize"} shrink-0 flex items-center justify-center group transition-colors z-10 ${t.divider}`,
-        style: { userSelect: "none" },
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `${vertical ? "w-8 h-0.5" : "w-0.5 h-8"} rounded-full transition-colors group-hover:bg-[#FF6B35]/50 ${t.dividerDot}` })
-      }
+        style: { userSelect: "none" }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `${vertical ? "w-8 h-0.5" : "w-0.5 h-8"} rounded-full transition-colors group-hover:bg-[#FF6B35]/50 ${t.dividerDot}` })
     );
   }
   var SOUTH_BARITO_SCAN_STEPS = [
@@ -51371,42 +51044,28 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
     };
     if (phase === 0) {
       const step = SOUTH_BARITO_SCAN_STEPS[Math.min(scanIdx, SOUTH_BARITO_SCAN_STEPS.length - 1)];
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: baseCard, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 12, height: 12, color: "#FF6B35", animation: "qBlink 1.1s ease-in-out infinite", flexShrink: 0 } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#191C21", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" }, children: "SCANNING" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          fontSize: 10,
-          color: dark ? "rgba(248,250,252,0.55)" : "rgba(0,0,0,0.55)",
-          lineHeight: 1.55,
-          display: "flex",
-          gap: 5,
-          alignItems: "flex-start",
-          opacity: scanVis ? 1 : 0,
-          transition: "opacity 0.28s ease"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 5, height: 5, borderRadius: "50%", background: "#FF6B35", flexShrink: 0, marginTop: 3, display: "inline-block", animation: "qDotPulse 1s ease-in-out infinite" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: SOUTH_BARITO_SCAN_STEPS[Math.min(scanIdx, SOUTH_BARITO_SCAN_STEPS.length - 1)], speed: 20, color: dark ? "rgba(248,250,252,0.60)" : "rgba(0,0,0,0.60)" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 3, marginTop: 8 }, children: SOUTH_BARITO_SCAN_STEPS.map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          height: 3,
-          borderRadius: 999,
-          display: "inline-block",
-          transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
-          width: i === scanIdx ? 14 : 4,
-          background: i < scanIdx ? "#FF6B35" : i === scanIdx ? "#FF6B35" : dark ? "rgba(255,107,53,0.18)" : "rgba(255,107,53,0.22)"
-        } }, i)) })
-      ] });
+      return /* @__PURE__ */ import_react61.default.createElement("div", { style: baseCard }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 7 } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 12, height: 12, color: "#FF6B35", animation: "qBlink 1.1s ease-in-out infinite", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#191C21", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" } }, "SCANNING")), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        fontSize: 10,
+        color: dark ? "rgba(248,250,252,0.55)" : "rgba(0,0,0,0.55)",
+        lineHeight: 1.55,
+        display: "flex",
+        gap: 5,
+        alignItems: "flex-start",
+        opacity: scanVis ? 1 : 0,
+        transition: "opacity 0.28s ease"
+      } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { width: 5, height: 5, borderRadius: "50%", background: "#FF6B35", flexShrink: 0, marginTop: 3, display: "inline-block", animation: "qDotPulse 1s ease-in-out infinite" } }), /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: SOUTH_BARITO_SCAN_STEPS[Math.min(scanIdx, SOUTH_BARITO_SCAN_STEPS.length - 1)], speed: 20, color: dark ? "rgba(248,250,252,0.60)" : "rgba(0,0,0,0.60)" })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 3, marginTop: 8 } }, SOUTH_BARITO_SCAN_STEPS.map((_, i) => /* @__PURE__ */ import_react61.default.createElement("span", { key: i, style: {
+        height: 3,
+        borderRadius: 999,
+        display: "inline-block",
+        transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
+        width: i === scanIdx ? 14 : 4,
+        background: i < scanIdx ? "#FF6B35" : i === scanIdx ? "#FF6B35" : dark ? "rgba(255,107,53,0.18)" : "rgba(255,107,53,0.22)"
+      } }))));
     }
     if (phase === 1) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: baseCard, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { style: { width: 12, height: 12, color: "#FF6B35", flexShrink: 0 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#191C21", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" }, children: "THINKING" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { display: "flex", gap: 3, marginLeft: 4, alignItems: "center" }, children: [0, 150, 300].map((delay) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 4, height: 4, borderRadius: "50%", background: "#FF6B35", display: "inline-block", animation: "qDotPulse 0.9s ease-in-out infinite", animationDelay: `${delay}ms` } }, delay)) })
-      ] }) });
+      return /* @__PURE__ */ import_react61.default.createElement("div", { style: baseCard }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ import_react61.default.createElement(Brain, { style: { width: 12, height: 12, color: "#FF6B35", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: dark ? "rgba(255,255,255,0.85)" : "#191C21", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.09em" } }, "THINKING"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { display: "flex", gap: 3, marginLeft: 4, alignItems: "center" } }, [0, 150, 300].map((delay) => /* @__PURE__ */ import_react61.default.createElement("span", { key: delay, style: { width: 4, height: 4, borderRadius: "50%", background: "#FF6B35", display: "inline-block", animation: "qDotPulse 0.9s ease-in-out infinite", animationDelay: `${delay}ms` } })))));
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: {
       maxWidth: 300,
       fontSize: 11,
       color: dark ? "rgba(248,250,252,0.80)" : "rgba(0,0,0,0.75)",
@@ -51415,7 +51074,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       opacity: phaseVis ? 1 : 0,
       transform: phaseVis ? "translateY(0)" : "translateY(6px)",
       transition: "opacity 0.4s ease, transform 0.4s ease"
-    }, children: text });
+    } }, text);
   }
   function AgentCardsStrip({ dark, send, setPage: setPage2 }) {
     const cards = [
@@ -51428,10 +51087,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         bg: dark ? "rgba(255,107,53,0.09)" : "rgba(255,107,53,0.06)",
         border: "rgba(255,107,53,0.28)",
         onClick: () => send("Open discovery agents"),
-        icon: (c2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 12, height: 12, color: c2, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", animation: "qBlink 1.2s ease-in-out infinite" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", inset: 0, borderRadius: "50%", border: `1px solid ${c2}50`, animation: "radarPing 2s ease-out infinite" } })
-        ] })
+        icon: (c2) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 12, height: 12, color: c2, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", animation: "qBlink 1.2s ease-in-out infinite" } }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", inset: 0, borderRadius: "50%", border: `1px solid ${c2}50`, animation: "radarPing 2s ease-out infinite" } }))
       },
       {
         id: "client",
@@ -51442,10 +51098,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         bg: dark ? "rgba(107,127,107,0.09)" : "rgba(107,127,107,0.06)",
         border: "rgba(107,127,107,0.26)",
         onClick: () => setPage2("clients"),
-        icon: (c2) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Target, { style: { width: 12, height: 12, color: c2, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", inset: 0, animation: "orbitDot 2.8s linear infinite" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: c2 } }) })
-        ] })
+        icon: (c2) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(Target, { style: { width: 12, height: 12, color: c2, position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" } }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", inset: 0, animation: "orbitDot 2.8s linear infinite" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: c2 } })))
       },
       {
         id: "doc",
@@ -51456,7 +51109,7 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         bg: dark ? "rgba(248,250,252,0.05)" : "rgba(0,0,0,0.04)",
         border: dark ? "rgba(248,250,252,0.12)" : "rgba(0,0,0,0.10)",
         onClick: () => setPage2("dataroom"),
-        icon: (c2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, { style: { width: 11, height: 11, color: c2, animation: "docFloat 2.2s ease-in-out infinite" } }) })
+        icon: (c2) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(FileText, { style: { width: 11, height: 11, color: c2, animation: "docFloat 2.2s ease-in-out infinite" } }))
       },
       {
         id: "news",
@@ -51467,45 +51120,40 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
         bg: dark ? "rgba(204,90,37,0.09)" : "rgba(204,90,37,0.06)",
         border: "rgba(204,90,37,0.26)",
         onClick: () => send("Show hot leads"),
-        icon: (c2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Newspaper, { style: { width: 11, height: 11, color: c2, animation: "newsTilt 2.6s ease-in-out infinite" } }) })
+        icon: (c2) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Newspaper, { style: { width: 11, height: 11, color: c2, animation: "newsTilt 2.6s ease-in-out infinite" } }))
       }
     ];
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "6px 10px 4px", flexShrink: 0 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "6px 10px 4px", flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("style", null, `
         /* keyframes defined globally */
-      ` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5 }, children: cards.map(({ id, label, color: color2, glow, bg, border, onClick, icon }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "button",
-        {
-          onClick,
-          style: {
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "3px 8px",
-            borderRadius: 999,
-            background: bg,
-            border: `1px solid ${border}`,
-            boxShadow: `0 0 6px ${glow}`,
-            cursor: "pointer",
-            transition: "box-shadow 0.15s, transform 0.1s"
-          },
-          onMouseEnter: (e) => {
-            e.currentTarget.style.boxShadow = `0 0 11px ${glow}`;
-            e.currentTarget.style.transform = "translateY(-1px)";
-          },
-          onMouseLeave: (e) => {
-            e.currentTarget.style.boxShadow = `0 0 6px ${glow}`;
-            e.currentTarget.style.transform = "translateY(0)";
-          },
-          children: [
-            icon(color2),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 400, color: dark ? "rgba(255,255,255,0.70)" : "#374151", whiteSpace: "nowrap" }, children: label })
-          ]
+      `), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 5 } }, cards.map(({ id, label, color: color2, glow, bg, border, onClick, icon }) => /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        key: id,
+        onClick,
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "3px 8px",
+          borderRadius: 999,
+          background: bg,
+          border: `1px solid ${border}`,
+          boxShadow: `0 0 6px ${glow}`,
+          cursor: "pointer",
+          transition: "box-shadow 0.15s, transform 0.1s"
         },
-        id
-      )) })
-    ] });
+        onMouseEnter: (e) => {
+          e.currentTarget.style.boxShadow = `0 0 11px ${glow}`;
+          e.currentTarget.style.transform = "translateY(-1px)";
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.boxShadow = `0 0 6px ${glow}`;
+          e.currentTarget.style.transform = "translateY(0)";
+        }
+      },
+      icon(color2),
+      /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 400, color: dark ? "rgba(255,255,255,0.70)" : "#374151", whiteSpace: "nowrap" } }, label)
+    ))));
   }
   var CHAT_SCAN_MSGS = [
     "Scanning global carbon markets\u2026 activating intelligence grid",
@@ -51536,75 +51184,65 @@ Take a look at the reducer(s) handling this action type: ${action.type}.
       }, 2600);
       return () => clearTimeout(timer);
     }, [msgIdx, done]);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: {
       background: dark ? "rgba(26,29,36,0.97)" : "rgba(245,246,248,0.97)",
       border: `1px solid ${dark ? "rgba(255,107,53,0.30)" : "rgba(255,107,53,0.22)"}`,
       borderRadius: 12,
       padding: "10px 12px",
       minWidth: 230,
       maxWidth: 280
-    }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 7 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: {
-          width: 13,
-          height: 13,
-          color: done ? "#6B7F6B" : "#FF6B35",
-          flexShrink: 0,
-          animation: done ? "none" : "qBlink 1.1s ease-in-out infinite"
-        } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 7 } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: {
+      width: 13,
+      height: 13,
+      color: done ? "#6B7F6B" : "#FF6B35",
+      flexShrink: 0,
+      animation: done ? "none" : "qBlink 1.1s ease-in-out infinite"
+    } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 10,
+      fontWeight: 800,
+      color: dark ? "rgba(255,255,255,0.85)" : "#191C21",
+      fontFamily: "monospace",
+      letterSpacing: "0.09em"
+    } }, "SCOUT"), done && /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      marginLeft: "auto",
+      fontSize: 9,
+      fontWeight: 700,
+      color: "#6B7F6B",
+      fontFamily: "monospace",
+      letterSpacing: "0.06em"
+    } }, "COMPLETE")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { minHeight: 30, overflow: "hidden", marginBottom: 7 } }, /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: msgIdx,
+        style: {
           fontSize: 10,
-          fontWeight: 800,
-          color: dark ? "rgba(255,255,255,0.85)" : "#191C21",
-          fontFamily: "monospace",
-          letterSpacing: "0.09em"
-        }, children: "SCOUT" }),
-        done && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          marginLeft: "auto",
-          fontSize: 9,
-          fontWeight: 700,
-          color: "#6B7F6B",
-          fontFamily: "monospace",
-          letterSpacing: "0.06em"
-        }, children: "COMPLETE" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { minHeight: 30, overflow: "hidden", marginBottom: 7 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "div",
-        {
-          style: {
-            fontSize: 10,
-            color: dark ? "rgba(255,255,255,0.60)" : "rgba(0,0,0,0.60)",
-            lineHeight: 1.55,
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 5,
-            animation: visible ? "qMsgIn 0.4s cubic-bezier(0.0,0,0.2,1) both" : "qMsgOut 0.3s cubic-bezier(0.4,0,1,1) both"
-          },
-          children: [
-            done ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#6B7F6B", fontSize: 11, flexShrink: 0 }, children: "\u2713" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              width: 5,
-              height: 5,
-              borderRadius: "50%",
-              background: "#FF6B35",
-              flexShrink: 0,
-              marginTop: 3,
-              display: "inline-block",
-              animation: "qDotPulse 1s ease-in-out infinite"
-            } }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: CHAT_SCAN_MSGS[msgIdx] })
-          ]
-        },
-        msgIdx
-      ) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", alignItems: "center", gap: 3 }, children: CHAT_SCAN_MSGS.map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-        height: 3,
-        borderRadius: 999,
+          color: dark ? "rgba(255,255,255,0.60)" : "rgba(0,0,0,0.60)",
+          lineHeight: 1.55,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 5,
+          animation: visible ? "qMsgIn 0.4s cubic-bezier(0.0,0,0.2,1) both" : "qMsgOut 0.3s cubic-bezier(0.4,0,1,1) both"
+        }
+      },
+      done ? /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#6B7F6B", fontSize: 11, flexShrink: 0 } }, "\u2713") : /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        width: 5,
+        height: 5,
+        borderRadius: "50%",
+        background: "#FF6B35",
+        flexShrink: 0,
+        marginTop: 3,
         display: "inline-block",
-        width: !done && i === msgIdx ? 14 : 4,
-        background: done || i < msgIdx ? "#FF6B35" : !done && i === msgIdx ? "#FF6B35" : dark ? "rgba(255,107,53,0.18)" : "rgba(255,107,53,0.22)",
-        transition: "all 0.3s"
-      } }, i)) })
-    ] });
+        animation: "qDotPulse 1s ease-in-out infinite"
+      } }),
+      /* @__PURE__ */ import_react61.default.createElement("span", null, CHAT_SCAN_MSGS[msgIdx])
+    )), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 3 } }, CHAT_SCAN_MSGS.map((_, i) => /* @__PURE__ */ import_react61.default.createElement("span", { key: i, style: {
+      height: 3,
+      borderRadius: 999,
+      display: "inline-block",
+      width: !done && i === msgIdx ? 14 : 4,
+      background: done || i < msgIdx ? "#FF6B35" : !done && i === msgIdx ? "#FF6B35" : dark ? "rgba(255,107,53,0.18)" : "rgba(255,107,53,0.22)",
+      transition: "all 0.3s"
+    } }))));
   }
   function ChatPanel({ t, dark, messages, setMessages, setPage: setPage2, addLead, addProject, page, openNewCampaign, addAgent, onChatScanDone, chatInputRef }) {
     const [input, setInput] = (0, import_react60.useState)("");
@@ -51779,7 +51417,7 @@ ${name} is now live in your Agent Fleet. I've switched you to the Agent Terminal
                 role: "ai",
                 text: `\u2713 South Barito Kapuas Project added to your pipeline.
 
-I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are your strongest fits. Navigating to Client Management now.`
+I've matched it to your client accounts \u2014 Japan Gas, Engenix Energy, and Vitronix Trading are your strongest fits. Navigating to Client Management now.`
               }]);
             }, 400);
           } else {
@@ -51831,160 +51469,98 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
         send();
       }
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+    return /* @__PURE__ */ import_react61.default.createElement(
       "div",
       {
         className: `flex flex-col h-full ${t.chat} overflow-hidden`,
         style: {
           transition: "box-shadow 0.4s ease",
           boxShadow: isCalculating ? "inset 2px 0 0 #FF6B35, 0 0 24px rgba(255,107,53,0.12)" : "none"
+        }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `px-3 py-2.5 border-b ${t.border} shrink-0 flex items-center gap-2` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-6 h-6 rounded-lg bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shadow shadow-[#FF6B35]/20` }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-3 h-3 text-white" })), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold ${t.text}` }, "Qatalyst"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-1 ml-1" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" }), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] ${t.aiAccent}` }, "Active"))),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex justify-start" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-5 h-5 rounded-full bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shrink-0 mt-0.5 mr-2` }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), /* @__PURE__ */ import_react61.default.createElement("div", { className: `max-w-[90%] px-3 py-2.5 rounded-2xl text-xs leading-relaxed ${t.msgAi} border` }, page === "campaigns" ? /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `block font-bold ${t.text} mb-1` }, "Tell me your objective"), "What are you trying to achieve?") : page === "terminal" ? /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `block font-bold ${t.text} mb-1` }, "Agent Terminal ready."), "I can deploy new scanning agents for you. Just say ", /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-[#FF6B35] font-bold" }, '"create agent"'), " and I'll guide you through the configuration with smart recommendations.") : /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `block font-bold ${t.text} mb-1` }, "Let's get you to a decision faster."), "What would you like to start with?"))), messages.map((m, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, className: `flex ${m.role === "user" ? "justify-end" : "justify-start"}` }, m.role === "ai" && /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-5 h-5 rounded-full bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shrink-0 mt-0.5 mr-2` }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), m.scoutMsg ? /* @__PURE__ */ import_react61.default.createElement(ScoutWidget, { dark, onDone: m.onScanDone }) : m.reasoningMsg ? /* @__PURE__ */ import_react61.default.createElement(ChatReasoningWidget, { dark, query: m.query, setPage: setPage2 }) : m.scannerWidget ? /* @__PURE__ */ import_react61.default.createElement(ScanMarketWidget, { dark, onDone: m.onScanDone }) : m.pipelineHandoff ? /* @__PURE__ */ import_react61.default.createElement(PipelineHandoffMessage, { dark, project: m.project, matches: m.matches }) : m.southBaritoMsg ? /* @__PURE__ */ import_react61.default.createElement(SouthBaritoMessage, { dark, text: m.text }) : /* @__PURE__ */ import_react61.default.createElement("div", { className: `max-w-[90%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${m.role === "user" ? t.msgUser : t.msgAi} border` }, m.text, m.actions && m.actions.length > 0 && /* @__PURE__ */ import_react61.default.createElement("div", { className: "mt-3 border-t border-[#2A2D38] pt-2.5" }, m.actions[0]?.agentAction?.kind === "setType" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-wrap gap-1.5" }, m.actions.map((action, ai) => /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          key: ai,
+          onClick: () => {
+            setTyping(true);
+            handleAgentAction(action, action.label);
+          },
+          className: "px-2.5 py-1 rounded text-[10px] font-bold font-['JetBrains_Mono'] tracking-wider transition-all border hover:bg-[#FF6B35]/15 hover:border-[#FF6B35]/50 hover:text-[#FF6B35]",
+          style: { background: "var(--c-card2)", border: "1px solid var(--c-border2)", color: "var(--c-sub)" }
         },
-        children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `px-3 py-2.5 border-b ${t.border} shrink-0 flex items-center gap-2`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-6 h-6 rounded-lg bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shadow shadow-[#FF6B35]/20`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-3 h-3 text-white" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs font-bold ${t.text}`, children: "Qatalyst" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-1 ml-1", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] ${t.aiAccent}`, children: "Active" })
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex justify-start", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-5 h-5 rounded-full bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shrink-0 mt-0.5 mr-2`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `max-w-[90%] px-3 py-2.5 rounded-2xl text-xs leading-relaxed ${t.msgAi} border`, children: page === "campaigns" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `block font-bold ${t.text} mb-1`, children: "Tell me your objective" }),
-                "What are you trying to achieve?"
-              ] }) : page === "terminal" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `block font-bold ${t.text} mb-1`, children: "Agent Terminal ready." }),
-                "I can deploy new scanning agents for you. Just say ",
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[#FF6B35] font-bold", children: '"create agent"' }),
-                " and I'll guide you through the configuration with smart recommendations."
-              ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `block font-bold ${t.text} mb-1`, children: "Let's get you to a decision faster." }),
-                "What would you like to start with?"
-              ] }) })
-            ] }),
-            messages.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex ${m.role === "user" ? "justify-end" : "justify-start"}`, children: [
-              m.role === "ai" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-5 h-5 rounded-full bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shrink-0 mt-0.5 mr-2`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-              m.scoutMsg ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScoutWidget, { dark, onDone: m.onScanDone }) : m.reasoningMsg ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChatReasoningWidget, { dark, query: m.query, setPage: setPage2 }) : m.scannerWidget ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScanMarketWidget, { dark, onDone: m.onScanDone }) : m.pipelineHandoff ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PipelineHandoffMessage, { dark, project: m.project, matches: m.matches }) : m.southBaritoMsg ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SouthBaritoMessage, { dark, text: m.text }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `max-w-[90%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${m.role === "user" ? t.msgUser : t.msgAi} border`, children: [
-                m.text,
-                m.actions && m.actions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mt-3 border-t border-[#2A2D38] pt-2.5", children: [
-                  m.actions[0]?.agentAction?.kind === "setType" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex flex-wrap gap-1.5", children: m.actions.map((action, ai) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "button",
-                    {
-                      onClick: () => {
-                        setTyping(true);
-                        handleAgentAction(action, action.label);
-                      },
-                      className: "px-2.5 py-1 rounded text-[10px] font-bold font-['JetBrains_Mono'] tracking-wider transition-all border hover:bg-[#FF6B35]/15 hover:border-[#FF6B35]/50 hover:text-[#FF6B35]",
-                      style: { background: "var(--c-card2)", border: "1px solid var(--c-border2)", color: "var(--c-sub)" },
-                      children: action.label
-                    },
-                    ai
-                  )) }),
-                  m.actions[0]?.agentAction?.kind === "setName" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex flex-wrap gap-1.5", children: m.actions.map((action, ai) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "button",
-                    {
-                      onClick: () => {
-                        setTyping(true);
-                        handleAgentAction(action, action.label);
-                      },
-                      className: "px-2.5 py-1 rounded text-[10px] font-bold font-['JetBrains_Mono'] tracking-wider transition-all border hover:bg-[#FF6B35]/15 hover:border-[#FF6B35]/50 hover:text-[#FF6B35]",
-                      style: { background: "var(--c-card2)", border: "1px solid var(--c-border2)", color: "var(--c-sub)" },
-                      children: action.label
-                    },
-                    ai
-                  )) }),
-                  m.actions[0]?.agentAction?.kind === "toggleMarket" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "space-y-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex flex-wrap gap-1.5", children: m.actions.map((action, ai) => {
-                      const selected = agentFlow?.markets?.includes(action.label);
-                      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                        "button",
-                        {
-                          onClick: () => handleAgentAction(action, action.label),
-                          className: `px-2.5 py-1 rounded text-[10px] font-bold font-['JetBrains_Mono'] tracking-wider transition-all border`,
-                          style: {
-                            background: selected ? "rgba(255,107,53,0.20)" : "#1E2126",
-                            border: selected ? "1px solid rgba(255,107,53,0.50)" : "1px solid var(--c-border2)",
-                            color: selected ? "#FF6B35" : "rgba(248,250,252,0.55)"
-                          },
-                          children: [
-                            selected ? "\u2713 " : "",
-                            action.label
-                          ]
-                        },
-                        ai
-                      );
-                    }) }),
-                    agentFlow?.step === 3 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                      "button",
-                      {
-                        onClick: confirmMarkets,
-                        className: "w-full px-3 py-2 rounded text-[11px] font-bold tracking-widest transition-all mt-1",
-                        style: { background: "#FF6B35", color: "var(--c-text)", fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 2px 8px rgba(255,107,53,0.35)" },
-                        children: [
-                          "\u26A1 DEPLOY AGENT ",
-                          agentFlow.markets.length ? `(${agentFlow.markets.join(", ")})` : "(EU_ETS, VCM)"
-                        ]
-                      }
-                    )
-                  ] }),
-                  !m.actions[0]?.agentAction && m.actions.map((action, ai) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "button",
-                    {
-                      onClick: () => openNewCampaign(action.template),
-                      className: `w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all mb-1.5
-                        ${action.primary ? "bg-[#FF6B35] hover:bg-[#E55520] text-white shadow-[0_2px_6px_rgba(255,107,53,0.35)]" : "bg-[#282C32] hover:bg-[#FF6B35]/10 text-white/60 border border-[#2A2D38] hover:border-[#FF6B35]/30"}`,
-                      children: action.primary ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "flex items-center gap-1.5", children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "w-3 h-3 inline" }),
-                        action.label
-                      ] }) : action.label
-                    },
-                    ai
-                  ))
-                ] })
-              ] })
-            ] }, i)),
-            typing && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex justify-start", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-5 h-5 rounded-full bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shrink-0 mt-0.5 mr-2`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `px-3 py-2 rounded-2xl border ${t.msgAi}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "flex gap-1 items-center", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-bounce", style: { animationDelay: "0ms" } }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-bounce", style: { animationDelay: "150ms" } }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-bounce", style: { animationDelay: "300ms" } })
-              ] }) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: bottomRef })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AgentCardsStrip, { dark, send, setPage: setPage2 }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `px-3 pb-3 shrink-0`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex items-end gap-2 rounded-xl border ${t.border} p-2 ${dark ? "bg-[#191C21]" : "bg-[#282C32]"}`, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "textarea",
-                {
-                  ref: inputRef,
-                  value: input,
-                  onChange: (e) => setInput(e.target.value),
-                  onKeyDown: handleKey,
-                  placeholder: "Ask anything\u2026 'What's at risk?' \xB7 'Pipeline health' \xB7 'Best project match'",
-                  rows: 2,
-                  className: `flex-1 resize-none text-xs bg-transparent focus:outline-none ${t.text} placeholder:${t.muted} leading-relaxed`,
-                  style: { maxHeight: 80 }
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "button",
-                {
-                  onClick: () => send(),
-                  disabled: !input.trim(),
-                  className: "w-7 h-7 rounded-lg bg-[#FF6B35] hover:bg-[#E55520] disabled:opacity-30 flex items-center justify-center transition-all shadow-[0_2px_8px_rgba(255,107,53,0.40)] hover:shadow-[0_3px_12px_rgba(255,107,53,0.55)] shrink-0",
-                  children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "w-3.5 h-3.5 text-white" })
-                }
-              )
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.muted} mt-1.5 text-center`, children: "Press Enter to send \xB7 Shift+Enter for newline" })
-          ] })
-        ]
-      }
+        action.label
+      ))), m.actions[0]?.agentAction?.kind === "setName" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-wrap gap-1.5" }, m.actions.map((action, ai) => /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          key: ai,
+          onClick: () => {
+            setTyping(true);
+            handleAgentAction(action, action.label);
+          },
+          className: "px-2.5 py-1 rounded text-[10px] font-bold font-['JetBrains_Mono'] tracking-wider transition-all border hover:bg-[#FF6B35]/15 hover:border-[#FF6B35]/50 hover:text-[#FF6B35]",
+          style: { background: "var(--c-card2)", border: "1px solid var(--c-border2)", color: "var(--c-sub)" }
+        },
+        action.label
+      ))), m.actions[0]?.agentAction?.kind === "toggleMarket" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-wrap gap-1.5" }, m.actions.map((action, ai) => {
+        const selected = agentFlow?.markets?.includes(action.label);
+        return /* @__PURE__ */ import_react61.default.createElement(
+          "button",
+          {
+            key: ai,
+            onClick: () => handleAgentAction(action, action.label),
+            className: `px-2.5 py-1 rounded text-[10px] font-bold font-['JetBrains_Mono'] tracking-wider transition-all border`,
+            style: {
+              background: selected ? "rgba(255,107,53,0.20)" : "#1E2126",
+              border: selected ? "1px solid rgba(255,107,53,0.50)" : "1px solid var(--c-border2)",
+              color: selected ? "#FF6B35" : "rgba(248,250,252,0.55)"
+            }
+          },
+          selected ? "\u2713 " : "",
+          action.label
+        );
+      })), agentFlow?.step === 3 && /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: confirmMarkets,
+          className: "w-full px-3 py-2 rounded text-[11px] font-bold tracking-widest transition-all mt-1",
+          style: { background: "#FF6B35", color: "var(--c-text)", fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 2px 8px rgba(255,107,53,0.35)" }
+        },
+        "\u26A1 DEPLOY AGENT ",
+        agentFlow.markets.length ? `(${agentFlow.markets.join(", ")})` : "(EU_ETS, VCM)"
+      )), !m.actions[0]?.agentAction && m.actions.map((action, ai) => /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          key: ai,
+          onClick: () => openNewCampaign(action.template),
+          className: `w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all mb-1.5
+                        ${action.primary ? "bg-[#FF6B35] hover:bg-[#E55520] text-white shadow-[0_2px_6px_rgba(255,107,53,0.35)]" : "bg-[#282C32] hover:bg-[#FF6B35]/10 text-white/60 border border-[#2A2D38] hover:border-[#FF6B35]/30"}`
+        },
+        action.primary ? /* @__PURE__ */ import_react61.default.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react61.default.createElement(Plus, { className: "w-3 h-3 inline" }), action.label) : action.label
+      )))))), typing && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex justify-start" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-5 h-5 rounded-full bg-gradient-to-br ${t.logoGrad} flex items-center justify-center shrink-0 mt-0.5 mr-2` }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), /* @__PURE__ */ import_react61.default.createElement("div", { className: `px-3 py-2 rounded-2xl border ${t.msgAi}` }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "flex gap-1 items-center" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-bounce", style: { animationDelay: "0ms" } }), /* @__PURE__ */ import_react61.default.createElement("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-bounce", style: { animationDelay: "150ms" } }), /* @__PURE__ */ import_react61.default.createElement("span", { className: "w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-bounce", style: { animationDelay: "300ms" } })))), /* @__PURE__ */ import_react61.default.createElement("div", { ref: bottomRef })),
+      /* @__PURE__ */ import_react61.default.createElement(AgentCardsStrip, { dark, send, setPage: setPage2 }),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `px-3 pb-3 shrink-0` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex items-end gap-2 rounded-xl border ${t.border} p-2 ${dark ? "bg-[#191C21]" : "bg-[#282C32]"}` }, /* @__PURE__ */ import_react61.default.createElement(
+        "textarea",
+        {
+          ref: inputRef,
+          value: input,
+          onChange: (e) => setInput(e.target.value),
+          onKeyDown: handleKey,
+          placeholder: "Ask anything\u2026 'What's at risk?' \xB7 'Pipeline health' \xB7 'Best project match'",
+          rows: 2,
+          className: `flex-1 resize-none text-xs bg-transparent focus:outline-none ${t.text} placeholder:${t.muted} leading-relaxed`,
+          style: { maxHeight: 80 }
+        }
+      ), /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: () => send(),
+          disabled: !input.trim(),
+          className: "w-7 h-7 rounded-lg bg-[#FF6B35] hover:bg-[#E55520] disabled:opacity-30 flex items-center justify-center transition-all shadow-[0_2px_8px_rgba(255,107,53,0.40)] hover:shadow-[0_3px_12px_rgba(255,107,53,0.55)] shrink-0"
+        },
+        /* @__PURE__ */ import_react61.default.createElement(Send, { className: "w-3.5 h-3.5 text-white" })
+      )), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} mt-1.5 text-center` }, "Press Enter to send \xB7 Shift+Enter for newline"))
     );
   }
   function Sidebar({ t, page, setPage: setPage2, pipelineCount, dark, setDark }) {
@@ -51996,42 +51572,16 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       { id: "dataroom", label: "Data Room", icon: FolderOpen },
       { id: "terminal", label: "Agent Terminal", icon: Activity }
     ];
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("aside", { className: `w-[210px] shrink-0 flex flex-col h-full ${t.sidebar}`, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2.5 px-4 py-4", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-8 h-8 rounded-xl bg-white/[0.10] flex items-center justify-center shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Leaf, { className: "w-4 h-4 text-white" }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-extrabold text-[15px] tracking-tight text-white leading-none", children: "Qatalyst" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "text-[10px] text-white/35 mt-0.5 leading-none", children: "Carbon Intelligence" })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "px-4 pb-1", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[9px] font-bold text-white/25 tracking-[0.14em] uppercase", children: "Workspace" }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("nav", { className: "flex-1 px-2 pb-2 space-y-0.5 overflow-y-auto", children: nav.map(({ id, label, icon: Icon2 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "button",
-        {
-          onClick: () => setPage2(id),
-          className: `w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-all duration-150 ${page === id ? t.navOn : t.navOff}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { className: "w-3.5 h-3.5 shrink-0" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "flex-1 text-left font-medium", children: label })
-          ]
-        },
-        id
-      )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "px-2 pb-3 border-t border-white/[0.06] pt-2 space-y-0.5", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `w-full flex items-center gap-2.5 px-3 py-2 text-xs ${t.navOff} transition-all`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, { className: "w-3.5 h-3.5 shrink-0" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-medium", children: "Settings" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2.5 px-3 py-2 mt-1 rounded-lg mx-0 cursor-pointer hover:bg-white/[0.05] transition-colors", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-7 h-7 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#CC5A25] flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-[0_2px_6px_rgba(255,107,53,0.35)]", children: "KA" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 min-w-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "text-[11px] font-semibold text-white leading-none truncate", children: "Kopal Agarwal" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "text-[9px] text-white/35 mt-0.5 truncate", children: "Admin" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Ellipsis, { className: "w-3.5 h-3.5 text-white/25 shrink-0" })
-        ] })
-      ] })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("aside", { className: `w-[210px] shrink-0 flex flex-col h-full ${t.sidebar}` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2.5 px-4 py-4" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-8 h-8 rounded-xl bg-white/[0.10] flex items-center justify-center shrink-0" }, /* @__PURE__ */ import_react61.default.createElement(Leaf, { className: "w-4 h-4 text-white" })), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("span", { className: "font-extrabold text-[15px] tracking-tight text-white leading-none" }, "Qatalyst"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "text-[10px] text-white/35 mt-0.5 leading-none" }, "Carbon Intelligence"))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-4 pb-1" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-[9px] font-bold text-white/25 tracking-[0.14em] uppercase" }, "Workspace")), /* @__PURE__ */ import_react61.default.createElement("nav", { className: "flex-1 px-2 pb-2 space-y-0.5 overflow-y-auto" }, nav.map(({ id, label, icon: Icon2 }) => /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        key: id,
+        onClick: () => setPage2(id),
+        className: `w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-all duration-150 ${page === id ? t.navOn : t.navOff}`
+      },
+      /* @__PURE__ */ import_react61.default.createElement(Icon2, { className: "w-3.5 h-3.5 shrink-0" }),
+      /* @__PURE__ */ import_react61.default.createElement("span", { className: "flex-1 text-left font-medium" }, label)
+    ))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-2 pb-3 border-t border-white/[0.06] pt-2 space-y-0.5" }, /* @__PURE__ */ import_react61.default.createElement("button", { className: `w-full flex items-center gap-2.5 px-3 py-2 text-xs ${t.navOff} transition-all` }, /* @__PURE__ */ import_react61.default.createElement(Settings, { className: "w-3.5 h-3.5 shrink-0" }), /* @__PURE__ */ import_react61.default.createElement("span", { className: "font-medium" }, "Settings")), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2.5 px-3 py-2 mt-1 rounded-lg mx-0 cursor-pointer hover:bg-white/[0.05] transition-colors" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-7 h-7 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#CC5A25] flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-[0_2px_6px_rgba(255,107,53,0.35)]" }, "KA"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "text-[11px] font-semibold text-white leading-none truncate" }, "Kopal Agarwal"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "text-[9px] text-white/35 mt-0.5 truncate" }, "Admin")), /* @__PURE__ */ import_react61.default.createElement(Ellipsis, { className: "w-3.5 h-3.5 text-white/25 shrink-0" }))));
   }
   function Topbar({ t, page, dark, setDark, onInsight, insightOpen }) {
     const titles = {
@@ -52043,77 +51593,64 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       pipeline: "Sales Pipeline",
       terminal: "Agent Terminal"
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", { className: `h-11 flex items-center gap-3 px-4 ${t.topbar} shrink-0`, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", { style: { fontSize: 16, fontWeight: 700, color: dark ? "#F8FAFC" : "#121417", letterSpacing: "-0.01em", fontFamily: "'Inter',system-ui,sans-serif" }, children: titles[page] || "Qatalyst" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "button",
-        {
-          onClick: () => setDark((d) => !d),
-          className: `relative flex items-center rounded-full border transition-all duration-300 ${t.card} overflow-hidden`,
-          style: { width: 44, height: 22, padding: 0, flexShrink: 0 },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { position: "absolute", inset: 0, background: dark ? "rgba(248,250,252,0.06)" : "rgba(107,127,107,0.12)", transition: "background 0.3s" } }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              position: "absolute",
-              top: 2,
-              left: dark ? "calc(100% - 19px)" : 2,
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              background: dark ? "#FF6B35" : "#6B7F6B",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "left 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.3s",
-              boxShadow: dark ? "0 1px 4px rgba(255,107,53,0.5)" : "0 1px 4px rgba(107,127,107,0.5)"
-            }, children: dark ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Moon, { style: { width: 9, height: 9, color: "#fff" } }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sun, { style: { width: 9, height: 9, color: "#fff" } }) })
-          ]
+    return /* @__PURE__ */ import_react61.default.createElement("header", { className: `h-11 flex items-center gap-3 px-4 ${t.topbar} shrink-0` }, /* @__PURE__ */ import_react61.default.createElement("h1", { style: { fontSize: 16, fontWeight: 700, color: dark ? "#F8FAFC" : "#121417", letterSpacing: "-0.01em", fontFamily: "'Inter',system-ui,sans-serif" } }, titles[page] || "Qatalyst"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1" }), /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        onClick: () => setDark((d) => !d),
+        className: `relative flex items-center rounded-full border transition-all duration-300 ${t.card} overflow-hidden`,
+        style: { width: 44, height: 22, padding: 0, flexShrink: 0 }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("span", { style: { position: "absolute", inset: 0, background: dark ? "rgba(248,250,252,0.06)" : "rgba(107,127,107,0.12)", transition: "background 0.3s" } }),
+      /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        position: "absolute",
+        top: 2,
+        left: dark ? "calc(100% - 19px)" : 2,
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        background: dark ? "#FF6B35" : "#6B7F6B",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "left 0.25s cubic-bezier(0.34,1.56,0.64,1), background 0.3s",
+        boxShadow: dark ? "0 1px 4px rgba(255,107,53,0.5)" : "0 1px 4px rgba(107,127,107,0.5)"
+      } }, dark ? /* @__PURE__ */ import_react61.default.createElement(Moon, { style: { width: 9, height: 9, color: "#fff" } }) : /* @__PURE__ */ import_react61.default.createElement(Sun, { style: { width: 9, height: 9, color: "#fff" } }))
+    ), /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        onClick: onInsight,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 5,
+          padding: "5px 10px",
+          borderRadius: 7,
+          cursor: "pointer",
+          background: insightOpen ? "rgba(255,107,53,0.12)" : dark ? "rgba(248,250,252,0.04)" : "#F1F5F9",
+          border: `1px solid ${insightOpen ? "rgba(255,107,53,0.40)" : dark ? "rgba(248,250,252,0.10)" : "#E2E8EA"}`
         }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "button",
-        {
-          onClick: onInsight,
-          style: {
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "5px 10px",
-            borderRadius: 7,
-            cursor: "pointer",
-            background: insightOpen ? "rgba(255,107,53,0.12)" : dark ? "rgba(248,250,252,0.04)" : "#F1F5F9",
-            border: `1px solid ${insightOpen ? "rgba(255,107,53,0.40)" : dark ? "rgba(248,250,252,0.10)" : "#E2E8EA"}`
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: {
-              width: 11,
-              height: 11,
-              color: insightOpen ? "#FF6B35" : "#64748B",
-              animation: insightOpen ? "qBlink 1.8s ease-in-out infinite" : "none"
-            } }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 600, color: insightOpen ? "#FF6B35" : "#64748B" }, children: "Insights" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              fontSize: 8,
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: 999,
-              background: "rgba(255,107,53,0.15)",
-              color: "#FF6B35"
-            }, children: GLOBAL_INSIGHTS.length })
-          ]
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `relative p-1.5 rounded-lg ${t.card} border`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bell, { className: `w-3.5 h-3.5 ${t.sub}` }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#FF6B35]" })
-      ] })
-    ] });
+      },
+      /* @__PURE__ */ import_react61.default.createElement(Activity, { style: {
+        width: 11,
+        height: 11,
+        color: insightOpen ? "#FF6B35" : "#64748B",
+        animation: insightOpen ? "qBlink 1.8s ease-in-out infinite" : "none"
+      } }),
+      /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 600, color: insightOpen ? "#FF6B35" : "#64748B" } }, "Insights"),
+      /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        fontSize: 8,
+        fontWeight: 800,
+        padding: "1px 5px",
+        borderRadius: 999,
+        background: "rgba(255,107,53,0.15)",
+        color: "#FF6B35"
+      } }, GLOBAL_INSIGHTS.length)
+    ), /* @__PURE__ */ import_react61.default.createElement("button", { className: `relative p-1.5 rounded-lg ${t.card} border` }, /* @__PURE__ */ import_react61.default.createElement(Bell, { className: `w-3.5 h-3.5 ${t.sub}` }), /* @__PURE__ */ import_react61.default.createElement("span", { className: "absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#FF6B35]" })));
   }
   function VerifiedBadge({ label = "Verified", size = "sm" }) {
     const pad2 = size === "xs" ? "1px 5px" : "2px 7px";
     const fs = size === "xs" ? 7 : 9;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: {
+    return /* @__PURE__ */ import_react61.default.createElement("span", { style: {
       display: "inline-flex",
       alignItems: "center",
       gap: 3,
@@ -52128,10 +51665,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       letterSpacing: "0.04em",
       textTransform: "uppercase",
       flexShrink: 0
-    }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: fs + 1, height: fs + 1, flexShrink: 0 } }),
-      label
-    ] });
+    } }, /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: fs + 1, height: fs + 1, flexShrink: 0 } }), label);
   }
   function TypewriterText({ text, speed = 22, color: color2, onDone }) {
     const [shown, setShown] = (0, import_react60.useState)("");
@@ -52151,15 +51685,12 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       }, speed);
       return () => clearInterval(iv);
     }, [text]);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: color2 }, children: [
-      shown,
-      !done && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-        opacity: 1,
-        animation: "qBlink 0.55s step-end infinite",
-        color: "#FF6B35",
-        fontWeight: 400
-      }, children: "\u258B" })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: color2 } }, shown, !done && /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      opacity: 1,
+      animation: "qBlink 0.55s step-end infinite",
+      color: "#FF6B35",
+      fontWeight: 400
+    } }, "\u258B"));
   }
   var SCOUT_STEPS = [
     "Activating Scout agent \u2014 initialising intelligence grid\u2026",
@@ -52192,79 +51723,62 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       }, 680);
       return () => clearInterval(iv);
     }, []);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: "100%", maxWidth: 320 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 12px",
-        borderRadius: done ? "10px 10px 0 0" : 10,
-        background: done ? "rgba(107,127,107,0.10)" : "rgba(255,107,53,0.10)",
-        border: `1px solid ${done ? "rgba(107,127,107,0.35)" : "rgba(255,107,53,0.35)"}`,
-        borderBottom: done ? "none" : void 0,
-        animation: done ? "none" : "calcPulse 1.6s ease-in-out infinite",
-        boxShadow: done ? "none" : "0 0 20px rgba(255,107,53,0.15)",
-        transition: "background 0.4s, border 0.4s, box-shadow 0.4s"
-      }, children: [
-        done ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 12, height: 12, color: "#6B7F6B", flexShrink: 0 } }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 12, height: 12, color: "#FF6B35", animation: "qBlink 0.8s ease-in-out infinite", flexShrink: 0 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.10em",
-          fontFamily: "'JetBrains Mono',monospace",
-          color: done ? "#6B7F6B" : "#FF6B35"
-        }, children: done ? "SCOUT COMPLETE \u2014 STREAMING RESULTS" : "SCOUT SCANNING\u2026" }),
-        !done && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { marginLeft: "auto", display: "flex", gap: 3 }, children: [0, 1, 2].map((d) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "#FF6B35",
-          display: "inline-block",
-          animation: "qDotPulse 1s ease-in-out infinite",
-          animationDelay: `${d * 180}ms`
-        } }, d)) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        background: cLog,
-        borderRadius: done ? "0 0 10px 10px" : "0 0 10px 10px",
-        border: `1px solid ${done ? "rgba(107,127,107,0.25)" : "rgba(255,107,53,0.20)"}`,
-        borderTop: "none",
-        padding: "10px 12px",
-        fontFamily: "'JetBrains Mono',monospace",
-        transition: "border 0.4s"
-      }, children: [
-        SCOUT_STEPS.slice(0, stepVis).map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 7,
-          fontSize: 11,
-          lineHeight: 1.75,
-          marginBottom: 3,
-          animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            color: done || i < stepVis - 1 ? "#6B7F6B" : "#FF6B35",
-            fontSize: 9,
-            marginTop: 3,
-            flexShrink: 0,
-            transition: "color 0.3s"
-          }, children: done || i < stepVis - 1 ? "\u2713" : "\u25B6" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: i === stepVis - 1 && !done ? pc.body : pc.label }, children: i === stepVis - 1 && !done ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: s2, speed: 20, color: pc.body }) : s2 })
-        ] }, i)),
-        done && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          marginTop: 6,
-          paddingTop: 6,
-          borderTop: `1px solid ${dark ? "rgba(107,127,107,0.15)" : "rgba(107,127,107,0.20)"}`,
-          fontSize: 10,
-          color: "#6B7F6B",
-          fontFamily: "'JetBrains Mono',monospace"
-        }, children: [
-          "\u21B3 Navigating to Discovery \xB7 streaming ",
-          15,
-          " opportunities now\u2026"
-        ] })
-      ] })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: "100%", maxWidth: 320 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "8px 12px",
+      borderRadius: done ? "10px 10px 0 0" : 10,
+      background: done ? "rgba(107,127,107,0.10)" : "rgba(255,107,53,0.10)",
+      border: `1px solid ${done ? "rgba(107,127,107,0.35)" : "rgba(255,107,53,0.35)"}`,
+      borderBottom: done ? "none" : void 0,
+      animation: done ? "none" : "calcPulse 1.6s ease-in-out infinite",
+      boxShadow: done ? "none" : "0 0 20px rgba(255,107,53,0.15)",
+      transition: "background 0.4s, border 0.4s, box-shadow 0.4s"
+    } }, done ? /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 12, height: 12, color: "#6B7F6B", flexShrink: 0 } }) : /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 12, height: 12, color: "#FF6B35", animation: "qBlink 0.8s ease-in-out infinite", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: "0.10em",
+      fontFamily: "'JetBrains Mono',monospace",
+      color: done ? "#6B7F6B" : "#FF6B35"
+    } }, done ? "SCOUT COMPLETE \u2014 STREAMING RESULTS" : "SCOUT SCANNING\u2026"), !done && /* @__PURE__ */ import_react61.default.createElement("span", { style: { marginLeft: "auto", display: "flex", gap: 3 } }, [0, 1, 2].map((d) => /* @__PURE__ */ import_react61.default.createElement("span", { key: d, style: {
+      width: 4,
+      height: 4,
+      borderRadius: "50%",
+      background: "#FF6B35",
+      display: "inline-block",
+      animation: "qDotPulse 1s ease-in-out infinite",
+      animationDelay: `${d * 180}ms`
+    } })))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      background: cLog,
+      borderRadius: done ? "0 0 10px 10px" : "0 0 10px 10px",
+      border: `1px solid ${done ? "rgba(107,127,107,0.25)" : "rgba(255,107,53,0.20)"}`,
+      borderTop: "none",
+      padding: "10px 12px",
+      fontFamily: "'JetBrains Mono',monospace",
+      transition: "border 0.4s"
+    } }, SCOUT_STEPS.slice(0, stepVis).map((s2, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 7,
+      fontSize: 11,
+      lineHeight: 1.75,
+      marginBottom: 3,
+      animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      color: done || i < stepVis - 1 ? "#6B7F6B" : "#FF6B35",
+      fontSize: 9,
+      marginTop: 3,
+      flexShrink: 0,
+      transition: "color 0.3s"
+    } }, done || i < stepVis - 1 ? "\u2713" : "\u25B6"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: i === stepVis - 1 && !done ? pc.body : pc.label } }, i === stepVis - 1 && !done ? /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: s2, speed: 20, color: pc.body }) : s2))), done && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      marginTop: 6,
+      paddingTop: 6,
+      borderTop: `1px solid ${dark ? "rgba(107,127,107,0.15)" : "rgba(107,127,107,0.20)"}`,
+      fontSize: 10,
+      color: "#6B7F6B",
+      fontFamily: "'JetBrains Mono',monospace"
+    } }, "\u21B3 Navigating to Discovery \xB7 streaming ", 15, " opportunities now\u2026")));
   }
   function ChatReasoningWidget({ dark, query, setPage: setPage2 }) {
     const pc = mkPc(dark);
@@ -52291,101 +51805,81 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     const cBg = dark ? "#141820" : "#FDFDFD";
     const cBd = dark ? "#21252A" : "#E2E8F0";
     const cLog = dark ? "#0D1014" : "#F8FAFB";
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: "100%", maxWidth: 320 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 12px",
-        borderRadius: state === "done" ? "10px 10px 0 0" : 10,
-        background: state === "thinking" ? "rgba(255,107,53,0.10)" : "rgba(107,127,107,0.10)",
-        border: state === "thinking" ? "1px solid rgba(255,107,53,0.35)" : `1px solid rgba(107,127,107,0.35)`,
-        borderBottom: state === "done" ? "none" : void 0,
-        animation: state === "thinking" ? "calcPulse 1.6s ease-in-out infinite" : "none",
-        boxShadow: state === "thinking" ? "0 0 20px rgba(255,107,53,0.15)" : "none",
-        transition: "background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease"
-      }, children: [
-        state === "thinking" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 12, height: 12, color: "#FF6B35", animation: "qBlink 0.8s ease-in-out infinite", flexShrink: 0 } }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 12, height: 12, color: "#6B7F6B", flexShrink: 0 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.10em",
-          fontFamily: "'JetBrains Mono',monospace",
-          color: state === "thinking" ? "#FF6B35" : "#6B7F6B"
-        }, children: state === "thinking" ? "AGENT REASONING\u2026" : "ANALYSIS COMPLETE" }),
-        state === "thinking" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { marginLeft: "auto", display: "flex", gap: 3 }, children: [0, 1, 2].map((d) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "#FF6B35",
-          display: "inline-block",
-          animation: `qDotPulse 1s ease-in-out infinite`,
-          animationDelay: `${d * 180}ms`
-        } }, d)) })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        background: cLog,
-        border: `1px solid ${state === "thinking" ? "rgba(255,107,53,0.20)" : cBd}`,
-        borderTop: "none",
-        borderRadius: state === "done" ? "0" : "0 0 10px 10px",
-        padding: "10px 12px",
-        fontFamily: "'JetBrains Mono',monospace",
-        transition: "border 0.4s ease"
-      }, children: [
-        match.steps.slice(0, stepVis).map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 7,
-          fontSize: 11,
-          lineHeight: 1.75,
-          marginBottom: 3,
-          animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            color: i === stepVis - 1 ? "#FF6B35" : state === "done" ? "#6B7F6B" : pc.label,
-            fontSize: 9,
-            marginTop: 3,
-            flexShrink: 0,
-            transition: "color 0.3s ease"
-          }, children: i === stepVis - 1 && state === "thinking" ? "\u25B6" : "\u2713" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: i === stepVis - 1 && state === "thinking" ? pc.body : pc.label }, children: i === stepVis - 1 && state === "thinking" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: s2, speed: 20, color: pc.body }) : s2 })
-        ] }, i)),
-        state === "thinking" && stepVis === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-          fontSize: 11,
-          color: "#FF6B35",
-          animation: "qBlink 0.6s step-end infinite",
-          fontFamily: "'JetBrains Mono',monospace"
-        }, children: "\u258B" })
-      ] }),
-      state === "done" && result && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        background: cBg,
-        border: `1px solid ${cBd}`,
-        borderTop: "none",
-        borderRadius: "0 0 10px 10px",
-        padding: "12px",
-        animation: "rowSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both"
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { fontSize: 13, color: pc.body, lineHeight: 1.65, marginBottom: 12, marginTop: 0 }, children: result.answer }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setPage2(result.page), style: {
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 11,
-          fontWeight: 500,
-          padding: "7px 14px",
-          borderRadius: 7,
-          cursor: "pointer",
-          background: "#FF6B35",
-          color: "#FDFDFD",
-          border: "none",
-          boxShadow: "0 2px 10px rgba(255,107,53,0.38)",
-          fontFamily: "'Inter',system-ui,sans-serif"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { style: { width: 11, height: 11 } }),
-          result.action
-        ] })
-      ] })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: "100%", maxWidth: 320 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "8px 12px",
+      borderRadius: state === "done" ? "10px 10px 0 0" : 10,
+      background: state === "thinking" ? "rgba(255,107,53,0.10)" : "rgba(107,127,107,0.10)",
+      border: state === "thinking" ? "1px solid rgba(255,107,53,0.35)" : `1px solid rgba(107,127,107,0.35)`,
+      borderBottom: state === "done" ? "none" : void 0,
+      animation: state === "thinking" ? "calcPulse 1.6s ease-in-out infinite" : "none",
+      boxShadow: state === "thinking" ? "0 0 20px rgba(255,107,53,0.15)" : "none",
+      transition: "background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease"
+    } }, state === "thinking" ? /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 12, height: 12, color: "#FF6B35", animation: "qBlink 0.8s ease-in-out infinite", flexShrink: 0 } }) : /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 12, height: 12, color: "#6B7F6B", flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: "0.10em",
+      fontFamily: "'JetBrains Mono',monospace",
+      color: state === "thinking" ? "#FF6B35" : "#6B7F6B"
+    } }, state === "thinking" ? "AGENT REASONING\u2026" : "ANALYSIS COMPLETE"), state === "thinking" && /* @__PURE__ */ import_react61.default.createElement("span", { style: { marginLeft: "auto", display: "flex", gap: 3 } }, [0, 1, 2].map((d) => /* @__PURE__ */ import_react61.default.createElement("span", { key: d, style: {
+      width: 4,
+      height: 4,
+      borderRadius: "50%",
+      background: "#FF6B35",
+      display: "inline-block",
+      animation: `qDotPulse 1s ease-in-out infinite`,
+      animationDelay: `${d * 180}ms`
+    } })))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      background: cLog,
+      border: `1px solid ${state === "thinking" ? "rgba(255,107,53,0.20)" : cBd}`,
+      borderTop: "none",
+      borderRadius: state === "done" ? "0" : "0 0 10px 10px",
+      padding: "10px 12px",
+      fontFamily: "'JetBrains Mono',monospace",
+      transition: "border 0.4s ease"
+    } }, match.steps.slice(0, stepVis).map((s2, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 7,
+      fontSize: 11,
+      lineHeight: 1.75,
+      marginBottom: 3,
+      animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      color: i === stepVis - 1 ? "#FF6B35" : state === "done" ? "#6B7F6B" : pc.label,
+      fontSize: 9,
+      marginTop: 3,
+      flexShrink: 0,
+      transition: "color 0.3s ease"
+    } }, i === stepVis - 1 && state === "thinking" ? "\u25B6" : "\u2713"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: i === stepVis - 1 && state === "thinking" ? pc.body : pc.label } }, i === stepVis - 1 && state === "thinking" ? /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: s2, speed: 20, color: pc.body }) : s2))), state === "thinking" && stepVis === 0 && /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 11,
+      color: "#FF6B35",
+      animation: "qBlink 0.6s step-end infinite",
+      fontFamily: "'JetBrains Mono',monospace"
+    } }, "\u258B")), state === "done" && result && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      background: cBg,
+      border: `1px solid ${cBd}`,
+      borderTop: "none",
+      borderRadius: "0 0 10px 10px",
+      padding: "12px",
+      animation: "rowSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both"
+    } }, /* @__PURE__ */ import_react61.default.createElement("p", { style: { fontSize: 13, color: pc.body, lineHeight: 1.65, marginBottom: 12, marginTop: 0 } }, result.answer), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setPage2(result.page), style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      fontSize: 11,
+      fontWeight: 500,
+      padding: "7px 14px",
+      borderRadius: 7,
+      cursor: "pointer",
+      background: "#FF6B35",
+      color: "#FDFDFD",
+      border: "none",
+      boxShadow: "0 2px 10px rgba(255,107,53,0.38)",
+      fontFamily: "'Inter',system-ui,sans-serif"
+    } }, /* @__PURE__ */ import_react61.default.createElement(ArrowRight, { style: { width: 11, height: 11 } }), result.action)));
   }
   var CK_RESPONSES = [
     {
@@ -52426,7 +51920,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
         "Scanning buyer intent signals \u2014 email opens, LinkedIn activity\u2026",
         "Generating project intelligence brief\u2026"
       ],
-      answer: "South Barito Kapuas (VCS 4782) \u2014 39,835 ha of protected Central Kalimantan peatland. BeZero A.pre rating, additionality score 'aaa'. Satellite data confirms sequestration +3.2% above projection. Tokyo Gas (NDA opened 4\xD7), Engie, and Vitol matched. Deal velocity 2.3\xD7 benchmark \u2014 send NDA today.",
+      answer: "South Barito Kapuas (VCS 4782) \u2014 39,835 ha of protected Central Kalimantan peatland. BeZero A.pre rating, additionality score 'aaa'. Satellite data confirms sequestration +3.2% above projection. Japan Gas (NDA opened 4\xD7), Engenix Energy, and Vitronix Trading matched. Deal velocity 2.3\xD7 benchmark \u2014 send NDA today.",
       action: "Open Project",
       page: "discovery"
     },
@@ -52440,7 +51934,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
         "Scanning deal probability trends \u2014 detecting sharp declines\u2026",
         "Ranking flags by revenue impact\u2026"
       ],
-      answer: "7 active red flags detected. Critical: Shell NbS Strategy ($12M, 42 days stale \u2014 single deal covers 52% of Q2 gap). Engie REDD+ deal probability dropped 18pp in 7 days. Q2 pipeline shortfall: $11.6M below 4\xD7 recommended buffer. Act on Shell re-engagement today.",
+      answer: "7 active red flags detected. Critical: Shellion Energy NbS Strategy ($12M, 42 days stale \u2014 single deal covers 52% of Q2 gap). Engenix Energy REDD+ deal probability dropped 18pp in 7 days. Q2 pipeline shortfall: $11.6M below 4\xD7 recommended buffer. Act on Shellion Energy re-engagement today.",
       action: "Open Action Center",
       page: "dashboard2"
     },
@@ -52468,7 +51962,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
         "Calculating match scores against current pipeline projects\u2026",
         "Generating buyer intelligence summary\u2026"
       ],
-      answer: "Tokyo Gas shows highest intent: NDA email opened 4\xD7 in 48h, procurement team active on LinkedIn. Q3 budget cycle opens in 18 days \u2014 optimal window. Engie is matched at 88/100 but probability is slipping. Vitol is warm with $200M voluntary carbon mandate confirmed for 2025.",
+      answer: "Japan Gas shows highest intent: NDA email opened 4\xD7 in 48h, procurement team active on LinkedIn. Q3 budget cycle opens in 18 days \u2014 optimal window. Engenix Energy is matched at 88/100 but probability is slipping. Vitronix Trading is warm with $200M voluntary carbon mandate confirmed for 2025.",
       action: "Open Clients",
       page: "clients"
     }
@@ -52479,8 +51973,8 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       type: "opportunity",
       icon: TrendingUp,
       color: "#FF6B35",
-      title: "Tokyo Gas \u2014 high-intent window open",
-      observation: "Tokyo Gas procurement team opened the NDA email 4\xD7 in 48h and their Q3 budget cycle opens in 18 days. This is the optimal engagement window.",
+      title: "Japan Gas \u2014 high-intent window open",
+      observation: "Japan Gas procurement team opened the NDA email 4\xD7 in 48h and their Q3 budget cycle opens in 18 days. This is the optimal engagement window.",
       reasoning: ["Email tracking: 4 opens in 48h (team avg: 1.2)", "LinkedIn: 2 profile views \u2014 Procurement Director + VP Finance", "Refinitiv: GX League filing confirms Q3 carbon procurement budget", "Match score: 94/100 \u2014 highest in active pipeline"],
       action: "Schedule Call",
       page: "clients"
@@ -52490,8 +51984,8 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       type: "risk",
       icon: Activity,
       color: "#CC5A25",
-      title: "Shell deal stale \u2014 42 days, $12M at risk",
-      observation: "Shell NbS Strategy has had zero activity in 42 days. At current pace this deal will expire from pipeline before Q2 close.",
+      title: "Shellion Energy deal stale \u2014 42 days, $12M at risk",
+      observation: "Shellion Energy NbS Strategy has had zero activity in 42 days. At current pace this deal will expire from pipeline before Q2 close.",
       reasoning: ["Last activity: Tom email \u2014 42 days ago", "Stage: Qualified (no advancement since Feb)", "Team average stale threshold: 14 days", "Revenue impact if lost: closes 52% of Q2 gap"],
       action: "Draft Re-engagement Email",
       page: "clients"
@@ -52514,7 +52008,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       color: "#FF6B35",
       title: "Katingan peatland \u2014 supply scarcity signal",
       observation: "Katingan Peatland (VCS 1477) credits are down 24% availability QoQ. With 3 buyers matched, this project needs immediate pipeline commitment.",
-      reasoning: ["Registry: available vintage 2024 credits down 24% QoQ", "Demand: Shell, Tokyo Gas, Volkswagen all matched", "Scarcity premium expected: +$4\u20136/tCO\u2082e by Q3", "Action window: 3\u20134 weeks before institutional buyers lock in"],
+      reasoning: ["Registry: available vintage 2024 credits down 24% QoQ", "Demand: Shellion Energy, Japan Gas, Volkswagen all matched", "Scarcity premium expected: +$4\u20136/tCO\u2082e by Q3", "Action window: 3\u20134 weeks before institutional buyers lock in"],
       action: "Verify & Commit",
       page: "discovery"
     },
@@ -52537,7 +52031,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     const [expanded, setExpanded] = (0, import_react60.useState)(null);
     const [resolved, setResolved] = (0, import_react60.useState)(/* @__PURE__ */ new Set());
     const typeColors = { opportunity: "#FF6B35", risk: "#CC5A25", verified: "#6B7F6B" };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: {
       position: "fixed",
       top: 0,
       right: 0,
@@ -52551,143 +52045,111 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       flexDirection: "column",
       overflow: "hidden",
       animation: "slideIn 0.38s cubic-bezier(0.34,1.56,0.64,1) both"
-    }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        padding: "14px 16px",
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      padding: "14px 16px",
+      borderBottom: `1px solid ${cBd}`,
+      flexShrink: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      width: 26,
+      height: 26,
+      borderRadius: 6,
+      background: "rgba(255,107,53,0.12)",
+      border: "1px solid rgba(255,107,53,0.28)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 12, height: 12, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, "AI Insight Feed"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: "#FF6B35", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em" } }, GLOBAL_INSIGHTS.length, " PROACTIVE OBSERVATIONS")), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      marginLeft: "auto",
+      width: 7,
+      height: 7,
+      borderRadius: "50%",
+      background: "#FF6B35",
+      boxShadow: "0 0 7px #FF6B35",
+      animation: "qBlink 2s ease-in-out infinite",
+      flexShrink: 0
+    } }), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: onClose, style: { background: "none", border: "none", cursor: "pointer", color: pc.label, fontSize: 18, marginLeft: 4 } }, "\xD7")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto" } }, GLOBAL_INSIGHTS.map((ins, i) => {
+      const col = typeColors[ins.type] || "#FF6B35";
+      const isExp = expanded === ins.id;
+      const isDone = resolved.has(ins.id);
+      return /* @__PURE__ */ import_react61.default.createElement("div", { key: ins.id, style: {
         borderBottom: `1px solid ${cBd}`,
-        flexShrink: 0,
-        display: "flex",
-        alignItems: "center",
-        gap: 10
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-          width: 26,
-          height: 26,
-          borderRadius: 6,
-          background: "rgba(255,107,53,0.12)",
-          border: "1px solid rgba(255,107,53,0.28)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 12, height: 12, color: "#FF6B35" } }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: "AI Insight Feed" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: "#FF6B35", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em" }, children: [
-            GLOBAL_INSIGHTS.length,
-            " PROACTIVE OBSERVATIONS"
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
+        opacity: isDone ? 0.45 : 1,
+        borderLeft: `3px solid ${isExp ? col : "transparent"}`,
+        transition: "all 0.2s"
+      } }, /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          style: { padding: "13px 14px", cursor: "pointer" },
+          onClick: () => setExpanded(isExp ? null : ins.id)
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 6 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+          fontSize: 8,
+          fontWeight: 800,
+          padding: "2px 6px",
+          borderRadius: 3,
+          background: `${col}18`,
+          color: col,
+          border: `1px solid ${col}35`,
+          fontFamily: "'JetBrains Mono',monospace",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase"
+        } }, ins.type), ins.type === "verified" && /* @__PURE__ */ import_react61.default.createElement(VerifiedBadge, { size: "xs" }), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
           marginLeft: "auto",
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          background: "#FF6B35",
-          boxShadow: "0 0 7px #FF6B35",
-          animation: "qBlink 2s ease-in-out infinite",
-          flexShrink: 0
-        } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, style: { background: "none", border: "none", cursor: "pointer", color: pc.label, fontSize: 18, marginLeft: 4 }, children: "\xD7" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, overflowY: "auto" }, children: GLOBAL_INSIGHTS.map((ins, i) => {
-        const col = typeColors[ins.type] || "#FF6B35";
-        const isExp = expanded === ins.id;
-        const isDone = resolved.has(ins.id);
-        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          borderBottom: `1px solid ${cBd}`,
-          opacity: isDone ? 0.45 : 1,
-          borderLeft: `3px solid ${isExp ? col : "transparent"}`,
-          transition: "all 0.2s"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-            "div",
-            {
-              style: { padding: "13px 14px", cursor: "pointer" },
-              onClick: () => setExpanded(isExp ? null : ins.id),
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                    fontSize: 8,
-                    fontWeight: 800,
-                    padding: "2px 6px",
-                    borderRadius: 3,
-                    background: `${col}18`,
-                    color: col,
-                    border: `1px solid ${col}35`,
-                    fontFamily: "'JetBrains Mono',monospace",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase"
-                  }, children: ins.type }),
-                  ins.type === "verified" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VerifiedBadge, { size: "xs" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                    marginLeft: "auto",
-                    fontSize: 11,
-                    color: pc.label,
-                    transition: "transform 0.2s",
-                    transform: isExp ? "rotate(180deg)" : "none"
-                  }, children: "\u25BE" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: pc.focus, lineHeight: 1.35, marginBottom: 4 }, children: ins.title }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.sub, lineHeight: 1.55 }, children: ins.observation })
-              ]
-            }
-          ),
-          isExp && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "0 14px 13px" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-              background: dark ? "#0D1014" : "#F8FAFB",
-              border: `1px solid ${dark ? "#21252A" : "#E2E8EA"}`,
-              borderRadius: 7,
-              padding: "10px 12px",
-              marginBottom: 10,
-              fontFamily: "'JetBrains Mono',monospace"
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 8, color: col, letterSpacing: "0.12em", marginBottom: 6 }, children: "REASONING TRACE" }),
-              ins.reasoning.map((r2, ri) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                fontSize: 10,
-                lineHeight: 1.65,
-                borderLeft: `2px solid ${ri === ins.reasoning.length - 1 ? col : dark ? "rgba(248,250,252,0.08)" : "#E2E8EA"}`,
-                paddingLeft: 8,
-                marginBottom: 3,
-                animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both",
-                animationDelay: `${ri * 60}ms`
-              }, children: ri === ins.reasoning.length - 1 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: r2, speed: 14, color: pc.sub }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.sub }, children: r2 }) }, ri))
-            ] }),
-            !isDone ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "button",
-              {
-                onClick: () => {
-                  setPage2(ins.page);
-                  setResolved((s2) => /* @__PURE__ */ new Set([...s2, ins.id]));
-                  onClose();
-                },
-                style: {
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 7,
-                  padding: "9px 14px",
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  background: "#FF6B35",
-                  color: "#FDFDFD",
-                  border: "none",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  boxShadow: "0 2px 10px rgba(255,107,53,0.35)",
-                  fontFamily: "'Inter',system-ui,sans-serif"
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { style: { width: 11, height: 11 } }),
-                  ins.action
-                ]
-              }
-            ) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { textAlign: "center", fontSize: 10, color: "#6B7F6B", fontWeight: 600 }, children: "\u2713 Action taken" })
-          ] })
-        ] }, ins.id);
-      }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "10px 14px", borderTop: `1px solid ${cBd}`, flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: pc.label, textAlign: "center", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.7 }, children: "Agent monitors pipeline, market signals & registry data \xB7 Updated live" }) })
-    ] });
+          fontSize: 11,
+          color: pc.label,
+          transition: "transform 0.2s",
+          transform: isExp ? "rotate(180deg)" : "none"
+        } }, "\u25BE")),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: pc.focus, lineHeight: 1.35, marginBottom: 4 } }, ins.title),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.sub, lineHeight: 1.55 } }, ins.observation)
+      ), isExp && /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "0 14px 13px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        background: dark ? "#0D1014" : "#F8FAFB",
+        border: `1px solid ${dark ? "#21252A" : "#E2E8EA"}`,
+        borderRadius: 7,
+        padding: "10px 12px",
+        marginBottom: 10,
+        fontFamily: "'JetBrains Mono',monospace"
+      } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 8, color: col, letterSpacing: "0.12em", marginBottom: 6 } }, "REASONING TRACE"), ins.reasoning.map((r2, ri) => /* @__PURE__ */ import_react61.default.createElement("div", { key: ri, style: {
+        fontSize: 10,
+        lineHeight: 1.65,
+        borderLeft: `2px solid ${ri === ins.reasoning.length - 1 ? col : dark ? "rgba(248,250,252,0.08)" : "#E2E8EA"}`,
+        paddingLeft: 8,
+        marginBottom: 3,
+        animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both",
+        animationDelay: `${ri * 60}ms`
+      } }, ri === ins.reasoning.length - 1 ? /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: r2, speed: 14, color: pc.sub }) : /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.sub } }, r2)))), !isDone ? /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: () => {
+            setPage2(ins.page);
+            setResolved((s2) => /* @__PURE__ */ new Set([...s2, ins.id]));
+            onClose();
+          },
+          style: {
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 7,
+            padding: "9px 14px",
+            borderRadius: 7,
+            cursor: "pointer",
+            background: "#FF6B35",
+            color: "#FDFDFD",
+            border: "none",
+            fontSize: 14,
+            fontWeight: 500,
+            boxShadow: "0 2px 10px rgba(255,107,53,0.35)",
+            fontFamily: "'Inter',system-ui,sans-serif"
+          }
+        },
+        /* @__PURE__ */ import_react61.default.createElement(ArrowRight, { style: { width: 11, height: 11 } }),
+        ins.action
+      ) : /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "center", fontSize: 10, color: "#6B7F6B", fontWeight: 600 } }, "\u2713 Action taken")));
+    })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "10px 14px", borderTop: `1px solid ${cBd}`, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, textAlign: "center", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.7 } }, "Agent monitors pipeline, market signals & registry data \xB7 Updated live")));
   }
   var DB_REVENUE_TREND = [
     { month: "Oct", actual: 1.2, target: 1.5, forecast: null },
@@ -52708,10 +52170,10 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     { stage: "Contracted", count: 1, value: 6.5, pct: 11, drop: 6 }
   ];
   var DB_RED_FLAGS = [
-    { type: "stale", severity: "high", name: "Shell NbS Strategy", corp: "Shell PLC", desc: "No activity in 42 days", action: "Re-engage", age: 42 },
+    { type: "stale", severity: "high", name: "Shellion Energy NbS Strategy", corp: "Shellion Energy PLC", desc: "No activity in 42 days", action: "Re-engage", age: 42 },
     { type: "stale", severity: "medium", name: "BP Scope 3 Programme", corp: "BP PLC", desc: "Last contact 28 days ago", action: "Follow-up", age: 28 },
     { type: "slip", severity: "high", name: "Katingan Peatland NDA", corp: "Toyota Gas", desc: "NDA due in 3 days \u2014 not sent", action: "Send NDA", due: 3 },
-    { type: "slip", severity: "medium", name: "South Barito Contract", corp: "Engie", desc: "Q2 deadline slipping by 8 days", action: "Expedite", due: 8 },
+    { type: "slip", severity: "medium", name: "South Barito Contract", corp: "Engenix Energy", desc: "Q2 deadline slipping by 8 days", action: "Expedite", due: 8 },
     { type: "gap", severity: "high", name: "Q3 Pipeline Shortfall", corp: "\u2014", desc: "$4.2M gap to quarterly target", action: "Scout", gap: 4.2 },
     { type: "gap", severity: "medium", name: "Gold Standard coverage", corp: "\u2014", desc: "Only 1 GS project in pipeline", action: "Discover", gap: 1 }
   ];
@@ -52771,239 +52233,140 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       }
     ];
     const funnelMax = DB_FUNNEL[0].value;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px 20px", maxWidth: 1200, margin: "0 auto" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 14 }, children: kpis.map(({ label, value, sub, icon: Icon2, color: color2, bg, trend, good }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        background: cardBg,
-        border: `1px solid ${cardBd}`,
-        borderRadius: 12,
-        padding: "14px 16px",
-        borderLeft: `3px solid ${color2}`
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 32, height: 32, borderRadius: 8, background: bg, display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { style: { width: 15, height: 15, color: color2, flexShrink: 0 } }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            fontSize: 9,
-            fontWeight: 600,
-            padding: "2px 7px",
-            borderRadius: 999,
-            background: good ? "rgba(107,127,107,0.12)" : "rgba(204,90,37,0.12)",
-            color: good ? "#6B7F6B" : "#CC5A25",
-            border: `1px solid ${good ? "rgba(107,127,107,0.25)" : "rgba(204,90,37,0.25)"}`
-          }, children: trend })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 17, fontWeight: 700, color: pc.focus, lineHeight: 1, marginBottom: 4 }, children: value }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: pc.body, marginBottom: 2 }, children: label }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label }, children: sub })
-      ] }, label)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 12, marginBottom: 14 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: cardBg, border: `1px solid ${cardBd}`, borderRadius: 12, padding: "16px 18px" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: "Sales Funnel" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 }, children: "Leakage by stage" })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px 20px", maxWidth: 1200, margin: "0 auto" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 14 } }, kpis.map(({ label, value, sub, icon: Icon2, color: color2, bg, trend, good }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: label, style: {
+      background: cardBg,
+      border: `1px solid ${cardBd}`,
+      borderRadius: 12,
+      padding: "14px 16px",
+      borderLeft: `3px solid ${color2}`
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 32, height: 32, borderRadius: 8, background: bg, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { style: { width: 15, height: 15, color: color2, flexShrink: 0 } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 9,
+      fontWeight: 600,
+      padding: "2px 7px",
+      borderRadius: 999,
+      background: good ? "rgba(107,127,107,0.12)" : "rgba(204,90,37,0.12)",
+      color: good ? "#6B7F6B" : "#CC5A25",
+      border: `1px solid ${good ? "rgba(107,127,107,0.25)" : "rgba(204,90,37,0.25)"}`
+    } }, trend)), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 17, fontWeight: 700, color: pc.focus, lineHeight: 1, marginBottom: 4 } }, value), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: pc.body, marginBottom: 2 } }, label), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label } }, sub)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 12, marginBottom: 14 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: cardBg, border: `1px solid ${cardBd}`, borderRadius: 12, padding: "16px 18px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 } }, /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, "Sales Funnel"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 } }, "Leakage by stage")), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 9,
+      fontWeight: 700,
+      padding: "3px 8px",
+      borderRadius: 3,
+      background: "rgba(255,107,53,0.10)",
+      color: "#FF6B35",
+      border: "1px solid rgba(255,107,53,0.22)",
+      fontFamily: "'JetBrains Mono', monospace",
+      letterSpacing: "0.08em"
+    } }, "LIVE")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 5 } }, DB_FUNNEL.map((s2, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: s2.stage }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 600, color: pc.body } }, s2.stage), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, s2.drop !== null && /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: "#CC5A25", fontWeight: 600 } }, "\u2212", s2.drop, "%"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: pc.focus } }, s2.count), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: pc.label } }, "$", s2.value, "M"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: 7, borderRadius: 4, background: dark ? "rgba(248,250,252,0.06)" : "#F3F4F6", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      height: "100%",
+      borderRadius: 4,
+      width: `${s2.pct}%`,
+      background: i === 0 ? "#FF6B35" : i === 4 ? "#6B7F6B" : `linear-gradient(90deg,${["#FF6B35", "#D0581A", "#D04418", "#CC5A25"][Math.min(i, 3)]},${["#D0581A", "#D04418", "#CC5A25", "#6B7F6B"][Math.min(i, 3)]})`,
+      transition: "width 0.6s ease"
+    } }))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      marginTop: 12,
+      paddingTop: 10,
+      borderTop: `1px solid ${cardBd}`,
+      display: "flex",
+      justifyContent: "space-between"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: pc.label } }, "Pipeline \u2192 Close conversion"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: "#6B7F6B" } }, "11%"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: cardBg, border: `1px solid ${cardBd}`, borderRadius: 12, padding: "16px 18px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 } }, /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, "Revenue Trend"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 } }, "Actual \xB7 Target \xB7 Forecast ($M)")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center" } }, [["Actual", "#FF6B35"], ["Target", "#6B7F6B"], ["Forecast", "rgba(255,107,53,0.40)"]].map(([l, c2]) => /* @__PURE__ */ import_react61.default.createElement("div", { key: l, style: { display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 16, height: 2, background: c2, borderRadius: 1 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: pc.label } }, l))))), /* @__PURE__ */ import_react61.default.createElement(ResponsiveContainer, { width: "100%", height: 180 }, /* @__PURE__ */ import_react61.default.createElement(AreaChart, { data: DB_REVENUE_TREND, margin: { top: 4, right: 4, left: -20, bottom: 0 } }, /* @__PURE__ */ import_react61.default.createElement("defs", null, /* @__PURE__ */ import_react61.default.createElement("linearGradient", { id: "gradActual", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ import_react61.default.createElement("stop", { offset: "5%", stopColor: "#FF6B35", stopOpacity: 0.25 }), /* @__PURE__ */ import_react61.default.createElement("stop", { offset: "95%", stopColor: "#FF6B35", stopOpacity: 0 })), /* @__PURE__ */ import_react61.default.createElement("linearGradient", { id: "gradForecast", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ import_react61.default.createElement("stop", { offset: "5%", stopColor: "#FF6B35", stopOpacity: 0.12 }), /* @__PURE__ */ import_react61.default.createElement("stop", { offset: "95%", stopColor: "#FF6B35", stopOpacity: 0 }))), /* @__PURE__ */ import_react61.default.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: gridColor, vertical: false }), /* @__PURE__ */ import_react61.default.createElement(XAxis, { dataKey: "month", tick: { fontSize: 10, fill: axisColor }, axisLine: false, tickLine: false }), /* @__PURE__ */ import_react61.default.createElement(YAxis, { tick: { fontSize: 10, fill: axisColor }, axisLine: false, tickLine: false, tickFormatter: (v) => `$${v}M` }), /* @__PURE__ */ import_react61.default.createElement(
+      Tooltip,
+      {
+        contentStyle: { background: dark ? "#1E2126" : "#FDFDFD", border: `1px solid ${cardBd}`, borderRadius: 8, fontSize: 11 },
+        labelStyle: { color: pc.focus, fontWeight: 600 },
+        formatter: (v, n) => [`$${v}M`, n]
+      }
+    ), /* @__PURE__ */ import_react61.default.createElement(
+      ReferenceLine,
+      {
+        y: 3,
+        stroke: "#6B7F6B",
+        strokeDasharray: "4 3",
+        strokeOpacity: 0.5,
+        label: { value: "Q2 Target", fill: "#6B7F6B", fontSize: 9, position: "right" }
+      }
+    ), /* @__PURE__ */ import_react61.default.createElement(Area, { type: "monotone", dataKey: "actual", stroke: "#FF6B35", strokeWidth: 2, fill: "url(#gradActual)", dot: { r: 3, fill: "#FF6B35", strokeWidth: 0 }, connectNulls: false }), /* @__PURE__ */ import_react61.default.createElement(Area, { type: "monotone", dataKey: "forecast", stroke: "#FF6B35", strokeWidth: 1.5, strokeDasharray: "5 3", fill: "url(#gradForecast)", dot: false, connectNulls: true }), /* @__PURE__ */ import_react61.default.createElement(Line, { type: "monotone", dataKey: "target", stroke: "#6B7F6B", strokeWidth: 1.5, strokeDasharray: "4 3", dot: false }))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: cardBg, border: `1px solid ${cardBd}`, borderRadius: 12, overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "13px 18px", borderBottom: `1px solid ${cardBd}`, display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 8, height: 8, borderRadius: "50%", background: "#CC5A25", boxShadow: "0 0 6px rgba(204,90,37,0.6)" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, "Red Flag Monitor"), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 9,
+      fontWeight: 700,
+      padding: "2px 8px",
+      borderRadius: 3,
+      background: "rgba(204,90,37,0.12)",
+      color: "#CC5A25",
+      border: "1px solid rgba(204,90,37,0.28)",
+      fontFamily: "'JetBrains Mono', monospace",
+      letterSpacing: "0.08em"
+    } }, DB_RED_FLAGS.length, " ISSUES"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 8 } }, [["Stale Deals", "#CC5A25"], ["Slipping Deadlines", "#FF6B35"], ["Pipeline Gaps", "#6B7F6B"]].map(([l, c2]) => /* @__PURE__ */ import_react61.default.createElement("div", { key: l, style: { display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 6, height: 6, borderRadius: "50%", background: c2 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: pc.label } }, l))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "grid",
+      gridTemplateColumns: "24px 90px 1fr 1fr 1.4fr 90px",
+      padding: "7px 18px",
+      background: dark ? "#0D1018" : "#F9FAFB",
+      borderBottom: `1px solid ${cardBd}`
+    } }, ["", "TYPE", "DEAL / ISSUE", "COUNTERPARTY", "WARNING", "ACTION"].map((h) => /* @__PURE__ */ import_react61.default.createElement("span", { key: h, style: { fontSize: 9, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.09em" } }, h))), DB_RED_FLAGS.map((f, i) => {
+      const typeColors = { stale: ["#CC5A25", "rgba(204,90,37,0.12)", "rgba(204,90,37,0.28)"], slip: ["#FF6B35", "rgba(255,107,53,0.10)", "rgba(255,107,53,0.25)"], gap: ["#6B7F6B", "rgba(107,127,107,0.10)", "rgba(107,127,107,0.25)"] };
+      const typeLabels = { stale: "STALE DEAL", slip: "DEADLINE", gap: "GAP" };
+      const [tc, tbg, tbd] = typeColors[f.type];
+      const isLast = i === DB_RED_FLAGS.length - 1;
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: i,
+          style: {
+            display: "grid",
+            gridTemplateColumns: "24px 90px 1fr 1fr 1.4fr 90px",
+            padding: "11px 18px",
+            borderBottom: isLast ? "none" : `1px solid ${cardBd}`,
+            alignItems: "center",
+            transition: "background 0.15s",
+            background: f.severity === "high" && i === 0 ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.03)" : "transparent"
+          },
+          onMouseEnter: (e) => e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
+          onMouseLeave: (e) => e.currentTarget.style.background = i === 0 && f.severity === "high" ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.03)" : "transparent"
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: f.severity === "high" ? tc : dark ? "rgba(248,250,252,0.20)" : "#CBD5E1",
+          boxShadow: f.severity === "high" ? `0 0 5px ${tc}` : "none"
+        } }),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+          fontSize: 8,
+          fontWeight: 700,
+          padding: "2px 7px",
+          borderRadius: 3,
+          width: "fit-content",
+          background: tbg,
+          color: tc,
+          border: `1px solid ${tbd}`,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.07em"
+        } }, typeLabels[f.type]),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, fontWeight: 600, color: pc.focus } }, f.name),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: pc.sub } }, f.corp),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 4, height: 4, borderRadius: "50%", background: tc, flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: f.severity === "high" ? tc : pc.sub } }, f.desc)),
+        /* @__PURE__ */ import_react61.default.createElement(
+          "button",
+          {
+            onClick: () => setPage2(f.type === "gap" ? "discovery" : f.type === "stale" ? "clients" : "clients"),
+            style: {
               fontSize: 9,
               fontWeight: 700,
-              padding: "3px 8px",
-              borderRadius: 3,
-              background: "rgba(255,107,53,0.10)",
-              color: "#FF6B35",
-              border: "1px solid rgba(255,107,53,0.22)",
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.08em"
-            }, children: "LIVE" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 5 }, children: DB_FUNNEL.map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 600, color: pc.body }, children: s2.stage }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-                s2.drop !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, color: "#CC5A25", fontWeight: 600 }, children: [
-                  "\u2212",
-                  s2.drop,
-                  "%"
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: pc.focus }, children: s2.count }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, color: pc.label }, children: [
-                  "$",
-                  s2.value,
-                  "M"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: 7, borderRadius: 4, background: dark ? "rgba(248,250,252,0.06)" : "#F3F4F6", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-              height: "100%",
+              padding: "4px 10px",
               borderRadius: 4,
-              width: `${s2.pct}%`,
-              background: i === 0 ? "#FF6B35" : i === 4 ? "#6B7F6B" : `linear-gradient(90deg,${["#FF6B35", "#D0581A", "#D04418", "#CC5A25"][Math.min(i, 3)]},${["#D0581A", "#D04418", "#CC5A25", "#6B7F6B"][Math.min(i, 3)]})`,
-              transition: "width 0.6s ease"
-            } }) })
-          ] }, s2.stage)) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-            marginTop: 12,
-            paddingTop: 10,
-            borderTop: `1px solid ${cardBd}`,
-            display: "flex",
-            justifyContent: "space-between"
-          }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, color: pc.label }, children: "Pipeline \u2192 Close conversion" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: "#6B7F6B" }, children: "11%" })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: cardBg, border: `1px solid ${cardBd}`, borderRadius: 12, padding: "16px 18px" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: "Revenue Trend" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 }, children: "Actual \xB7 Target \xB7 Forecast ($M)" })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 12, alignItems: "center" }, children: [["Actual", "#FF6B35"], ["Target", "#6B7F6B"], ["Forecast", "rgba(255,107,53,0.40)"]].map(([l, c2]) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 16, height: 2, background: c2, borderRadius: 1 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, color: pc.label }, children: l })
-            ] }, l)) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResponsiveContainer, { width: "100%", height: 180, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AreaChart, { data: DB_REVENUE_TREND, margin: { top: 4, right: 4, left: -20, bottom: 0 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("defs", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("linearGradient", { id: "gradActual", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "5%", stopColor: "#FF6B35", stopOpacity: 0.25 }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "95%", stopColor: "#FF6B35", stopOpacity: 0 })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("linearGradient", { id: "gradForecast", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "5%", stopColor: "#FF6B35", stopOpacity: 0.12 }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "95%", stopColor: "#FF6B35", stopOpacity: 0 })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CartesianGrid, { strokeDasharray: "3 3", stroke: gridColor, vertical: false }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(XAxis, { dataKey: "month", tick: { fontSize: 10, fill: axisColor }, axisLine: false, tickLine: false }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(YAxis, { tick: { fontSize: 10, fill: axisColor }, axisLine: false, tickLine: false, tickFormatter: (v) => `$${v}M` }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              Tooltip,
-              {
-                contentStyle: { background: dark ? "#1E2126" : "#FDFDFD", border: `1px solid ${cardBd}`, borderRadius: 8, fontSize: 11 },
-                labelStyle: { color: pc.focus, fontWeight: 600 },
-                formatter: (v, n) => [`$${v}M`, n]
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              ReferenceLine,
-              {
-                y: 3,
-                stroke: "#6B7F6B",
-                strokeDasharray: "4 3",
-                strokeOpacity: 0.5,
-                label: { value: "Q2 Target", fill: "#6B7F6B", fontSize: 9, position: "right" }
-              }
-            ),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Area, { type: "monotone", dataKey: "actual", stroke: "#FF6B35", strokeWidth: 2, fill: "url(#gradActual)", dot: { r: 3, fill: "#FF6B35", strokeWidth: 0 }, connectNulls: false }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Area, { type: "monotone", dataKey: "forecast", stroke: "#FF6B35", strokeWidth: 1.5, strokeDasharray: "5 3", fill: "url(#gradForecast)", dot: false, connectNulls: true }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Line, { type: "monotone", dataKey: "target", stroke: "#6B7F6B", strokeWidth: 1.5, strokeDasharray: "4 3", dot: false })
-          ] }) })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: cardBg, border: `1px solid ${cardBd}`, borderRadius: 12, overflow: "hidden" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "13px 18px", borderBottom: `1px solid ${cardBd}`, display: "flex", alignItems: "center", gap: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 8, height: 8, borderRadius: "50%", background: "#CC5A25", boxShadow: "0 0 6px rgba(204,90,37,0.6)" } }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: "Red Flag Monitor" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: {
-            fontSize: 9,
-            fontWeight: 700,
-            padding: "2px 8px",
-            borderRadius: 3,
-            background: "rgba(204,90,37,0.12)",
-            color: "#CC5A25",
-            border: "1px solid rgba(204,90,37,0.28)",
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.08em"
-          }, children: [
-            DB_RED_FLAGS.length,
-            " ISSUES"
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { marginLeft: "auto", display: "flex", gap: 8 }, children: [["Stale Deals", "#CC5A25"], ["Slipping Deadlines", "#FF6B35"], ["Pipeline Gaps", "#6B7F6B"]].map(([l, c2]) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 6, height: 6, borderRadius: "50%", background: c2 } }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, color: pc.label }, children: l })
-          ] }, l)) })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-          display: "grid",
-          gridTemplateColumns: "24px 90px 1fr 1fr 1.4fr 90px",
-          padding: "7px 18px",
-          background: dark ? "#0D1018" : "#F9FAFB",
-          borderBottom: `1px solid ${cardBd}`
-        }, children: ["", "TYPE", "DEAL / ISSUE", "COUNTERPARTY", "WARNING", "ACTION"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.09em" }, children: h }, h)) }),
-        DB_RED_FLAGS.map((f, i) => {
-          const typeColors = { stale: ["#CC5A25", "rgba(204,90,37,0.12)", "rgba(204,90,37,0.28)"], slip: ["#FF6B35", "rgba(255,107,53,0.10)", "rgba(255,107,53,0.25)"], gap: ["#6B7F6B", "rgba(107,127,107,0.10)", "rgba(107,127,107,0.25)"] };
-          const typeLabels = { stale: "STALE DEAL", slip: "DEADLINE", gap: "GAP" };
-          const [tc, tbg, tbd] = typeColors[f.type];
-          const isLast = i === DB_RED_FLAGS.length - 1;
-          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-            "div",
-            {
-              style: {
-                display: "grid",
-                gridTemplateColumns: "24px 90px 1fr 1fr 1.4fr 90px",
-                padding: "11px 18px",
-                borderBottom: isLast ? "none" : `1px solid ${cardBd}`,
-                alignItems: "center",
-                transition: "background 0.15s",
-                background: f.severity === "high" && i === 0 ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.03)" : "transparent"
-              },
-              onMouseEnter: (e) => e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
-              onMouseLeave: (e) => e.currentTarget.style.background = i === 0 && f.severity === "high" ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.03)" : "transparent",
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: f.severity === "high" ? tc : dark ? "rgba(248,250,252,0.20)" : "#CBD5E1",
-                  boxShadow: f.severity === "high" ? `0 0 5px ${tc}` : "none"
-                } }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                  fontSize: 8,
-                  fontWeight: 700,
-                  padding: "2px 7px",
-                  borderRadius: 3,
-                  width: "fit-content",
-                  background: tbg,
-                  color: tc,
-                  border: `1px solid ${tbd}`,
-                  fontFamily: "'JetBrains Mono', monospace",
-                  letterSpacing: "0.07em"
-                }, children: typeLabels[f.type] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, fontWeight: 600, color: pc.focus }, children: f.name }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, color: pc.sub }, children: f.corp }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 4, height: 4, borderRadius: "50%", background: tc, flexShrink: 0 } }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: f.severity === "high" ? tc : pc.sub }, children: f.desc })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                  "button",
-                  {
-                    onClick: () => setPage2(f.type === "gap" ? "discovery" : f.type === "stale" ? "clients" : "clients"),
-                    style: {
-                      fontSize: 9,
-                      fontWeight: 700,
-                      padding: "4px 10px",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      background: tbg,
-                      color: tc,
-                      border: `1px solid ${tbd}`,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase"
-                    },
-                    children: [
-                      f.action,
-                      " \u2192"
-                    ]
-                  }
-                )
-              ]
-            },
-            i
-          );
-        })
-      ] })
-    ] });
+              cursor: "pointer",
+              background: tbg,
+              color: tc,
+              border: `1px solid ${tbd}`,
+              fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase"
+            }
+          },
+          f.action,
+          " \u2192"
+        )
+      );
+    })));
   }
   var D2 = {
     revenue: [
@@ -53035,13 +52398,13 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       { name: "Tom", quota: 42, attain: 18, winRate: 15, cycle: 78, activities: 9, opps: 3, deals: 0 }
     ],
     flags: [
-      { type: "stale", sev: "high", deal: "Shell NbS Strategy Alignment", rep: "Tom", detail: "Last activity 42 days ago \u2014 deal cooling", action: "Re-engage Rep", page: "clients" },
+      { type: "stale", sev: "high", deal: "Shellion Energy NbS Strategy Alignment", rep: "Tom", detail: "Last activity 42 days ago \u2014 deal cooling", action: "Re-engage Rep", page: "clients" },
       { type: "stale", sev: "medium", deal: "BP Scope 3 Offset Programme", rep: "Gordian", detail: "Last activity 29 days ago \u2014 no follow-up", action: "Schedule Call", page: "clients" },
       { type: "slip", sev: "high", deal: "Katingan Peatland NDA", rep: "Natalie", detail: "Close date passed 7 days ago \u2014 still open", action: "Update Close Date", page: "clients" },
       { type: "slip", sev: "medium", deal: "South Barito Contract", rep: "Lena", detail: "Close date passing in 2 days \u2014 at risk", action: "Escalate Now", page: "clients" },
       { type: "gap", sev: "high", deal: "Q2 Pipeline Shortfall", rep: "\u2014", detail: "$12.4M pipeline vs $24M needed (3\xD7 target)", action: "Run Scout", page: "discovery" },
-      { type: "risk", sev: "high", deal: "Engie REDD+ Deal ($8.2M)", rep: "Nicholas", detail: "Win probability fell 18pp in 7 days", action: "Review Strategy", page: "clients" },
-      { type: "risk", sev: "medium", deal: "Vitol Peatland Credits", rep: "Natalie", detail: "No stakeholder engagement in 3 weeks", action: "Exec Outreach", page: "clients" }
+      { type: "risk", sev: "high", deal: "Engenix Energy REDD+ Deal ($8.2M)", rep: "Nicholas", detail: "Win probability fell 18pp in 7 days", action: "Review Strategy", page: "clients" },
+      { type: "risk", sev: "medium", deal: "Vitronix Trading Peatland Credits", rep: "Natalie", detail: "No stakeholder engagement in 3 weeks", action: "Exec Outreach", page: "clients" }
     ]
   };
   function GaugeSVG({ pct, label, color: color2, dark }) {
@@ -53055,33 +52418,25 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     const track = `M ${x1} ${y1} A ${R} ${R} 0 1 1 ${cx + R} ${cy}`;
     const filled = `M ${x1} ${y1} A ${R} ${R} 0 ${big} 1 ${x2} ${y2}`;
     const bg = dark ? "rgba(248,250,252,0.07)" : "#F3F4F6";
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: 160, height: 90, viewBox: "0 0 160 90", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: track, fill: "none", stroke: bg, strokeWidth: sw, strokeLinecap: "round" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: filled, fill: "none", stroke: color2, strokeWidth: sw, strokeLinecap: "round" }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("text", { x: 80, y: 72, textAnchor: "middle", fontSize: 20, fontWeight: 800, fill: dark ? "#FDFDFD" : "#111827", children: [
-        Math.round(pct * 100),
-        "%"
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("text", { x: 80, y: 87, textAnchor: "middle", fontSize: 9, fill: dark ? "rgba(248,250,252,0.45)" : "#64748B", children: label })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("svg", { width: 160, height: 90, viewBox: "0 0 160 90" }, /* @__PURE__ */ import_react61.default.createElement("path", { d: track, fill: "none", stroke: bg, strokeWidth: sw, strokeLinecap: "round" }), /* @__PURE__ */ import_react61.default.createElement("path", { d: filled, fill: "none", stroke: color2, strokeWidth: sw, strokeLinecap: "round" }), /* @__PURE__ */ import_react61.default.createElement("text", { x: 80, y: 72, textAnchor: "middle", fontSize: 20, fontWeight: 800, fill: dark ? "#FDFDFD" : "#111827" }, Math.round(pct * 100), "%"), /* @__PURE__ */ import_react61.default.createElement("text", { x: 80, y: 87, textAnchor: "middle", fontSize: 9, fill: dark ? "rgba(248,250,252,0.45)" : "#64748B" }, label));
   }
   var CMD_QA = [
     { keys: ["pipeline", "coverage", "funnel"], steps: ["Parsing intent: pipeline status query\u2026", "Loading 16 active deals \u2014 $48.2M total pipeline\u2026", "Calculating coverage vs Q2 target ($16M)\u2026", "Detecting stage concentration risk\u2026", "Generating insight\u2026"], result: "Your pipeline totals $48.2M across 16 deals \u2014 3.0\xD7 coverage, exactly at the minimum threshold. But 73% of value sits in Prospect/Qualified. Only $14.1M is in Negotiating+, meaning one lost deal breaks your Q2 number.", action: "Top-fill the funnel \u2014 run Scout now", page: "discovery" },
     { keys: ["win rate", "close", "convert"], steps: ["Querying closed deal outcomes \u2014 last 90 days\u2026", "Segmenting by rep, deal type, and segment\u2026", "Comparing against Q1 baseline (32%)\u2026", "Isolating root-cause signals in lost deals\u2026", "Generating analysis\u2026"], result: "Team win rate is 24% \u2014 down 8pp vs Q1. Enterprise losses are the driver: 3 of 5 Enterprise deals cited pricing objections. Priya and Alex account for the majority of qualified deals; their win rates are holding, but Tom is at 15% and dragging the average.", action: "Review Enterprise pricing strategy and coach Tom", page: "dashboard2" },
-    { keys: ["risk", "flag", "danger", "slip"], steps: ["Loading red flag monitor\u2026", "Identifying stale deals (>14 days no activity)\u2026", "Checking close date compliance across open deals\u2026", "Calculating pipeline coverage against 3\xD7 rule\u2026", "Ranking by revenue impact\u2026"], result: "7 active red flags. Highest risk: Shell NbS deal (42 days stale, $12M) and a Q2 pipeline gap ($12.4M vs $24M needed). Two close dates have already passed. Act on Shell today \u2014 that single deal would close 52% of your gap.", action: "Open Action Center \u2192 Shell re-engagement", page: "dashboard2" },
+    { keys: ["risk", "flag", "danger", "slip"], steps: ["Loading red flag monitor\u2026", "Identifying stale deals (>14 days no activity)\u2026", "Checking close date compliance across open deals\u2026", "Calculating pipeline coverage against 3\xD7 rule\u2026", "Ranking by revenue impact\u2026"], result: "7 active red flags. Highest risk: Shellion Energy NbS deal (42 days stale, $12M) and a Q2 pipeline gap ($12.4M vs $24M needed). Two close dates have already passed. Act on Shellion Energy today \u2014 that single deal would close 52% of your gap.", action: "Open Action Center \u2192 Shellion Energy re-engagement", page: "dashboard2" },
     { keys: ["team", "rep", "performance", "quota"], steps: ["Loading rep quota data for Q2\u2026", "Computing attainment, win rates, and cycle lengths\u2026", "Benchmarking against team averages\u2026", "Identifying outliers\u2026", "Generating leaderboard analysis\u2026"], result: "Lena leads at 112% attainment. Natalie is on track at 86%. Concern: Tom at 43% with 6 weeks left \u2014 his pipeline of $8.4M is mostly Prospect-stage and his win rate is 15% vs 27% team average. Without intervention, he will miss quota.", action: "Schedule coaching with Tom", page: "dashboard2" }
   ];
   var INSIGHTS = [
     { id: 1, label: "Win Rate Alert", obs: "Enterprise win rate dropped 8pp in 6 weeks \u2014 pricing objections flagged in 3 of 5 lost deals.", reasoning: ["[QUERY] SELECT deal_outcome, segment FROM deals WHERE date > NOW()-6w", "[RESULT] 5 Enterprise deals: 3 Lost, 2 Won \u2192 40% win rate", "[BASELINE] Q1 Enterprise win rate: 48%", "[DELTA] \u22128pp, 3/3 loss notes cite: 'pricing too high vs alternatives'", "[HYPOTHESIS] Competitive pricing pressure increasing in Enterprise segment"], action: "Run Competitive Analysis", page: "dashboard2", color: "#CC5A25" },
-    { id: 2, label: "High-Intent Signal", obs: "Tokyo Gas: NDA email opened 4\xD7, procurement team viewed LinkedIn profile twice this week.", reasoning: ["[SOURCE] Email tracking: 4 opens in 48h (avg: 1.2)", "[SOURCE] LinkedIn: 2 profile views \u2014 Procurement Director + VP Finance", "[MODEL] Intent score: 62 \u2192 89 (threshold: 75 = high-intent)", "[CONTEXT] Tokyo Gas Q3 budget cycle opens in 3 weeks", "[WINDOW] Optimal engagement window: NOW"], action: "Schedule Discovery Call", page: "clients", color: "#FF6B35" },
-    { id: 3, label: "Deal Velocity", obs: "South Barito is moving 2.3\xD7 faster than benchmark REDD+ transactions \u2014 accelerate to close.", reasoning: ["[BENCHMARK] Avg REDD+ deal cycle: 78 days (Verra registry data)", "[DEAL] South Barito cycle to date: 34 days, currently: Negotiating", "[QUALITY] Project score 94/100 \u2014 highest in active pipeline", "[BUYER] Tokyo Gas avg procurement cycle: 41 days", "[SIGNAL] Velocity indicates high close probability \u2014 do not slow down"], action: "Fast-track Contract", page: "clients", color: "#6B7F6B" },
+    { id: 2, label: "High-Intent Signal", obs: "Japan Gas: NDA email opened 4\xD7, procurement team viewed LinkedIn profile twice this week.", reasoning: ["[SOURCE] Email tracking: 4 opens in 48h (avg: 1.2)", "[SOURCE] LinkedIn: 2 profile views \u2014 Procurement Director + VP Finance", "[MODEL] Intent score: 62 \u2192 89 (threshold: 75 = high-intent)", "[CONTEXT] Japan Gas Q3 budget cycle opens in 3 weeks", "[WINDOW] Optimal engagement window: NOW"], action: "Schedule Discovery Call", page: "clients", color: "#FF6B35" },
+    { id: 3, label: "Deal Velocity", obs: "South Barito is moving 2.3\xD7 faster than benchmark REDD+ transactions \u2014 accelerate to close.", reasoning: ["[BENCHMARK] Avg REDD+ deal cycle: 78 days (Verra registry data)", "[DEAL] South Barito cycle to date: 34 days, currently: Negotiating", "[QUALITY] Project score 94/100 \u2014 highest in active pipeline", "[BUYER] Japan Gas avg procurement cycle: 41 days", "[SIGNAL] Velocity indicates high close probability \u2014 do not slow down"], action: "Fast-track Contract", page: "clients", color: "#6B7F6B" },
     { id: 4, label: "Quota Risk", obs: "Tom at 43% attainment with 6 weeks left. Pipeline covers only 1.2\xD7 remaining quota.", reasoning: ["[DATA] Quota: $42K | Attained: $18K (43%)", "[PIPELINE] 3 open deals, $8.4M total \u2014 weighted value: $1.26M", "[ACTIVITY] 9 activities in period vs team avg: 19", "[WIN RATE] 15% vs team avg: 27%", "[PROJECTION] At current pace: will close at 54% of quota"], action: "Coach Tom", page: "dashboard2", color: "#CC5A25" }
   ];
   var RESOLUTIONS = {
-    stale: { title: "Re-engage Deal", icon: "\u2709\uFE0F", steps: ["Pull last interaction notes from CRM \u2014 last contact: Tom, 42 days ago", "Identify new stakeholder angle: ESG procurement lead at Shell", "Reference fresh hook: Verra Q2 sequestration data released this week", "Draft personalised email referencing project BeZero A.pre rating", "Auto-schedule follow-up in 5 days if no response"], preview: "Subject: South Barito Kapuas \u2014 Verra Q2 Update & Next Steps\n\nHi [Name],\n\nI wanted to share a quick update on the South Barito Kapuas project. Verra published new satellite verification data this week confirming a 3.2% uplift in sequestration rates \u2014 strengthening the credit quality case.\n\nGiven your stated target of 4\u20138M credits for Q3, I believe this is worth a 20-minute call. Are you available Thursday or Friday this week?\n\nBest,\n[Your Name]" },
-    slip: { title: "Expedite NDA Package", icon: "\u{1F4C4}", steps: ["Load NDA template v3 (pre-approved by legal)", "Pre-fill buyer details from CRM: Tokyo Gas, Procurement Director", "Add project schedule referencing South Barito vintage 2022\u20132037", "Flag for legal review: 2 clauses flagged in previous version", "Set e-signature reminder: 48h deadline to meet close date"], preview: "NDA Package:\n\u2022 Document: NDA_SouthBarito_TokyoGas_v1.pdf\n\u2022 Pre-filled: Buyer details, project schedule, credit delivery terms\n\u2022 Legal note: Clauses 4.2 and 7.1 flagged for review\n\u2022 Signature deadline: 48 hours\n\nReady to send via DocuSign \u2192" },
+    stale: { title: "Re-engage Deal", icon: "\u2709\uFE0F", steps: ["Pull last interaction notes from CRM \u2014 last contact: Tom, 42 days ago", "Identify new stakeholder angle: ESG procurement lead at Shellion Energy", "Reference fresh hook: Verra Q2 sequestration data released this week", "Draft personalised email referencing project BeZero A.pre rating", "Auto-schedule follow-up in 5 days if no response"], preview: "Subject: South Barito Kapuas \u2014 Verra Q2 Update & Next Steps\n\nHi [Name],\n\nI wanted to share a quick update on the South Barito Kapuas project. Verra published new satellite verification data this week confirming a 3.2% uplift in sequestration rates \u2014 strengthening the credit quality case.\n\nGiven your stated target of 4\u20138M credits for Q3, I believe this is worth a 20-minute call. Are you available Thursday or Friday this week?\n\nBest,\n[Your Name]" },
+    slip: { title: "Expedite NDA Package", icon: "\u{1F4C4}", steps: ["Load NDA template v3 (pre-approved by legal)", "Pre-fill buyer details from CRM: Japan Gas, Procurement Director", "Add project schedule referencing South Barito vintage 2022\u20132037", "Flag for legal review: 2 clauses flagged in previous version", "Set e-signature reminder: 48h deadline to meet close date"], preview: "NDA Package:\n\u2022 Document: NDA_SouthBarito_TokyoGas_v1.pdf\n\u2022 Pre-filled: Buyer details, project schedule, credit delivery terms\n\u2022 Legal note: Clauses 4.2 and 7.1 flagged for review\n\u2022 Signature deadline: 48 hours\n\nReady to send via DocuSign \u2192" },
     gap: { title: "Identify New Leads", icon: "\u{1F50D}", steps: ["Define ICP: Utilities / Energy sector, Asia-Pacific, net zero 2045\u20132050", "Query Refinitiv for companies with active carbon procurement budgets", "Cross-reference with LinkedIn for open sustainability roles (intent signal)", "Filter: ESG score > 70, emissions > 5M tCO\u2082/yr, budget cycle Q3", "Return top 5 targets ranked by fit score and intent"], preview: "Top Pipeline Candidates:\n1. Jera Co (Japan) \u2014 50M tCO\u2082/yr, Q3 budget, ESG: 82\n2. TotalEnergies (France) \u2014 40M tCO\u2082/yr, NBS mandate, ESG: 76\n3. CLP Group (HK) \u2014 8M tCO\u2082/yr, Net Zero 2050, ESG: 88\n4. Fortum (Finland) \u2014 6M tCO\u2082/yr, aggressive offset target, ESG: 91\n5. Repsol (Spain) \u2014 22M tCO\u2082/yr, SBTi validated, ESG: 74\n\nRun Scout agent to initiate outreach \u2192" },
-    risk: { title: "Draft Exec Review Brief", icon: "\u{1F4CA}", steps: ["Pull deal history: Engie REDD+ \u2014 $8.2M, stage: Negotiating", "Identify probability drop: 74% \u2192 56% over 7 days", "Analyse stakeholder engagement: no senior sponsor contact in 12 days", "Draft exec briefing: deal status, risk factors, suggested interventions", "Recommend: exec-to-exec call to re-anchor senior sponsorship"], preview: "Exec Brief \u2014 Engie REDD+ Deal ($8.2M)\n\nStatus: AT RISK \u2014 Win probability fell 18pp in 7 days\nRoot Cause: Senior sponsor (VP Sustainability) disengaged\nLast Activity: Nicholas \u2014 email, 9 days ago (no response)\n\nRecommended Action:\n\u2192 CEO/VP call with Engie's Chief Sustainability Officer\n\u2192 Share updated BeZero rating brief\n\u2192 Re-anchor contract timeline to Q3 close\n\nEstimated recovery probability if actioned today: 68%" }
+    risk: { title: "Draft Exec Review Brief", icon: "\u{1F4CA}", steps: ["Pull deal history: Engenix Energy REDD+ \u2014 $8.2M, stage: Negotiating", "Identify probability drop: 74% \u2192 56% over 7 days", "Analyse stakeholder engagement: no senior sponsor contact in 12 days", "Draft exec briefing: deal status, risk factors, suggested interventions", "Recommend: exec-to-exec call to re-anchor senior sponsorship"], preview: "Exec Brief \u2014 Engenix Energy REDD+ Deal ($8.2M)\n\nStatus: AT RISK \u2014 Win probability fell 18pp in 7 days\nRoot Cause: Senior sponsor (VP Sustainability) disengaged\nLast Activity: Nicholas \u2014 email, 9 days ago (no response)\n\nRecommended Action:\n\u2192 CEO/VP call with Engenix Energy's Chief Sustainability Officer\n\u2192 Share updated BeZero rating brief\n\u2192 Re-anchor contract timeline to Q3 close\n\nEstimated recovery probability if actioned today: 68%" }
   };
   function ReasoningModal({ insight, dark, onClose }) {
     const pc = mkPc(dark);
@@ -53091,75 +52446,54 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       const t = setTimeout(() => setVisible((v) => v + 1), 380);
       return () => clearTimeout(t);
     }, [visible, insight.reasoning.length]);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    return /* @__PURE__ */ import_react61.default.createElement(
       "div",
       {
         style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 1e3, display: "flex", alignItems: "center", justifyContent: "center" },
-        onClick: onClose,
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            style: {
-              background: dark ? "#0D1018" : "#FDFDFD",
-              border: `1px solid ${dark ? "#21252A" : "#E2E8F0"}`,
-              borderRadius: 14,
-              padding: "24px",
-              width: 520,
-              maxWidth: "90vw",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-              borderTop: `3px solid ${insight.color}`,
-              animation: "modalIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both"
-            },
-            onClick: (e) => e.stopPropagation(),
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 14, height: 14, color: insight.color } }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 13, fontWeight: 700, color: pc.focus }, children: "Reasoning Log" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: insight.color, marginLeft: 4 }, children: insight.label }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, style: { marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: pc.label, fontSize: 16 }, children: "\xD7" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                background: dark ? "#080C10" : "#F8F9FA",
-                border: `1px solid ${dark ? "#1E2126" : "#E2E8F0"}`,
-                borderRadius: 8,
-                padding: "14px 16px",
-                fontFamily: "'JetBrains Mono', monospace"
-              }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: insight.color, letterSpacing: "0.12em", marginBottom: 10 }, children: [
-                  "AGENT TRACE \xB7 ",
-                  (/* @__PURE__ */ new Date()).toLocaleTimeString(),
-                  " \xB7 QATALYST ENGINE v2.1"
-                ] }),
-                insight.reasoning.slice(0, visible).map((line, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  fontSize: 11,
-                  lineHeight: 1.7,
-                  borderLeft: `2px solid ${i === visible - 1 ? insight.color : dark ? "rgba(248,250,252,0.10)" : "#E5E7EB"}`,
-                  paddingLeft: 10,
-                  marginBottom: 4,
-                  animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
-                }, children: i === visible - 1 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: line, speed: 16, color: dark ? "rgba(248,250,252,0.72)" : "#374151" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: dark ? "rgba(248,250,252,0.72)" : "#374151" }, children: line }) }, i)),
-                visible < insight.reasoning.length && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: insight.color, fontFamily: "'JetBrains Mono', monospace", animation: "qBlink 0.8s ease-in-out infinite" }, children: "\u2588" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: pc.label }, children: "Based on live pipeline and activity data" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setPage && setPage("dashboard2"), style: {
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: "6px 14px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  background: `${insight.color}20`,
-                  color: insight.color,
-                  border: `1px solid ${insight.color}40`
-                }, children: [
-                  insight.action,
-                  " \u2192"
-                ] })
-              ] })
-            ]
-          }
-        )
-      }
+        onClick: onClose
+      },
+      /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          style: {
+            background: dark ? "#0D1018" : "#FDFDFD",
+            border: `1px solid ${dark ? "#21252A" : "#E2E8F0"}`,
+            borderRadius: 14,
+            padding: "24px",
+            width: 520,
+            maxWidth: "90vw",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+            borderTop: `3px solid ${insight.color}`,
+            animation: "modalIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both"
+          },
+          onClick: (e) => e.stopPropagation()
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 18 } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 14, height: 14, color: insight.color } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: pc.focus } }, "Reasoning Log"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: insight.color, marginLeft: 4 } }, insight.label), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: onClose, style: { marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: pc.label, fontSize: 16 } }, "\xD7")),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+          background: dark ? "#080C10" : "#F8F9FA",
+          border: `1px solid ${dark ? "#1E2126" : "#E2E8F0"}`,
+          borderRadius: 8,
+          padding: "14px 16px",
+          fontFamily: "'JetBrains Mono', monospace"
+        } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: insight.color, letterSpacing: "0.12em", marginBottom: 10 } }, "AGENT TRACE \xB7 ", (/* @__PURE__ */ new Date()).toLocaleTimeString(), " \xB7 QATALYST ENGINE v2.1"), insight.reasoning.slice(0, visible).map((line, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: {
+          fontSize: 11,
+          lineHeight: 1.7,
+          borderLeft: `2px solid ${i === visible - 1 ? insight.color : dark ? "rgba(248,250,252,0.10)" : "#E5E7EB"}`,
+          paddingLeft: 10,
+          marginBottom: 4,
+          animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
+        } }, i === visible - 1 ? /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: line, speed: 16, color: dark ? "rgba(248,250,252,0.72)" : "#374151" }) : /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: dark ? "rgba(248,250,252,0.72)" : "#374151" } }, line))), visible < insight.reasoning.length && /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: insight.color, fontFamily: "'JetBrains Mono', monospace", animation: "qBlink 0.8s ease-in-out infinite" } }, "\u2588")),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: pc.label } }, "Based on live pipeline and activity data"), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setPage && setPage("dashboard2"), style: {
+          fontSize: 10,
+          fontWeight: 700,
+          padding: "6px 14px",
+          borderRadius: 6,
+          cursor: "pointer",
+          background: `${insight.color}20`,
+          color: insight.color,
+          border: `1px solid ${insight.color}40`
+        } }, insight.action, " \u2192"))
+      )
     );
   }
   function ResolutionModal({ flag, dark, onClose, setPage: setPage2 }) {
@@ -53174,108 +52508,77 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     }, [step, done, res.steps.length]);
     const m = { stale: ["#CC5A25", "rgba(204,90,37,0.12)"], slip: ["#FF6B35", "rgba(255,107,53,0.10)"], gap: ["#6B7F6B", "rgba(107,127,107,0.10)"], risk: ["#CC5A25", "rgba(204,90,37,0.12)"] };
     const [col, bg] = m[flag.type];
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    return /* @__PURE__ */ import_react61.default.createElement(
       "div",
       {
         style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 1e3, display: "flex", alignItems: "center", justifyContent: "center" },
-        onClick: onClose,
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            style: {
-              background: dark ? "#0D1018" : "#FDFDFD",
-              border: `1px solid ${dark ? "#21252A" : "#E2E8F0"}`,
-              borderRadius: 14,
-              padding: "24px",
-              width: 560,
-              maxWidth: "92vw",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-              borderTop: `3px solid ${col}`,
-              animation: "modalIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both"
-            },
-            onClick: (e) => e.stopPropagation(),
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 14, height: 14, color: col } }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 13, fontWeight: 700, color: pc.focus }, children: "Proposed Resolution" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, padding: "2px 8px", borderRadius: 3, background: bg, color: col, border: `1px solid ${col}40`, fontFamily: "'JetBrains Mono', monospace" }, children: res.title }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, style: { marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: pc.label, fontSize: 16 }, children: "\xD7" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11, color: pc.sub, marginBottom: 14 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontWeight: 600, color: pc.focus }, children: flag.deal }),
-                " \xB7 ",
-                flag.rep
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                background: dark ? "#080C10" : "#F8F9FA",
-                border: `1px solid ${dark ? "#1E2126" : "#E2E8F0"}`,
-                borderRadius: 8,
-                padding: "12px 14px",
-                fontFamily: "'JetBrains Mono', monospace",
-                marginBottom: 14
-              }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: col, letterSpacing: "0.12em", marginBottom: 8 }, children: [
-                  "AGENT PLAN \xB7 ",
-                  res.steps.length,
-                  " STEPS"
-                ] }),
-                res.steps.slice(0, step).map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 8,
-                  marginBottom: 5,
-                  animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
-                }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: col, flexShrink: 0, marginTop: 1 }, children: "\u2713" }),
-                  i === step - 1 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TypewriterText, { text: s2, speed: 16, color: dark ? "rgba(248,250,252,0.72)" : "#374151" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: dark ? "rgba(248,250,252,0.72)" : "#374151", lineHeight: 1.5 }, children: s2 })
-                ] }, i)),
-                step < res.steps.length && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: col, animation: "qBlink 0.8s ease-in-out infinite" }, children: "\u25B6 Processing\u2026" })
-              ] }),
-              step >= res.steps.length && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                background: dark ? "rgba(248,250,252,0.03)" : "#F9FAFB",
-                border: `1px solid ${dark ? "rgba(248,250,252,0.08)" : "#E2E8F0"}`,
-                borderRadius: 8,
-                padding: "12px 14px",
-                marginBottom: 14,
-                maxHeight: 140,
-                overflowY: "auto"
-              }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: pc.label, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 6 }, children: "PREVIEW" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: pc.sub, lineHeight: 1.65, whiteSpace: "pre-wrap", fontFamily: "'JetBrains Mono', monospace" }, children: res.preview })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 10, justifyContent: "flex-end" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, style: {
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "8px 16px",
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  background: "none",
-                  border: `1px solid ${dark ? "rgba(248,250,252,0.12)" : "#CBD5E1"}`,
-                  color: pc.sub
-                }, children: "Dismiss" }),
-                step >= res.steps.length && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => {
-                  onClose();
-                  setPage2(flag.page);
-                }, style: {
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: "8px 18px",
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  background: col,
-                  color: "#FDFDFD",
-                  border: "none",
-                  boxShadow: `0 2px 10px ${col}50`
-                }, children: [
-                  "Execute \u2192 ",
-                  res.title
-                ] })
-              ] })
-            ]
-          }
-        )
-      }
+        onClick: onClose
+      },
+      /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          style: {
+            background: dark ? "#0D1018" : "#FDFDFD",
+            border: `1px solid ${dark ? "#21252A" : "#E2E8F0"}`,
+            borderRadius: 14,
+            padding: "24px",
+            width: 560,
+            maxWidth: "92vw",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+            borderTop: `3px solid ${col}`,
+            animation: "modalIn 0.36s cubic-bezier(0.34,1.56,0.64,1) both"
+          },
+          onClick: (e) => e.stopPropagation()
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 14, height: 14, color: col } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: pc.focus } }, "Proposed Resolution"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, padding: "2px 8px", borderRadius: 3, background: bg, color: col, border: `1px solid ${col}40`, fontFamily: "'JetBrains Mono', monospace" } }, res.title), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: onClose, style: { marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: pc.label, fontSize: 16 } }, "\xD7")),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.sub, marginBottom: 14 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontWeight: 600, color: pc.focus } }, flag.deal), " \xB7 ", flag.rep),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+          background: dark ? "#080C10" : "#F8F9FA",
+          border: `1px solid ${dark ? "#1E2126" : "#E2E8F0"}`,
+          borderRadius: 8,
+          padding: "12px 14px",
+          fontFamily: "'JetBrains Mono', monospace",
+          marginBottom: 14
+        } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: col, letterSpacing: "0.12em", marginBottom: 8 } }, "AGENT PLAN \xB7 ", res.steps.length, " STEPS"), res.steps.slice(0, step).map((s2, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: {
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 8,
+          marginBottom: 5,
+          animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
+        } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: col, flexShrink: 0, marginTop: 1 } }, "\u2713"), i === step - 1 ? /* @__PURE__ */ import_react61.default.createElement(TypewriterText, { text: s2, speed: 16, color: dark ? "rgba(248,250,252,0.72)" : "#374151" }) : /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: dark ? "rgba(248,250,252,0.72)" : "#374151", lineHeight: 1.5 } }, s2))), step < res.steps.length && /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: col, animation: "qBlink 0.8s ease-in-out infinite" } }, "\u25B6 Processing\u2026")),
+        step >= res.steps.length && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+          background: dark ? "rgba(248,250,252,0.03)" : "#F9FAFB",
+          border: `1px solid ${dark ? "rgba(248,250,252,0.08)" : "#E2E8F0"}`,
+          borderRadius: 8,
+          padding: "12px 14px",
+          marginBottom: 14,
+          maxHeight: 140,
+          overflowY: "auto"
+        } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 6 } }, "PREVIEW"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.sub, lineHeight: 1.65, whiteSpace: "pre-wrap", fontFamily: "'JetBrains Mono', monospace" } }, res.preview)),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "flex-end" } }, /* @__PURE__ */ import_react61.default.createElement("button", { onClick: onClose, style: {
+          fontSize: 11,
+          fontWeight: 600,
+          padding: "8px 16px",
+          borderRadius: 7,
+          cursor: "pointer",
+          background: "none",
+          border: `1px solid ${dark ? "rgba(248,250,252,0.12)" : "#CBD5E1"}`,
+          color: pc.sub
+        } }, "Dismiss"), step >= res.steps.length && /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => {
+          onClose();
+          setPage2(flag.page);
+        }, style: {
+          fontSize: 11,
+          fontWeight: 700,
+          padding: "8px 18px",
+          borderRadius: 7,
+          cursor: "pointer",
+          background: col,
+          color: "#FDFDFD",
+          border: "none",
+          boxShadow: `0 2px 10px ${col}50`
+        } }, "Execute \u2192 ", res.title))
+      )
     );
   }
   function Dashboard2({ t, dark, pipeline, setPage: setPage2 }) {
@@ -53312,11 +52615,8 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       risk: { label: "HIGH-VALUE RISK", col: "#CC5A25", bg: "rgba(204,90,37,0.10)", bd: "rgba(204,90,37,0.25)" }
     };
     const tt = { contentStyle: { background: cBg, border: `1px solid ${cBd}`, borderRadius: 8, fontSize: 11, color: pc.focus }, labelStyle: { color: pc.focus, fontWeight: 600 } };
-    const card = (children, style = {}) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { background: cBg, border: `1px solid ${cBd}`, borderRadius: 12, ...style }, children });
-    const sec = (txt, sub) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginBottom: 14 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: txt }),
-      sub && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 }, children: sub })
-    ] });
+    const card = (children, style = {}) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: cBg, border: `1px solid ${cBd}`, borderRadius: 12, ...style } }, children);
+    const sec = (txt, sub) => /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginBottom: 14 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, txt), sub && /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 } }, sub));
     const runCmd = (q) => {
       if (!q.trim()) return;
       const lower = q.toLowerCase();
@@ -53342,530 +52642,297 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       if (cmdState === "thinking" && cmdStepVis < cmdSteps.length) {
       }
     }, [cmdState]);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        flexShrink: 0,
-        padding: "12px 20px",
-        borderBottom: `1px solid ${cBd}`,
-        background: dark ? "#0D1018" : cBg
-      }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 10, alignItems: "center", maxWidth: 900 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, position: "relative" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 13, height: 13, color: "#FF6B35" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              "input",
-              {
-                ref: cmdRef,
-                value: cmdInput,
-                onChange: (e) => setCmdInput(e.target.value),
-                onKeyDown: (e) => {
-                  if (e.key === "Enter") runCmd(cmdInput);
-                },
-                placeholder: "Ask your data anything\u2026 e.g. 'What's at risk this quarter?' or 'Who has the best win rate?'",
-                style: {
-                  width: "100%",
-                  padding: "10px 12px 10px 34px",
-                  borderRadius: 8,
-                  background: dark ? "rgba(248,250,252,0.04)" : "#F8F9FA",
-                  border: `1px solid ${cmdState === "thinking" ? "#FF6B35" : dark ? "rgba(248,250,252,0.12)" : cBd}`,
-                  color: pc.focus,
-                  fontSize: 12,
-                  outline: "none",
-                  boxShadow: cmdState === "thinking" ? "0 0 0 2px rgba(255,107,53,0.18)" : "none",
-                  transition: "border-color 0.2s, box-shadow 0.2s"
-                }
-              }
-            )
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => runCmd(cmdInput), style: {
-            padding: "10px 18px",
-            borderRadius: 8,
-            background: "#FF6B35",
-            color: "#FDFDFD",
-            border: "none",
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: "pointer",
-            fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.08em",
-            boxShadow: "0 2px 10px rgba(255,107,53,0.35)",
-            flexShrink: 0
-          }, children: "ANALYSE \u2192" })
-        ] }),
-        cmdState !== "idle" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          marginTop: 10,
-          background: dark ? "rgba(255,107,53,0.04)" : "rgba(255,107,53,0.03)",
-          border: `1px solid rgba(255,107,53,0.18)`,
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      flexShrink: 0,
+      padding: "12px 20px",
+      borderBottom: `1px solid ${cBd}`,
+      background: dark ? "#0D1018" : cBg
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", maxWidth: 900 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, position: "relative" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 13, height: 13, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement(
+      "input",
+      {
+        ref: cmdRef,
+        value: cmdInput,
+        onChange: (e) => setCmdInput(e.target.value),
+        onKeyDown: (e) => {
+          if (e.key === "Enter") runCmd(cmdInput);
+        },
+        placeholder: "Ask your data anything\u2026 e.g. 'What's at risk this quarter?' or 'Who has the best win rate?'",
+        style: {
+          width: "100%",
+          padding: "10px 12px 10px 34px",
           borderRadius: 8,
-          padding: "12px 14px",
-          maxWidth: 900
-        }, children: [
-          cmdState === "thinking" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 11, height: 11, color: "#FF6B35", animation: "qBlink 0.9s ease-in-out infinite" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: "#FF6B35", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }, children: "AGENT THINKING\u2026" })
-            ] }),
-            cmdSteps.slice(0, cmdStepVis).map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-              fontSize: 10,
-              color: dark ? "rgba(248,250,252,0.55)" : "#64748B",
-              fontFamily: "'JetBrains Mono', monospace",
-              lineHeight: 1.7,
-              animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#FF6B35", marginRight: 6 }, children: "\u25B7" }),
-              s2
-            ] }, i))
-          ] }),
-          cmdState === "done" && cmdResult && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 11, height: 11, color: "#6B7F6B" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontWeight: 700, color: "#6B7F6B", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }, children: "ANALYSIS COMPLETE" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => {
-                setCmdState("idle");
-                setCmdInput("");
-              }, style: { marginLeft: "auto", fontSize: 9, color: pc.label, background: "none", border: "none", cursor: "pointer" }, children: "\u2715 Clear" })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, color: pc.body, lineHeight: 1.65, marginBottom: 10 }, children: cmdResult.result }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setPage2(cmdResult.page), style: {
-              fontSize: 10,
-              fontWeight: 700,
-              padding: "5px 12px",
-              borderRadius: 5,
-              background: "rgba(107,127,107,0.12)",
-              color: "#6B7F6B",
-              border: "1px solid rgba(107,127,107,0.28)",
-              cursor: "pointer"
-            }, children: [
-              "Suggested: ",
-              cmdResult.action,
-              " \u2192"
-            ] })
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", overflow: "hidden" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flexShrink: 0, padding: "0 20px", borderBottom: `1px solid ${cBd}`, background: cBg, display: "flex" }, children: TABS.map(({ id, label }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setTab(id), style: {
-            padding: "10px 16px",
-            fontSize: 11,
-            fontWeight: tab === id ? 700 : 500,
-            cursor: "pointer",
-            background: "none",
-            border: "none",
-            borderBottom: `2px solid ${tab === id ? "#FF6B35" : "transparent"}`,
-            color: tab === id ? "#FF6B35" : pc.sub,
-            transition: "color 0.15s, border-color 0.15s"
-          }, children: [
-            label,
-            id === "action" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              marginLeft: 5,
-              fontSize: 8,
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: 999,
-              background: "rgba(204,90,37,0.12)",
-              color: "#CC5A25",
-              border: "1px solid rgba(204,90,37,0.25)"
-            }, children: D2.flags.length })
-          ] }, id)) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, overflowY: "auto", padding: "16px 20px" }, children: [
-            tab === "exec" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 14 }, children: [
-                { label: "Projects & Buyers Matched", value: "6", sub: "Active project-buyer pairs", icon: GitMerge, col: "#FF6B35", up: true, delta: "+2 this quarter" },
-                { label: "Active Pipeline", value: "1.06M", sub: "Tonnes CO\u2082e credits", icon: ChartNoAxesColumn, col: "#6B7F6B", up: true, delta: "+18% vs last qtr" },
-                { label: "Potential Fees", value: "$680K", sub: "Est. advisory revenue", icon: TrendingUp, col: "#FF6B35", up: true, delta: "+12% vs pipeline" },
-                { label: "Carbon Credit Book", value: "7M", sub: "Tonnes CO\u2082e total est.", icon: Briefcase, col: "#6B7F6B", up: true, delta: "Target by Q4 2026" }
-              ].map(({ label, value, sub, icon: Icon2, col, up, delta }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                background: cBg,
-                border: `1px solid ${cBd}`,
-                borderRadius: 11,
-                padding: "14px",
-                borderTop: `3px solid ${col}`
-              }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 30, height: 30, borderRadius: 7, background: `${col}18`, display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { style: { width: 14, height: 14, color: col } }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                    fontSize: 9,
-                    padding: "2px 7px",
-                    borderRadius: 999,
-                    fontWeight: 600,
-                    background: up ? "rgba(107,127,107,0.12)" : "rgba(204,90,37,0.10)",
-                    color: up ? "#6B7F6B" : "#CC5A25",
-                    border: `1px solid ${up ? "rgba(107,127,107,0.25)" : "rgba(204,90,37,0.25)"}`
-                  }, children: delta })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 17, fontWeight: 700, color: pc.focus, lineHeight: 1, marginBottom: 3 }, children: value }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: pc.body }, children: label }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, marginTop: 1 }, children: sub })
-              ] }, label)) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "200px 1fr", gap: 12 }, children: [
-                card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px", display: "flex", flexDirection: "column", alignItems: "center" }, children: [
-                  sec("Revenue vs Target", "Current month"),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GaugeSVG, { pct: lastActual / lastTarget, label: "of Apr target", color: "#FF6B35", dark }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", marginTop: 10 }, children: [["Actual", "#FF6B35", `$${lastActual}M`], ["Target", "#6B7F6B", `$${lastTarget}M`]].map(([l, c2, v]) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "center", padding: "7px", borderRadius: 8, background: inner }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13, fontWeight: 800, color: c2 }, children: v }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: pc.label, marginTop: 1 }, children: l })
-                  ] }, l)) })
-                ] })),
-                card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px" }, children: [
-                  sec("Revenue Trend \u2014 6 Months", "Actual vs monthly target ($M)"),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResponsiveContainer, { width: "100%", height: 170, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AreaChart, { data: D2.revenue, margin: { top: 4, right: 8, left: -18, bottom: 0 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("linearGradient", { id: "d2g", x1: "0", y1: "0", x2: "0", y2: "1", children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "5%", stopColor: "#FF6B35", stopOpacity: 0.22 }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("stop", { offset: "95%", stopColor: "#FF6B35", stopOpacity: 0 })
-                    ] }) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CartesianGrid, { strokeDasharray: "3 3", stroke: grid, vertical: false }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(XAxis, { dataKey: "month", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(YAxis, { tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, tickFormatter: (v) => `$${v}M` }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, { ...tt, formatter: (v, n) => [`$${v}M`, n] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Area, { type: "monotone", dataKey: "actual", stroke: "#FF6B35", strokeWidth: 2, fill: "url(#d2g)", dot: { r: 3, fill: "#FF6B35", strokeWidth: 0 }, name: "Actual" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Line, { type: "monotone", dataKey: "target", stroke: "#6B7F6B", strokeWidth: 1.5, strokeDasharray: "5 3", dot: false, name: "Target" })
-                  ] }) })
-                ] }))
-              ] })
-            ] }),
-            tab === "pipe" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, children: [
-              card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px" }, children: [
-                sec("Conversion Funnel", "Stage-by-stage drop-off"),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 5 }, children: D2.funnel.map((s2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, fontWeight: 600, color: pc.body }, children: s2.stage }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-                      s2.conv !== null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, color: "#CC5A25", fontWeight: 600, background: "rgba(204,90,37,0.10)", padding: "1px 6px", borderRadius: 3 }, children: [
-                        s2.conv,
-                        "% conv"
-                      ] }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, fontWeight: 700, color: pc.focus }, children: s2.count })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: 26, borderRadius: 5, background: dark ? "rgba(248,250,252,0.05)" : "#F3F4F6", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                    height: "100%",
-                    borderRadius: 5,
-                    width: `${s2.pct}%`,
-                    background: i === 4 ? "linear-gradient(90deg,#5A6E5A,#6B7F6B)" : `linear-gradient(90deg,#FF6B35,${["#FF6B35", "#E55520", "#D44820", "#CC5A25"][Math.min(i, 3)]})`,
-                    display: "flex",
-                    alignItems: "center",
-                    paddingLeft: 8
-                  }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, color: "#fff", fontWeight: 600 }, children: [
-                    s2.pct,
-                    "%"
-                  ] }) }) }),
-                  i < D2.funnel.length - 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "center", fontSize: 9, color: pc.label, margin: "2px 0" }, children: [
-                    "\u25BC ",
-                    D2.funnel[i].count - D2.funnel[i + 1].count,
-                    " dropped"
-                  ] })
-                ] }, s2.stage)) })
-              ] })),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [
-                card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px" }, children: [
-                  sec("Pipeline Velocity", ""),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }, children: [{ l: "Velocity", v: "$2.4M", s: "/month", c: "#FF6B35" }, { l: "Avg Cycle", v: "52d", s: "to close", c: pc.body }, { l: "Open Deals", v: "16", s: "active", c: pc.body }].map(({ l, v, s: s2, c: c2 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "center", padding: "10px 8px", borderRadius: 8, background: inner }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 17, fontWeight: 800, color: c2 }, children: v }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: pc.label, marginTop: 1 }, children: s2 }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: pc.label }, children: l })
-                  ] }, l)) })
-                ] })),
-                card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px" }, children: [
-                  sec("Weighted vs Total Pipeline", "By stage ($M)"),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResponsiveContainer, { width: "100%", height: 140, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(BarChart, { data: D2.pipeline, layout: "vertical", margin: { top: 0, right: 8, left: 55, bottom: 0 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(XAxis, { type: "number", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, tickFormatter: (v) => `$${v}M` }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(YAxis, { type: "category", dataKey: "stage", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, width: 55 }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, { ...tt, formatter: (v, n) => [`$${v}M`, n] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bar, { dataKey: "total", fill: dark ? "rgba(255,107,53,0.20)" : "rgba(255,107,53,0.12)", radius: 3, name: "Total" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bar, { dataKey: "weighted", fill: "#FF6B35", radius: 3, name: "Weighted" })
-                  ] }) })
-                ] }))
-              ] })
-            ] }),
-            tab === "team" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, children: [
-              card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "13px 16px", borderBottom: `1px solid ${cBd}` }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: "Rep Leaderboard" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 }, children: "Q2 2026 quota attainment" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "24px 1fr 75px 65px 75px", padding: "7px 16px", background: inner, borderBottom: `1px solid ${cBd}` }, children: ["#", "Rep", "Attainment", "Win Rate", "Cycle"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.07em" }, children: h }, h)) }),
-                D2.team.map((rep, i) => {
-                  const rag = rep.attain >= 100 ? "#6B7F6B" : rep.attain >= 70 ? "#FF6B35" : "#CC5A25";
-                  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                    "div",
-                    {
-                      style: { display: "grid", gridTemplateColumns: "24px 1fr 75px 65px 75px", padding: "11px 16px", borderBottom: i < D2.team.length - 1 ? `1px solid ${cBd}` : "none", alignItems: "center", transition: "background 0.15s" },
-                      onMouseEnter: (e) => e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
-                      onMouseLeave: (e) => e.currentTarget.style.background = "transparent",
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, color: i === 0 ? "#FF6B35" : pc.label }, children: i === 0 ? "\u2605" : i + 1 }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: pc.focus }, children: rep.name }),
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: pc.label, marginTop: 1 }, children: [
-                            rep.deals,
-                            " closed \xB7 ",
-                            rep.opps,
-                            " open"
-                          ] })
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11, fontWeight: 700, color: rag }, children: [
-                            rep.attain,
-                            "%"
-                          ] }),
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: 3, borderRadius: 2, background: dark ? "rgba(248,250,252,0.06)" : "#F3F4F6", marginTop: 3, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: `${Math.min(rep.attain, 100)}%`, height: "100%", background: rag, borderRadius: 2 } }) })
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 11, color: pc.body }, children: [
-                          rep.winRate,
-                          "%"
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 11, color: pc.body }, children: [
-                          rep.cycle,
-                          "d"
-                        ] })
-                      ]
-                    },
-                    rep.name
-                  );
-                })
-              ] })),
-              card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px" }, children: [
-                sec("Activity \u2192 Opportunity Ratio", "Activities vs qualified opps per rep"),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResponsiveContainer, { width: "100%", height: 210, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(BarChart, { data: D2.team, margin: { top: 4, right: 4, left: -10, bottom: 28 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CartesianGrid, { strokeDasharray: "3 3", stroke: grid, vertical: false }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(XAxis, { dataKey: "name", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, angle: -20, textAnchor: "end", interval: 0 }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(YAxis, { tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, { ...tt }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bar, { dataKey: "activities", fill: dark ? "rgba(255,107,53,0.28)" : "rgba(255,107,53,0.18)", radius: [3, 3, 0, 0], name: "Activities" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bar, { dataKey: "opps", fill: "#FF6B35", radius: [3, 3, 0, 0], name: "Opportunities" })
-                ] }) })
-              ] }))
-            ] }),
-            tab === "action" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 12 }, children: [{ type: "stale", label: "Stale Deals", col: "#CC5A25" }, { type: "slip", label: "Slipping", col: "#FF6B35" }, { type: "gap", label: "Pipeline Gaps", col: "#6B7F6B" }, { type: "risk", label: "High-Value Risk", col: "#CC5A25" }].map(({ type, label, col }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: cBg, border: `1px solid ${cBd}`, borderRadius: 10, padding: "11px 14px", borderLeft: `3px solid ${col}` }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 20, fontWeight: 800, color: col }, children: D2.flags.filter((f) => f.type === type).length }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontWeight: 600, color: pc.body, marginTop: 2 }, children: label })
-              ] }, type)) }),
-              card(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "12px 16px", borderBottom: `1px solid ${cBd}`, display: "flex", alignItems: "center", gap: 10 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 8, height: 8, borderRadius: "50%", background: "#CC5A25", boxShadow: "0 0 6px rgba(204,90,37,0.6)", animation: "qBlink 1.8s ease-in-out infinite" } }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, fontWeight: 700, color: pc.focus }, children: "Action Required" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: {
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: 3,
-                    background: "rgba(204,90,37,0.12)",
-                    color: "#CC5A25",
-                    border: "1px solid rgba(204,90,37,0.28)",
-                    fontFamily: "'JetBrains Mono', monospace"
-                  }, children: [
-                    D2.flags.length,
-                    " FLAGS"
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { marginLeft: "auto", fontSize: 9, color: pc.label }, children: "Sorted by severity \xB7 AI resolutions available" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  display: "grid",
-                  gridTemplateColumns: "80px 1.3fr 90px 1.4fr 120px 130px",
-                  padding: "7px 16px",
-                  background: inner,
-                  borderBottom: `1px solid ${cBd}`
-                }, children: ["TYPE", "DEAL", "OWNER", "ALERT", "QUICK ACTION", "AI RESOLUTION"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.07em" }, children: h }, h)) }),
-                D2.flags.map((f, i) => {
-                  const m = FLAG_META[f.type];
-                  const res = RESOLUTIONS[f.type];
-                  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                    "div",
-                    {
-                      style: {
-                        display: "grid",
-                        gridTemplateColumns: "80px 1.3fr 90px 1.4fr 120px 130px",
-                        padding: "12px 16px",
-                        borderBottom: i < D2.flags.length - 1 ? `1px solid ${cBd}` : "none",
-                        alignItems: "center",
-                        transition: "background 0.15s",
-                        background: f.sev === "high" && i === 0 ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.02)" : "transparent"
-                      },
-                      onMouseEnter: (e) => e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
-                      onMouseLeave: (e) => e.currentTarget.style.background = f.sev === "high" && i === 0 ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.02)" : "transparent",
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                          fontSize: 8,
-                          fontWeight: 800,
-                          padding: "3px 7px",
-                          borderRadius: 3,
-                          width: "fit-content",
-                          background: m.bg,
-                          color: m.col,
-                          border: `1px solid ${m.bd}`,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          letterSpacing: "0.05em"
-                        }, children: m.label }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 600, color: pc.focus }, children: f.deal }),
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: pc.label, marginTop: 1, textTransform: "uppercase", letterSpacing: "0.04em" }, children: [
-                            f.sev,
-                            " severity"
-                          ] })
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, color: pc.sub }, children: f.rep }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: f.sev === "high" ? f.type === "gap" ? "#6B7F6B" : "#CC5A25" : pc.sub }, children: f.detail }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setPage2(f.page), style: {
-                          fontSize: 9,
-                          fontWeight: 700,
-                          padding: "5px 9px",
-                          borderRadius: 5,
-                          cursor: "pointer",
-                          background: m.bg,
-                          color: m.col,
-                          border: `1px solid ${m.bd}`,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          letterSpacing: "0.04em",
-                          textTransform: "uppercase"
-                        }, children: [
-                          f.action,
-                          " \u2192"
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setActiveResolution(f), style: {
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 5,
-                          fontSize: 9,
-                          fontWeight: 700,
-                          padding: "5px 9px",
-                          borderRadius: 5,
-                          cursor: "pointer",
-                          background: "rgba(255,107,53,0.08)",
-                          color: "#FF6B35",
-                          border: "1px solid rgba(255,107,53,0.25)",
-                          boxShadow: "0 0 6px rgba(255,107,53,0.12)",
-                          whiteSpace: "nowrap"
-                        }, children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 9, height: 9, flexShrink: 0 } }),
-                          res.title
-                        ] })
-                      ]
-                    },
-                    i
-                  );
-                })
-              ] }))
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          width: 268,
-          flexShrink: 0,
-          borderLeft: `1px solid ${cBd}`,
-          background: dark ? "#0D1018" : cBg,
+          background: dark ? "rgba(248,250,252,0.04)" : "#F8F9FA",
+          border: `1px solid ${cmdState === "thinking" ? "#FF6B35" : dark ? "rgba(248,250,252,0.12)" : cBd}`,
+          color: pc.focus,
+          fontSize: 12,
+          outline: "none",
+          boxShadow: cmdState === "thinking" ? "0 0 0 2px rgba(255,107,53,0.18)" : "none",
+          transition: "border-color 0.2s, box-shadow 0.2s"
+        }
+      }
+    )), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => runCmd(cmdInput), style: {
+      padding: "10px 18px",
+      borderRadius: 8,
+      background: "#FF6B35",
+      color: "#FDFDFD",
+      border: "none",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer",
+      fontFamily: "'JetBrains Mono', monospace",
+      letterSpacing: "0.08em",
+      boxShadow: "0 2px 10px rgba(255,107,53,0.35)",
+      flexShrink: 0
+    } }, "ANALYSE \u2192")), cmdState !== "idle" && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      marginTop: 10,
+      background: dark ? "rgba(255,107,53,0.04)" : "rgba(255,107,53,0.03)",
+      border: `1px solid rgba(255,107,53,0.18)`,
+      borderRadius: 8,
+      padding: "12px 14px",
+      maxWidth: 900
+    } }, cmdState === "thinking" && /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 8 } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 11, height: 11, color: "#FF6B35", animation: "qBlink 0.9s ease-in-out infinite" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: "#FF6B35", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" } }, "AGENT THINKING\u2026")), cmdSteps.slice(0, cmdStepVis).map((s2, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: {
+      fontSize: 10,
+      color: dark ? "rgba(248,250,252,0.55)" : "#64748B",
+      fontFamily: "'JetBrains Mono', monospace",
+      lineHeight: 1.7,
+      animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", marginRight: 6 } }, "\u25B7"), s2))), cmdState === "done" && cmdResult && /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 8 } }, /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 11, height: 11, color: "#6B7F6B" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 700, color: "#6B7F6B", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" } }, "ANALYSIS COMPLETE"), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => {
+      setCmdState("idle");
+      setCmdInput("");
+    }, style: { marginLeft: "auto", fontSize: 9, color: pc.label, background: "none", border: "none", cursor: "pointer" } }, "\u2715 Clear")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, color: pc.body, lineHeight: 1.65, marginBottom: 10 } }, cmdResult.result), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setPage2(cmdResult.page), style: {
+      fontSize: 10,
+      fontWeight: 700,
+      padding: "5px 12px",
+      borderRadius: 5,
+      background: "rgba(107,127,107,0.12)",
+      color: "#6B7F6B",
+      border: "1px solid rgba(107,127,107,0.28)",
+      cursor: "pointer"
+    } }, "Suggested: ", cmdResult.action, " \u2192")))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flexShrink: 0, padding: "0 20px", borderBottom: `1px solid ${cBd}`, background: cBg, display: "flex" } }, TABS.map(({ id, label }) => /* @__PURE__ */ import_react61.default.createElement("button", { key: id, onClick: () => setTab(id), style: {
+      padding: "10px 16px",
+      fontSize: 11,
+      fontWeight: tab === id ? 700 : 500,
+      cursor: "pointer",
+      background: "none",
+      border: "none",
+      borderBottom: `2px solid ${tab === id ? "#FF6B35" : "transparent"}`,
+      color: tab === id ? "#FF6B35" : pc.sub,
+      transition: "color 0.15s, border-color 0.15s"
+    } }, label, id === "action" && /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      marginLeft: 5,
+      fontSize: 8,
+      fontWeight: 800,
+      padding: "1px 5px",
+      borderRadius: 999,
+      background: "rgba(204,90,37,0.12)",
+      color: "#CC5A25",
+      border: "1px solid rgba(204,90,37,0.25)"
+    } }, D2.flags.length)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto", padding: "16px 20px" } }, tab === "exec" && /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 14 } }, [
+      { label: "Projects & Buyers Matched", value: "6", sub: "Active project-buyer pairs", icon: GitMerge, col: "#FF6B35", up: true, delta: "+2 this quarter" },
+      { label: "Active Pipeline", value: "1.06M", sub: "Tonnes CO\u2082e credits", icon: ChartNoAxesColumn, col: "#6B7F6B", up: true, delta: "+18% vs last qtr" },
+      { label: "Potential Fees", value: "$680K", sub: "Est. advisory revenue", icon: TrendingUp, col: "#FF6B35", up: true, delta: "+12% vs pipeline" },
+      { label: "Carbon Credit Book", value: "7M", sub: "Tonnes CO\u2082e total est.", icon: Briefcase, col: "#6B7F6B", up: true, delta: "Target by Q4 2026" }
+    ].map(({ label, value, sub, icon: Icon2, col, up, delta }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: label, style: {
+      background: cBg,
+      border: `1px solid ${cBd}`,
+      borderRadius: 11,
+      padding: "14px",
+      borderTop: `3px solid ${col}`
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 30, height: 30, borderRadius: 7, background: `${col}18`, display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { style: { width: 14, height: 14, color: col } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 9,
+      padding: "2px 7px",
+      borderRadius: 999,
+      fontWeight: 600,
+      background: up ? "rgba(107,127,107,0.12)" : "rgba(204,90,37,0.10)",
+      color: up ? "#6B7F6B" : "#CC5A25",
+      border: `1px solid ${up ? "rgba(107,127,107,0.25)" : "rgba(204,90,37,0.25)"}`
+    } }, delta)), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 17, fontWeight: 700, color: pc.focus, lineHeight: 1, marginBottom: 3 } }, value), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: pc.body } }, label), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginTop: 1 } }, sub)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "200px 1fr", gap: 12 } }, card(/* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px", display: "flex", flexDirection: "column", alignItems: "center" } }, sec("Revenue vs Target", "Current month"), /* @__PURE__ */ import_react61.default.createElement(GaugeSVG, { pct: lastActual / lastTarget, label: "of Apr target", color: "#FF6B35", dark }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", marginTop: 10 } }, [["Actual", "#FF6B35", `$${lastActual}M`], ["Target", "#6B7F6B", `$${lastTarget}M`]].map(([l, c2, v]) => /* @__PURE__ */ import_react61.default.createElement("div", { key: l, style: { textAlign: "center", padding: "7px", borderRadius: 8, background: inner } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: c2 } }, v), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, marginTop: 1 } }, l)))))), card(/* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px" } }, sec("Revenue Trend \u2014 6 Months", "Actual vs monthly target ($M)"), /* @__PURE__ */ import_react61.default.createElement(ResponsiveContainer, { width: "100%", height: 170 }, /* @__PURE__ */ import_react61.default.createElement(AreaChart, { data: D2.revenue, margin: { top: 4, right: 8, left: -18, bottom: 0 } }, /* @__PURE__ */ import_react61.default.createElement("defs", null, /* @__PURE__ */ import_react61.default.createElement("linearGradient", { id: "d2g", x1: "0", y1: "0", x2: "0", y2: "1" }, /* @__PURE__ */ import_react61.default.createElement("stop", { offset: "5%", stopColor: "#FF6B35", stopOpacity: 0.22 }), /* @__PURE__ */ import_react61.default.createElement("stop", { offset: "95%", stopColor: "#FF6B35", stopOpacity: 0 }))), /* @__PURE__ */ import_react61.default.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: grid, vertical: false }), /* @__PURE__ */ import_react61.default.createElement(XAxis, { dataKey: "month", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false }), /* @__PURE__ */ import_react61.default.createElement(YAxis, { tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, tickFormatter: (v) => `$${v}M` }), /* @__PURE__ */ import_react61.default.createElement(Tooltip, { ...tt, formatter: (v, n) => [`$${v}M`, n] }), /* @__PURE__ */ import_react61.default.createElement(Area, { type: "monotone", dataKey: "actual", stroke: "#FF6B35", strokeWidth: 2, fill: "url(#d2g)", dot: { r: 3, fill: "#FF6B35", strokeWidth: 0 }, name: "Actual" }), /* @__PURE__ */ import_react61.default.createElement(Line, { type: "monotone", dataKey: "target", stroke: "#6B7F6B", strokeWidth: 1.5, strokeDasharray: "5 3", dot: false, name: "Target" }))))))), tab === "pipe" && /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } }, card(/* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px" } }, sec("Conversion Funnel", "Stage-by-stage drop-off"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 5 } }, D2.funnel.map((s2, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: s2.stage }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, fontWeight: 600, color: pc.body } }, s2.stage), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, s2.conv !== null && /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: "#CC5A25", fontWeight: 600, background: "rgba(204,90,37,0.10)", padding: "1px 6px", borderRadius: 3 } }, s2.conv, "% conv"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: pc.focus } }, s2.count))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: 26, borderRadius: 5, background: dark ? "rgba(248,250,252,0.05)" : "#F3F4F6", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      height: "100%",
+      borderRadius: 5,
+      width: `${s2.pct}%`,
+      background: i === 4 ? "linear-gradient(90deg,#5A6E5A,#6B7F6B)" : `linear-gradient(90deg,#FF6B35,${["#FF6B35", "#E55520", "#D44820", "#CC5A25"][Math.min(i, 3)]})`,
+      display: "flex",
+      alignItems: "center",
+      paddingLeft: 8
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: "#fff", fontWeight: 600 } }, s2.pct, "%"))), i < D2.funnel.length - 1 && /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "center", fontSize: 9, color: pc.label, margin: "2px 0" } }, "\u25BC ", D2.funnel[i].count - D2.funnel[i + 1].count, " dropped")))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } }, card(/* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px" } }, sec("Pipeline Velocity", ""), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 } }, [{ l: "Velocity", v: "$2.4M", s: "/month", c: "#FF6B35" }, { l: "Avg Cycle", v: "52d", s: "to close", c: pc.body }, { l: "Open Deals", v: "16", s: "active", c: pc.body }].map(({ l, v, s: s2, c: c2 }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: l, style: { textAlign: "center", padding: "10px 8px", borderRadius: 8, background: inner } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 17, fontWeight: 800, color: c2 } }, v), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, marginTop: 1 } }, s2), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label } }, l)))))), card(/* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px" } }, sec("Weighted vs Total Pipeline", "By stage ($M)"), /* @__PURE__ */ import_react61.default.createElement(ResponsiveContainer, { width: "100%", height: 140 }, /* @__PURE__ */ import_react61.default.createElement(BarChart, { data: D2.pipeline, layout: "vertical", margin: { top: 0, right: 8, left: 55, bottom: 0 } }, /* @__PURE__ */ import_react61.default.createElement(XAxis, { type: "number", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, tickFormatter: (v) => `$${v}M` }), /* @__PURE__ */ import_react61.default.createElement(YAxis, { type: "category", dataKey: "stage", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, width: 55 }), /* @__PURE__ */ import_react61.default.createElement(Tooltip, { ...tt, formatter: (v, n) => [`$${v}M`, n] }), /* @__PURE__ */ import_react61.default.createElement(Bar, { dataKey: "total", fill: dark ? "rgba(255,107,53,0.20)" : "rgba(255,107,53,0.12)", radius: 3, name: "Total" }), /* @__PURE__ */ import_react61.default.createElement(Bar, { dataKey: "weighted", fill: "#FF6B35", radius: 3, name: "Weighted" }))))))), tab === "team" && /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } }, card(/* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "13px 16px", borderBottom: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, "Rep Leaderboard"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginTop: 2 } }, "Q2 2026 quota attainment")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "24px 1fr 75px 65px 75px", padding: "7px 16px", background: inner, borderBottom: `1px solid ${cBd}` } }, ["#", "Rep", "Attainment", "Win Rate", "Cycle"].map((h) => /* @__PURE__ */ import_react61.default.createElement("span", { key: h, style: { fontSize: 9, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.07em" } }, h))), D2.team.map((rep, i) => {
+      const rag = rep.attain >= 100 ? "#6B7F6B" : rep.attain >= 70 ? "#FF6B35" : "#CC5A25";
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: rep.name,
+          style: { display: "grid", gridTemplateColumns: "24px 1fr 75px 65px 75px", padding: "11px 16px", borderBottom: i < D2.team.length - 1 ? `1px solid ${cBd}` : "none", alignItems: "center", transition: "background 0.15s" },
+          onMouseEnter: (e) => e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
+          onMouseLeave: (e) => e.currentTarget.style.background = "transparent"
+        },
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: i === 0 ? "#FF6B35" : pc.label } }, i === 0 ? "\u2605" : i + 1),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: pc.focus } }, rep.name), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, marginTop: 1 } }, rep.deals, " closed \xB7 ", rep.opps, " open")),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: rag } }, rep.attain, "%"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: 3, borderRadius: 2, background: dark ? "rgba(248,250,252,0.06)" : "#F3F4F6", marginTop: 3, overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: `${Math.min(rep.attain, 100)}%`, height: "100%", background: rag, borderRadius: 2 } }))),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: pc.body } }, rep.winRate, "%"),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: pc.body } }, rep.cycle, "d")
+      );
+    }))), card(/* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px" } }, sec("Activity \u2192 Opportunity Ratio", "Activities vs qualified opps per rep"), /* @__PURE__ */ import_react61.default.createElement(ResponsiveContainer, { width: "100%", height: 210 }, /* @__PURE__ */ import_react61.default.createElement(BarChart, { data: D2.team, margin: { top: 4, right: 4, left: -10, bottom: 28 } }, /* @__PURE__ */ import_react61.default.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: grid, vertical: false }), /* @__PURE__ */ import_react61.default.createElement(XAxis, { dataKey: "name", tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false, angle: -20, textAnchor: "end", interval: 0 }), /* @__PURE__ */ import_react61.default.createElement(YAxis, { tick: { fontSize: 9, fill: ax }, axisLine: false, tickLine: false }), /* @__PURE__ */ import_react61.default.createElement(Tooltip, { ...tt }), /* @__PURE__ */ import_react61.default.createElement(Bar, { dataKey: "activities", fill: dark ? "rgba(255,107,53,0.28)" : "rgba(255,107,53,0.18)", radius: [3, 3, 0, 0], name: "Activities" }), /* @__PURE__ */ import_react61.default.createElement(Bar, { dataKey: "opps", fill: "#FF6B35", radius: [3, 3, 0, 0], name: "Opportunities" })))))), tab === "action" && /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 12 } }, [{ type: "stale", label: "Stale Deals", col: "#CC5A25" }, { type: "slip", label: "Slipping", col: "#FF6B35" }, { type: "gap", label: "Pipeline Gaps", col: "#6B7F6B" }, { type: "risk", label: "High-Value Risk", col: "#CC5A25" }].map(({ type, label, col }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: type, style: { background: cBg, border: `1px solid ${cBd}`, borderRadius: 10, padding: "11px 14px", borderLeft: `3px solid ${col}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 20, fontWeight: 800, color: col } }, D2.flags.filter((f) => f.type === type).length), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: pc.body, marginTop: 2 } }, label)))), card(/* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "12px 16px", borderBottom: `1px solid ${cBd}`, display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 8, height: 8, borderRadius: "50%", background: "#CC5A25", boxShadow: "0 0 6px rgba(204,90,37,0.6)", animation: "qBlink 1.8s ease-in-out infinite" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: pc.focus } }, "Action Required"), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 9,
+      fontWeight: 700,
+      padding: "2px 8px",
+      borderRadius: 3,
+      background: "rgba(204,90,37,0.12)",
+      color: "#CC5A25",
+      border: "1px solid rgba(204,90,37,0.28)",
+      fontFamily: "'JetBrains Mono', monospace"
+    } }, D2.flags.length, " FLAGS"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { marginLeft: "auto", fontSize: 9, color: pc.label } }, "Sorted by severity \xB7 AI resolutions available")), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "grid",
+      gridTemplateColumns: "80px 1.3fr 90px 1.4fr 120px 130px",
+      padding: "7px 16px",
+      background: inner,
+      borderBottom: `1px solid ${cBd}`
+    } }, ["TYPE", "DEAL", "OWNER", "ALERT", "QUICK ACTION", "AI RESOLUTION"].map((h) => /* @__PURE__ */ import_react61.default.createElement("span", { key: h, style: { fontSize: 9, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.07em" } }, h))), D2.flags.map((f, i) => {
+      const m = FLAG_META[f.type];
+      const res = RESOLUTIONS[f.type];
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: i,
+          style: {
+            display: "grid",
+            gridTemplateColumns: "80px 1.3fr 90px 1.4fr 120px 130px",
+            padding: "12px 16px",
+            borderBottom: i < D2.flags.length - 1 ? `1px solid ${cBd}` : "none",
+            alignItems: "center",
+            transition: "background 0.15s",
+            background: f.sev === "high" && i === 0 ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.02)" : "transparent"
+          },
+          onMouseEnter: (e) => e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)",
+          onMouseLeave: (e) => e.currentTarget.style.background = f.sev === "high" && i === 0 ? dark ? "rgba(204,90,37,0.04)" : "rgba(204,90,37,0.02)" : "transparent"
+        },
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+          fontSize: 8,
+          fontWeight: 800,
+          padding: "3px 7px",
+          borderRadius: 3,
+          width: "fit-content",
+          background: m.bg,
+          color: m.col,
+          border: `1px solid ${m.bd}`,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.05em"
+        } }, m.label),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 600, color: pc.focus } }, f.deal), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, marginTop: 1, textTransform: "uppercase", letterSpacing: "0.04em" } }, f.sev, " severity")),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: pc.sub } }, f.rep),
+        /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: f.sev === "high" ? f.type === "gap" ? "#6B7F6B" : "#CC5A25" : pc.sub } }, f.detail),
+        /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setPage2(f.page), style: {
+          fontSize: 9,
+          fontWeight: 700,
+          padding: "5px 9px",
+          borderRadius: 5,
+          cursor: "pointer",
+          background: m.bg,
+          color: m.col,
+          border: `1px solid ${m.bd}`,
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase"
+        } }, f.action, " \u2192"),
+        /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setActiveResolution(f), style: {
           display: "flex",
-          flexDirection: "column",
-          overflow: "hidden"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "12px 14px", borderBottom: `1px solid ${cBd}`, flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 20, height: 20, borderRadius: 5, background: "rgba(255,107,53,0.12)", border: "1px solid rgba(255,107,53,0.28)", display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 10, height: 10, color: "#FF6B35" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, fontWeight: 700, color: pc.focus, letterSpacing: "0.04em" }, children: "AI Analyst" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "#FF6B35",
-              marginLeft: "auto",
-              boxShadow: "0 0 6px #FF6B35",
-              animation: "qBlink 2s ease-in-out infinite",
-              flexShrink: 0
-            } })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, overflowY: "auto" }, children: [
-            INSIGHTS.map((ins, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "div",
-              {
-                style: {
-                  padding: "13px 14px",
-                  borderBottom: `1px solid ${cBd}`,
-                  cursor: "pointer",
-                  transition: "background 0.15s",
-                  borderLeft: `2px solid ${i === 0 ? ins.color : "transparent"}`
-                },
-                onMouseEnter: (e) => {
-                  e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)";
-                  e.currentTarget.style.borderLeftColor = ins.color;
-                },
-                onMouseLeave: (e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.borderLeftColor = i === 0 ? ins.color : "transparent";
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 3, background: `${ins.color}18`, color: ins.color, border: `1px solid ${ins.color}35`, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", flexShrink: 0, marginTop: 1 }, children: ins.label.toUpperCase() }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: pc.body, lineHeight: 1.55, marginBottom: 8 }, children: ins.obs }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 6 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setActiveReasoning(ins), style: {
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: 9,
-                      fontWeight: 600,
-                      padding: "3px 8px",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      background: dark ? "rgba(248,250,252,0.05)" : "#F3F4F6",
-                      color: pc.sub,
-                      border: `1px solid ${cBd}`
-                    }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 9, height: 9 } }),
-                      "Reasoning"
-                    ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setPage2(ins.page), style: {
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: 9,
-                      fontWeight: 600,
-                      padding: "3px 8px",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      background: `${ins.color}14`,
-                      color: ins.color,
-                      border: `1px solid ${ins.color}35`
-                    }, children: [
-                      ins.action,
-                      " \u2192"
-                    ] })
-                  ] })
-                ]
-              },
-              ins.id
-            )),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "12px 14px" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: pc.label, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.7 }, children: [
-              "AI Analyst monitors pipeline,",
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("br", {}),
-              "team activity, and market signals",
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("br", {}),
-              "continuously in the background."
-            ] }) })
-          ] })
-        ] })
-      ] }),
-      activeReasoning && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ReasoningModal, { insight: activeReasoning, dark, onClose: () => setActiveReasoning(null) }),
-      activeResolution && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResolutionModal, { flag: activeResolution, dark, onClose: () => setActiveResolution(null), setPage: setPage2 })
-    ] });
+          alignItems: "center",
+          gap: 5,
+          fontSize: 9,
+          fontWeight: 700,
+          padding: "5px 9px",
+          borderRadius: 5,
+          cursor: "pointer",
+          background: "rgba(255,107,53,0.08)",
+          color: "#FF6B35",
+          border: "1px solid rgba(255,107,53,0.25)",
+          boxShadow: "0 0 6px rgba(255,107,53,0.12)",
+          whiteSpace: "nowrap"
+        } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 9, height: 9, flexShrink: 0 } }), res.title)
+      );
+    })))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      width: 268,
+      flexShrink: 0,
+      borderLeft: `1px solid ${cBd}`,
+      background: dark ? "#0D1018" : cBg,
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden"
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "12px 14px", borderBottom: `1px solid ${cBd}`, flexShrink: 0, display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 20, height: 20, borderRadius: 5, background: "rgba(255,107,53,0.12)", border: "1px solid rgba(255,107,53,0.28)", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 10, height: 10, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: pc.focus, letterSpacing: "0.04em" } }, "AI Analyst"), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      width: 6,
+      height: 6,
+      borderRadius: "50%",
+      background: "#FF6B35",
+      marginLeft: "auto",
+      boxShadow: "0 0 6px #FF6B35",
+      animation: "qBlink 2s ease-in-out infinite",
+      flexShrink: 0
+    } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto" } }, INSIGHTS.map((ins, i) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: ins.id,
+        style: {
+          padding: "13px 14px",
+          borderBottom: `1px solid ${cBd}`,
+          cursor: "pointer",
+          transition: "background 0.15s",
+          borderLeft: `2px solid ${i === 0 ? ins.color : "transparent"}`
+        },
+        onMouseEnter: (e) => {
+          e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.02)";
+          e.currentTarget.style.borderLeftColor = ins.color;
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.borderLeftColor = i === 0 ? ins.color : "transparent";
+        }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 6 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 8, fontWeight: 800, padding: "2px 6px", borderRadius: 3, background: `${ins.color}18`, color: ins.color, border: `1px solid ${ins.color}35`, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", flexShrink: 0, marginTop: 1 } }, ins.label.toUpperCase())),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.body, lineHeight: 1.55, marginBottom: 8 } }, ins.obs),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setActiveReasoning(ins), style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 9,
+        fontWeight: 600,
+        padding: "3px 8px",
+        borderRadius: 4,
+        cursor: "pointer",
+        background: dark ? "rgba(248,250,252,0.05)" : "#F3F4F6",
+        color: pc.sub,
+        border: `1px solid ${cBd}`
+      } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 9, height: 9 } }), "Reasoning"), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setPage2(ins.page), style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 9,
+        fontWeight: 600,
+        padding: "3px 8px",
+        borderRadius: 4,
+        cursor: "pointer",
+        background: `${ins.color}14`,
+        color: ins.color,
+        border: `1px solid ${ins.color}35`
+      } }, ins.action, " \u2192"))
+    )), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "12px 14px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.label, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.7 } }, "AI Analyst monitors pipeline,", /* @__PURE__ */ import_react61.default.createElement("br", null), "team activity, and market signals", /* @__PURE__ */ import_react61.default.createElement("br", null), "continuously in the background."))))), activeReasoning && /* @__PURE__ */ import_react61.default.createElement(ReasoningModal, { insight: activeReasoning, dark, onClose: () => setActiveReasoning(null) }), activeResolution && /* @__PURE__ */ import_react61.default.createElement(ResolutionModal, { flag: activeResolution, dark, onClose: () => setActiveResolution(null), setPage: setPage2 }));
   }
   var OPP_BASE = [
-    { id: 13, name: "South Barito Kapuas Project", type: "REDD+ / Conservation", quality: 94, matches: ["Tokyo Gas", "Engie", "Vitol"], icon: "\u{1F333}", country: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}", registry: "Verra", projectId: "4782" },
-    { id: 14, name: "Katingan Peatland Restoration & Conservation", type: "Peatland", quality: 96, matches: ["Shell", "Tokyo Gas", "Volkswagen"], icon: "\u{1F33F}", country: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}", registry: "Verra", projectId: "1477" },
+    { id: 13, name: "South Barito Kapuas Project", type: "REDD+ / Conservation", quality: 94, matches: ["Japan Gas", "Engenix Energy", "Vitronix Trading"], icon: "\u{1F333}", country: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}", registry: "Verra", projectId: "4782" },
+    { id: 14, name: "Katingan Peatland Restoration & Conservation", type: "Peatland", quality: 96, matches: ["Shellion Energy", "Japan Gas", "Volkswagen"], icon: "\u{1F33F}", country: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}", registry: "Verra", projectId: "1477" },
     { id: 15, name: "V Carbon Nuku Maimai Project", type: "Conservation", quality: 88, matches: ["Go Net Zero"], icon: "\u{1F332}", country: "Papua New Guinea", flag: "\u{1F1F5}\u{1F1EC}", registry: "Verra", projectId: "5232" },
-    { id: 1, name: "Amazonia Resurrect", type: "Reforestation", quality: 93, matches: ["Microsoft", "Amazon"], icon: "\u{1F33F}", country: "Brazil", flag: "\u{1F1E7}\u{1F1F7}", registry: "Verra", projectId: "2834" },
-    { id: 2, name: "Nordic DAC Hub", type: "Direct Air Capture", quality: 86, matches: ["Shell PLC", "BP PLC"], icon: "\u26A1", country: "Norway", flag: "\u{1F1F3}\u{1F1F4}", registry: "Gold Standard", projectId: "9012" },
-    { id: 3, name: "BlueOcean Kelp", type: "Blue Carbon", quality: 92, matches: ["Unilever", "Microsoft"], icon: "\u{1F30A}", country: "International", flag: "\u{1F310}", registry: "Verra", projectId: "3341" },
+    { id: 1, name: "Amazia Cloudia Resurrect", type: "Reforestation", quality: 93, matches: ["Microdyne Systems", "Amazia Cloud"], icon: "\u{1F33F}", country: "Brazil", flag: "\u{1F1E7}\u{1F1F7}", registry: "Verra", projectId: "2834" },
+    { id: 2, name: "Nordic DAC Hub", type: "Direct Air Capture", quality: 86, matches: ["Shellion Energy PLC", "BP PLC"], icon: "\u26A1", country: "Norway", flag: "\u{1F1F3}\u{1F1F4}", registry: "Gold Standard", projectId: "9012" },
+    { id: 3, name: "BlueOcean Kelp", type: "Blue Carbon", quality: 92, matches: ["Unilever", "Microdyne Systems"], icon: "\u{1F30A}", country: "International", flag: "\u{1F310}", registry: "Verra", projectId: "3341" },
     { id: 4, name: "Sahara Solar Offset", type: "Renewable", quality: 71, matches: ["BP PLC"], icon: "\u2600\uFE0F", country: "Morocco", flag: "\u{1F1F2}\u{1F1E6}", registry: "Gold Standard", projectId: "7765" },
-    { id: 5, name: "Congo Basin Guard", type: "Conservation", quality: 89, matches: ["Amazon", "Apple Inc"], icon: "\u{1F332}", country: "DRC", flag: "\u{1F1E8}\u{1F1E9}", registry: "Verra", projectId: "1923" },
-    { id: 6, name: "Bayer Biochar V3", type: "Industrial Sink", quality: 80, matches: ["Shell PLC", "Unilever"], icon: "\u{1F3ED}", country: "Germany", flag: "\u{1F1E9}\u{1F1EA}", registry: "Gold Standard", projectId: "8841" },
-    { id: 7, name: "Patagonia Wind Farm", type: "Renewable Energy", quality: 85, matches: ["BP PLC", "Amazon"], icon: "\u{1F4A8}", country: "Argentina", flag: "\u{1F1E6}\u{1F1F7}", registry: "Gold Standard", projectId: "6623" },
-    { id: 8, name: "Midwest Regenerative", type: "Soil Carbon", quality: 88, matches: ["Microsoft", "Unilever"], icon: "\u{1F33E}", country: "USA", flag: "\u{1F1FA}\u{1F1F8}", registry: "Verra", projectId: "4410" },
-    { id: 9, name: "Indo Peatland Lock", type: "Conservation", quality: 74, matches: ["Shell PLC"], icon: "\u{1F33F}", country: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}", registry: "Verra", projectId: "2287" },
-    { id: 10, name: "Mangrove Guard X", type: "Coastal Protection", quality: 91, matches: ["Amazon", "Apple Inc", "BP PLC"], icon: "\u{1F334}", country: "Bangladesh", flag: "\u{1F1E7}\u{1F1E9}", registry: "Verra", projectId: "5509" },
-    { id: 11, name: "Icelandic Geothermal", type: "Energy Efficiency", quality: 83, matches: ["Microsoft"], icon: "\u2668\uFE0F", country: "Iceland", flag: "\u{1F1EE}\u{1F1F8}", registry: "Gold Standard", projectId: "7731" },
-    { id: 12, name: "Urban Methane Capture", type: "Industrial Waste", quality: 80, matches: ["Shell PLC", "BP PLC"], icon: "\u{1F3D9}", country: "Brazil", flag: "\u{1F1E7}\u{1F1F7}", registry: "Gold Standard", projectId: "3398" }
+    { id: 5, name: "Congo Basin Guard", type: "Conservation", quality: 89, matches: ["Amazia Cloud", "Apple Inc"], icon: "\u{1F332}", country: "DRC", flag: "\u{1F1E8}\u{1F1E9}", registry: "Verra", projectId: "1923" },
+    { id: 6, name: "Bayer Biochar V3", type: "Industrial Sink", quality: 80, matches: ["Shellion Energy PLC", "Unilever"], icon: "\u{1F3ED}", country: "Germany", flag: "\u{1F1E9}\u{1F1EA}", registry: "Gold Standard", projectId: "8841" },
+    { id: 7, name: "Patagonia Wind Farm", type: "Renewable Energy", quality: 85, matches: ["BP PLC", "Amazia Cloud"], icon: "\u{1F4A8}", country: "Argentina", flag: "\u{1F1E6}\u{1F1F7}", registry: "Gold Standard", projectId: "6623" },
+    { id: 8, name: "Midwest Regenerative", type: "Soil Carbon", quality: 88, matches: ["Microdyne Systems", "Unilever"], icon: "\u{1F33E}", country: "USA", flag: "\u{1F1FA}\u{1F1F8}", registry: "Verra", projectId: "4410" },
+    { id: 9, name: "Indo Peatland Lock", type: "Conservation", quality: 74, matches: ["Shellion Energy PLC"], icon: "\u{1F33F}", country: "Indonesia", flag: "\u{1F1EE}\u{1F1E9}", registry: "Verra", projectId: "2287" },
+    { id: 10, name: "Mangrove Guard X", type: "Coastal Protection", quality: 91, matches: ["Amazia Cloud", "Apple Inc", "BP PLC"], icon: "\u{1F334}", country: "Bangladesh", flag: "\u{1F1E7}\u{1F1E9}", registry: "Verra", projectId: "5509" },
+    { id: 11, name: "Icelandic Geothermal", type: "Energy Efficiency", quality: 83, matches: ["Microdyne Systems"], icon: "\u2668\uFE0F", country: "Iceland", flag: "\u{1F1EE}\u{1F1F8}", registry: "Gold Standard", projectId: "7731" },
+    { id: 12, name: "Urban Methane Capture", type: "Industrial Waste", quality: 80, matches: ["Shellion Energy PLC", "BP PLC"], icon: "\u{1F3D9}", country: "Brazil", flag: "\u{1F1E7}\u{1F1F7}", registry: "Gold Standard", projectId: "3398" }
   ];
   var PROJECT_EXTRAS = {
-    1: { code: "AMZ-RF-2024-X", location: "Amazonas, Brazil", vintage: "2022\u20132025", credits: "320,000 tCO\u2082e", biodiversity: "9.4/10", registry: "Verra", status: "Verified", imgGrad: "linear-gradient(160deg,#1a2f18 0%,#2d4a22 50%,#152910 100%)", bidders: 14, summary: "This strategic reforestation initiative rehabilitates 45,000 hectares of degraded Amazonian land using AI-driven seed dispersal and real-time Sentinel-2 satellite monitoring to ensure maximum carbon sequestration efficacy." },
+    1: { code: "AMZ-RF-2024-X", location: "Amazia Cloudas, Brazil", vintage: "2022\u20132025", credits: "320,000 tCO\u2082e", biodiversity: "9.4/10", registry: "Verra", status: "Verified", imgGrad: "linear-gradient(160deg,#1a2f18 0%,#2d4a22 50%,#152910 100%)", bidders: 14, summary: "This strategic reforestation initiative rehabilitates 45,000 hectares of degraded Amazia Cloudian land using AI-driven seed dispersal and real-time Sentinel-2 satellite monitoring to ensure maximum carbon sequestration efficacy." },
     2: { code: "NDC-DAC-2024-B", location: "Troms\xF8, Norway", vintage: "2023\u20132028", credits: "85,000 tCO\u2082e", biodiversity: "6.1/10", registry: "Gold Standard", status: "Verified", imgGrad: "linear-gradient(160deg,#0d1a2e 0%,#1a2e40 50%,#0a1520 100%)", bidders: 6, summary: "Direct air capture facility powered by 100% renewable geothermal energy. Module-3 phase now operational, targeting 85K tCO\u2082e annually with mechanical removal verified by third-party auditors." },
     3: { code: "BOK-BC-2023-K", location: "North Sea / Kelp Belt", vintage: "2023\u20132030", credits: "210,000 tCO\u2082e", biodiversity: "8.8/10", registry: "Verra", status: "Verified", imgGrad: "linear-gradient(160deg,#0a1e2a 0%,#0d2d38 50%,#081520 100%)", bidders: 11, summary: "Open-ocean kelp cultivation sequestering carbon as deep-sinking biomass. Dual benefit: ocean carbon sink and marine ecosystem restoration across 12,000 km\xB2 of North Atlantic kelp belt." },
     4: { code: "SSO-RN-2024-M", location: "Sahara, Morocco/Tunisia", vintage: "2024\u20132031", credits: "140,000 tCO\u2082e", biodiversity: "4.2/10", registry: "Gold Standard", status: "Pending", imgGrad: "linear-gradient(160deg,#2a1e0a 0%,#3a2a10 50%,#1a1205 100%)", bidders: 3, summary: "Utility-scale solar offsetting fossil generation across North African grid. Additionality verified under Grid Emission Factor methodology, with 2,400 local construction jobs created." },
@@ -53912,19 +52979,19 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     ];
   }
   var CORP_TIERS = { 0: "TIER 1 MATCH", 1: "TIER 2 MATCH", 2: "TIER 3 MATCH" };
-  var CORP_SCORES = { "Microsoft": 98.4, "Amazon": 95.1, "Shell PLC": 89.2, "BP PLC": 82.1, "Unilever": 91.7, "Apple Inc": 87.3 };
+  var CORP_SCORES = { "Microdyne Systems": 98.4, "Amazia Cloud": 95.1, "Shellion Energy PLC": 89.2, "BP PLC": 82.1, "Unilever": 91.7, "Apple Inc": 87.3 };
   var CORP_MANDATE = {
-    "Microsoft": "Required transition to Net Zero 2030 focusing on high-integrity nature-based solutions for Scope 1-3 offset.",
-    "Amazon": "Climate Pledge signatory \u2014 net zero by 2040. Prioritises REDD+ and Blue Carbon with verified additionality.",
-    "Shell PLC": "Net Zero by 2050. Nature-based solutions strategy mandates Verra-certified projects with co-benefit scoring.",
+    "Microdyne Systems": "Required transition to Net Zero 2030 focusing on high-integrity nature-based solutions for Scope 1-3 offset.",
+    "Amazia Cloud": "Climate Pledge signatory \u2014 net zero by 2040. Prioritises REDD+ and Blue Carbon with verified additionality.",
+    "Shellion Energy PLC": "Net Zero by 2050. Nature-based solutions strategy mandates Verra-certified projects with co-benefit scoring.",
     "BP PLC": "Active offset programme despite capex cuts. Prefers Gold Standard projects with SDG-aligned impact metrics.",
     "Unilever": "SBTi-validated 2039 net zero target. CTAP 2025 mandates high-permanence removals and nature-based solutions.",
     "Apple Inc": "Carbon Neutral by 2030. Uses credits only as last resort \u2014 high quality threshold of 90+ quality score required."
   };
   var CORP_HOLDING = {
-    "Microsoft": { current: "12k", target: "80k" },
-    "Amazon": { current: "45k", target: "150k" },
-    "Shell PLC": { current: "2.1M", target: "8M" },
+    "Microdyne Systems": { current: "12k", target: "80k" },
+    "Amazia Cloud": { current: "45k", target: "150k" },
+    "Shellion Energy PLC": { current: "2.1M", target: "8M" },
     "BP PLC": { current: "800k", target: "4M" },
     "Unilever": { current: "180k", target: "600k" },
     "Apple Inc": { current: "220k", target: "400k" }
@@ -53932,16 +52999,7 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
   function ConfidenceArcBig({ score }) {
     const S = 64, sw = 5, r2 = (S - sw * 2) / 2, full = 2 * Math.PI * r2, arc = full * 0.75, fill = score / 100 * arc;
     const col = score >= 90 ? "#FF6B35" : score >= 80 ? "#CC5A25" : "#7A2820";
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", width: S, height: S, flexShrink: 0 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: S, height: S, style: { transform: "rotate(135deg)", display: "block" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: S / 2, cy: S / 2, r: r2, fill: "none", stroke: col + "28", strokeWidth: sw, strokeDasharray: `${arc} ${full}`, strokeLinecap: "round" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("circle", { cx: S / 2, cy: S / 2, r: r2, fill: "none", stroke: col, strokeWidth: sw, strokeDasharray: `${fill} ${full}`, strokeLinecap: "round" })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: col, fontSize: 11, fontWeight: 800, lineHeight: 1 }, children: [
-        score,
-        "%"
-      ] })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: S, height: S, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("svg", { width: S, height: S, style: { transform: "rotate(135deg)", display: "block" } }, /* @__PURE__ */ import_react61.default.createElement("circle", { cx: S / 2, cy: S / 2, r: r2, fill: "none", stroke: col + "28", strokeWidth: sw, strokeDasharray: `${arc} ${full}`, strokeLinecap: "round" }), /* @__PURE__ */ import_react61.default.createElement("circle", { cx: S / 2, cy: S / 2, r: r2, fill: "none", stroke: col, strokeWidth: sw, strokeDasharray: `${fill} ${full}`, strokeLinecap: "round" })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: col, fontSize: 11, fontWeight: 800, lineHeight: 1 } }, score, "%"));
   }
   function ProjectDetailPage({ opp, pipeline, addProject, onBack, dark = true, animateIn = false }) {
     const extra = PROJECT_EXTRAS[opp.id] || PROJECT_EXTRAS[1];
@@ -53986,302 +53044,197 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       const holdPct = Math.min(95, Math.round(parseInt(holding.current) / parseInt(holding.target) * 100)) || 15;
       return { name, lead, score, mandate, holding, holdPct, tier: CORP_TIERS[idx] || "TIER 3 MATCH" };
     });
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, display: "flex", flexDirection: "column", background: pc.pageBg, fontFamily: "'Inter',system-ui,sans-serif", overflow: "hidden", minHeight: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", minHeight: 0, overflow: "hidden" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, overflowY: "auto", padding: "20px 24px" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "260px 1fr", gap: 20, marginBottom: 20 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, overflow: "hidden", position: "relative", height: 180, background: extra.imgGrad, border: "1px solid " + pc.border, flexShrink: 0 }, children: [
-            extra.imgSrc && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { src: extra.imgSrc, alt: "", style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" } }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle,rgba(248,250,252,0.03) 1px,transparent 1px)", backgroundSize: "18px 18px" } })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", marginBottom: 8 }, children: "OPERATIONAL SUMMARY" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { color: pc.body, fontSize: 12, lineHeight: 1.7, margin: "0 0 16px" }, children: extra.summary }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", background: pc.pageBg, fontFamily: "'Inter',system-ui,sans-serif", overflow: "hidden", minHeight: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", minHeight: 0, overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto", padding: "20px 24px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "260px 1fr", gap: 20, marginBottom: 20 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderRadius: 8, overflow: "hidden", position: "relative", height: 180, background: extra.imgGrad, border: "1px solid " + pc.border, flexShrink: 0 } }, extra.imgSrc && /* @__PURE__ */ import_react61.default.createElement("img", { src: extra.imgSrc, alt: "", style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" } }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle,rgba(248,250,252,0.03) 1px,transparent 1px)", backgroundSize: "18px 18px" } })), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", marginBottom: 8 } }, "OPERATIONAL SUMMARY"), /* @__PURE__ */ import_react61.default.createElement("p", { style: { color: pc.body, fontSize: 12, lineHeight: 1.7, margin: "0 0 16px" } }, extra.summary), /* @__PURE__ */ import_react61.default.createElement("style", null, `
                 /* keyframes defined globally */
-              ` }),
-            ROWS_META.map(({ k: k2, v, source }, idx) => {
-              const loc = k2 === "LOCATION";
-              const val = loc ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MapPin, { style: { width: 9, height: 9, color: "#FF6B35", flexShrink: 0 } }),
-                extra.location
-              ] }) : v;
-              const show = idx < visibleRows;
-              if (!show) {
-                return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid " + pc.border3 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 90, height: 7, borderRadius: 2, background: dark ? "rgba(248,250,252,0.07)" : "rgba(0,0,0,0.07)", animation: "skelPulse 1.8s cubic-bezier(0.4,0,0.2,1) infinite", animationDelay: `${idx * 120}ms` } }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 55, height: 7, borderRadius: 2, background: dark ? "rgba(248,250,252,0.07)" : "rgba(0,0,0,0.07)", animation: "skelPulse 1.8s cubic-bezier(0.4,0,0.2,1) infinite", animationDelay: `${idx * 120 + 200}ms` } })
-                ] }, k2);
-              }
-              return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid " + pc.border3, animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both" }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 6 }, children: [
-                  k2,
-                  animateIn && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 7, color: "#FF6B35", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", animation: "srcFlash 1.1s ease-out both" }, children: [
-                    "\u2190 ",
-                    source
-                  ] })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.focus, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }, children: val })
-              ] }, k2);
-            }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10, marginTop: 12 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex" }, children: [
-                Array.from({ length: 3 }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  border: "2px solid " + pc.avatarBg,
-                  background: `hsl(${20 + i * 35},60%,35%)`,
-                  marginLeft: i ? -6 : 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 8,
-                  fontWeight: 700,
-                  color: pc.focus
-                }, children: ["GL", "NE", "MS"][i] }, i)),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  border: "2px solid " + pc.avatarBg,
-                  background: "#FF6B35",
-                  marginLeft: -6,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 8,
-                  fontWeight: 700,
-                  color: pc.focus
-                }, children: [
-                  "+",
-                  extra.bidders
-                ] })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.label, fontSize: 10, letterSpacing: "0.06em", fontFamily: "'JetBrains Mono', monospace" }, children: "ACTIVE INSTITUTIONAL BIDDERS" })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginTop: 4, opacity: sectionsVisible ? 1 : 0, transform: sectionsVisible ? "translateY(0)" : "translateY(10px)", transition: "opacity 0.5s ease, transform 0.5s ease" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 10 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#FF6B35", fontSize: 16 }, children: "\u2042" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.focus, fontWeight: 800, fontSize: 16 }, children: "Corporate Alignment" })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: pc.label }, children: "MATCHING ENGINE ACTIVE" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 10 }, children: corpCards.map((corp, ci) => {
-            const isOpen = expandedCorp === ci;
-            return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "div",
-              {
-                style: {
-                  borderRadius: 6,
-                  overflow: "hidden",
-                  border: `1px solid ${isOpen ? "rgba(255,107,53,0.45)" : "#1e2530"}`,
-                  background: isOpen ? pc.corpBgAc : pc.corpBg,
-                  borderLeft: `3px solid ${isOpen ? "#FF6B35" : "#2A2D38"}`,
-                  transition: "all 0.2s"
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                    "div",
-                    {
-                      style: { display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" },
-                      onClick: () => setExpandedCorp(isOpen ? -1 : ci),
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                          width: 38,
-                          height: 38,
-                          borderRadius: 6,
-                          flexShrink: 0,
-                          background: "rgba(255,107,53,0.10)",
-                          border: "1px solid rgba(255,107,53,0.20)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#FF6B35",
-                          fontSize: 16
-                        }, children: corp.name.slice(0, 2).toUpperCase() }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.focus, fontWeight: 700, fontSize: 13, marginBottom: 2 }, children: corp.name }),
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" }, children: [
-                            corp.lead.industry?.toUpperCase() || "CORPORATE",
-                            " \xB7 ",
-                            corp.tier
-                          ] })
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "right", flexShrink: 0 }, children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 4 }, children: "CONFIDENCE SCORE" }),
-                          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ConfidenceArcBig, { score: corp.score }),
-                            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { style: { width: 14, height: 14, color: pc.label, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" } })
-                          ] })
-                        ] })
-                      ]
-                    }
-                  ),
-                  isOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "0 16px 16px", borderTop: "1px solid rgba(255,107,53,0.15)" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, paddingTop: 14 }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", marginBottom: 7 }, children: "SUSTAINABILITY MANDATE" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { color: pc.sub, fontSize: 11, lineHeight: 1.65, margin: 0 }, children: corp.mandate })
-                    ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", marginBottom: 7 }, children: "DEMAND PROFILE" }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: 6, borderRadius: 3, background: pc.progBg, marginBottom: 6, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: "100%", borderRadius: 3, width: `${corp.holdPct}%`, background: "linear-gradient(90deg,#CC5A25,#FF6B35)", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" } }) }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between" }, children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }, children: [
-                          "Current Holding: ",
-                          corp.holding.current
-                        ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }, children: [
-                          "Target: ",
-                          corp.holding.target
-                        ] })
-                      ] }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 8, marginTop: 12 }, children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                          "button",
-                          {
-                            style: {
-                              flex: 1,
-                              padding: "8px 0",
-                              borderRadius: 4,
-                              fontSize: 9,
-                              fontWeight: 700,
-                              letterSpacing: "0.1em",
-                              cursor: "pointer",
-                              fontFamily: "'JetBrains Mono', monospace",
-                              background: "rgba(255,107,53,0.15)",
-                              color: "#FF6B35",
-                              border: "1px solid rgba(255,107,53,0.35)",
-                              transition: "all 0.15s"
-                            },
-                            onMouseEnter: (e) => {
-                              e.currentTarget.style.background = "rgba(255,107,53,0.28)";
-                            },
-                            onMouseLeave: (e) => {
-                              e.currentTarget.style.background = "rgba(255,107,53,0.15)";
-                            },
-                            children: "DIRECT ENGAGEMENT"
-                          }
-                        ),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                          "button",
-                          {
-                            style: {
-                              flex: 1,
-                              padding: "8px 0",
-                              borderRadius: 4,
-                              fontSize: 9,
-                              fontWeight: 700,
-                              letterSpacing: "0.1em",
-                              cursor: "pointer",
-                              fontFamily: "'JetBrains Mono', monospace",
-                              background: pc.btnSec,
-                              color: pc.btnSecTx,
-                              border: "1px solid " + pc.btnSecBd,
-                              transition: "all 0.15s"
-                            },
-                            onMouseEnter: (e) => {
-                              e.currentTarget.style.background = "rgba(248,250,252,0.10)";
-                              e.currentTarget.style.color = "white";
-                            },
-                            onMouseLeave: (e) => {
-                              e.currentTarget.style.background = "rgba(248,250,252,0.05)";
-                              e.currentTarget.style.color = "rgba(255,255,255,0.50)";
-                            },
-                            children: "VIEW AUDIT TRAIL"
-                          }
-                        )
-                      ] })
-                    ] })
-                  ] }) })
-                ]
-              },
-              corp.name
-            );
-          }) })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 300, flexShrink: 0, borderLeft: "1px solid " + pc.border, background: pc.feedBg, display: "flex", flexDirection: "column", overflow: "hidden", opacity: sectionsVisible ? 1 : 0, transition: "opacity 0.6s ease 0.2s" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px 16px 12px", borderBottom: "1px solid " + pc.border, flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 22, height: 22, borderRadius: 5, background: "rgba(255,107,53,0.10)", border: "1px solid rgba(255,107,53,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 11, height: 11, color: "#FF6B35" } }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.focus, fontWeight: 700, fontSize: 12, letterSpacing: "0.08em" }, children: "INTELLIGENCE FEED" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", marginLeft: "auto", boxShadow: "0 0 6px #FF6B35", flexShrink: 0 } })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, overflowY: "auto" }, children: intelFeed.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+              `), ROWS_META.map(({ k: k2, v, source }, idx) => {
+      const loc = k2 === "LOCATION";
+      const val = loc ? /* @__PURE__ */ import_react61.default.createElement("span", { style: { display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ import_react61.default.createElement(MapPin, { style: { width: 9, height: 9, color: "#FF6B35", flexShrink: 0 } }), extra.location) : v;
+      const show = idx < visibleRows;
+      if (!show) {
+        return /* @__PURE__ */ import_react61.default.createElement("div", { key: k2, style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid " + pc.border3 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 90, height: 7, borderRadius: 2, background: dark ? "rgba(248,250,252,0.07)" : "rgba(0,0,0,0.07)", animation: "skelPulse 1.8s cubic-bezier(0.4,0,0.2,1) infinite", animationDelay: `${idx * 120}ms` } }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 55, height: 7, borderRadius: 2, background: dark ? "rgba(248,250,252,0.07)" : "rgba(0,0,0,0.07)", animation: "skelPulse 1.8s cubic-bezier(0.4,0,0.2,1) infinite", animationDelay: `${idx * 120 + 200}ms` } }));
+      }
+      return /* @__PURE__ */ import_react61.default.createElement("div", { key: k2, style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid " + pc.border3, animation: "rowSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 6 } }, k2, animateIn && /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 7, color: "#FF6B35", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", animation: "srcFlash 1.1s ease-out both" } }, "\u2190 ", source)), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.focus, fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" } }, val));
+    }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginTop: 12 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex" } }, Array.from({ length: 3 }).map((_, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: {
+      width: 24,
+      height: 24,
+      borderRadius: "50%",
+      border: "2px solid " + pc.avatarBg,
+      background: `hsl(${20 + i * 35},60%,35%)`,
+      marginLeft: i ? -6 : 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 8,
+      fontWeight: 700,
+      color: pc.focus
+    } }, ["GL", "NE", "MS"][i])), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      width: 24,
+      height: 24,
+      borderRadius: "50%",
+      border: "2px solid " + pc.avatarBg,
+      background: "#FF6B35",
+      marginLeft: -6,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 8,
+      fontWeight: 700,
+      color: pc.focus
+    } }, "+", extra.bidders)), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, fontSize: 10, letterSpacing: "0.06em", fontFamily: "'JetBrains Mono', monospace" } }, "ACTIVE INSTITUTIONAL BIDDERS")))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginTop: 4, opacity: sectionsVisible ? 1 : 0, transform: sectionsVisible ? "translateY(0)" : "translateY(10px)", transition: "opacity 0.5s ease, transform 0.5s ease" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", fontSize: 16 } }, "\u2042"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.focus, fontWeight: 800, fontSize: 16 } }, "Corporate Alignment")), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: pc.label } }, "MATCHING ENGINE ACTIVE")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } }, corpCards.map((corp, ci) => {
+      const isOpen = expandedCorp === ci;
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: corp.name,
+          style: {
+            borderRadius: 6,
+            overflow: "hidden",
+            border: `1px solid ${isOpen ? "rgba(255,107,53,0.45)" : "#1e2530"}`,
+            background: isOpen ? pc.corpBgAc : pc.corpBg,
+            borderLeft: `3px solid ${isOpen ? "#FF6B35" : "#2A2D38"}`,
+            transition: "all 0.2s"
+          }
+        },
+        /* @__PURE__ */ import_react61.default.createElement(
           "div",
           {
-            style: {
-              padding: "14px 16px",
-              borderBottom: "1px solid " + pc.border2,
-              borderLeft: `2px solid ${i === 0 ? "#FF6B35" : "transparent"}`,
-              background: i === 0 ? "rgba(255,107,53,0.04)" : "transparent",
-              cursor: "pointer",
-              transition: "background 0.2s"
-            },
-            onMouseEnter: (e) => {
-              if (i !== 0) e.currentTarget.style.background = "rgba(255,255,255,0.025)";
-            },
-            onMouseLeave: (e) => {
-              if (i !== 0) e.currentTarget.style.background = "transparent";
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { color: item.tagCol, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", marginBottom: 6 }, children: [
-                item.ts,
-                " \xB7 ",
-                item.tag
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.body, fontWeight: 700, fontSize: 11, lineHeight: 1.4, marginBottom: 5 }, children: item.title }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 10, lineHeight: 1.5, marginBottom: 8 }, children: item.desc }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 5, flexWrap: "wrap" }, children: item.badges?.map((b) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                fontSize: 8,
-                fontWeight: 600,
-                padding: "2px 7px",
-                borderRadius: 3,
-                background: "rgba(248,250,252,0.06)",
-                color: "rgba(248,250,252,0.40)",
-                border: "1px solid rgba(248,250,252,0.10)",
-                letterSpacing: "0.06em"
-              }, children: b }, b)) })
-            ]
+            style: { display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" },
+            onClick: () => setExpandedCorp(isOpen ? -1 : ci)
           },
-          i
-        )) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "12px 16px", borderTop: "1px solid " + pc.border, flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+            width: 38,
+            height: 38,
+            borderRadius: 6,
+            flexShrink: 0,
+            background: "rgba(255,107,53,0.10)",
+            border: "1px solid rgba(255,107,53,0.20)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#FF6B35",
+            fontSize: 16
+          } }, corp.name.slice(0, 2).toUpperCase()),
+          /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.focus, fontWeight: 700, fontSize: 13, marginBottom: 2 } }, corp.name), /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em" } }, corp.lead.industry?.toUpperCase() || "CORPORATE", " \xB7 ", corp.tier)),
+          /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "right", flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em", marginBottom: 4 } }, "CONFIDENCE SCORE"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ import_react61.default.createElement(ConfidenceArcBig, { score: corp.score }), /* @__PURE__ */ import_react61.default.createElement(ChevronDown, { style: { width: 14, height: 14, color: pc.label, transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" } })))
+        ),
+        isOpen && /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "0 16px 16px", borderTop: "1px solid rgba(255,107,53,0.15)" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, paddingTop: 14 } }, /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", marginBottom: 7 } }, "SUSTAINABILITY MANDATE"), /* @__PURE__ */ import_react61.default.createElement("p", { style: { color: pc.sub, fontSize: 11, lineHeight: 1.65, margin: 0 } }, corp.mandate)), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", marginBottom: 7 } }, "DEMAND PROFILE"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: 6, borderRadius: 3, background: pc.progBg, marginBottom: 6, overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: "100%", borderRadius: 3, width: `${corp.holdPct}%`, background: "linear-gradient(90deg,#CC5A25,#FF6B35)", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "space-between" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" } }, "Current Holding: ", corp.holding.current), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" } }, "Target: ", corp.holding.target)), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 8, marginTop: 12 } }, /* @__PURE__ */ import_react61.default.createElement(
           "button",
           {
             style: {
-              width: "100%",
-              padding: "9px",
+              flex: 1,
+              padding: "8px 0",
               borderRadius: 4,
               fontSize: 9,
               fontWeight: 700,
-              letterSpacing: "0.12em",
+              letterSpacing: "0.1em",
               cursor: "pointer",
-              background: "rgba(248,250,252,0.04)",
-              color: "rgba(248,250,252,0.40)",
-              border: "1px solid rgba(248,250,252,0.10)",
               fontFamily: "'JetBrains Mono', monospace",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
+              background: "rgba(255,107,53,0.15)",
+              color: "#FF6B35",
+              border: "1px solid rgba(255,107,53,0.35)",
               transition: "all 0.15s"
             },
             onMouseEnter: (e) => {
-              e.currentTarget.style.background = "rgba(248,250,252,0.08)";
-              e.currentTarget.style.color = "rgba(248,250,252,0.65)";
+              e.currentTarget.style.background = "rgba(255,107,53,0.28)";
             },
             onMouseLeave: (e) => {
-              e.currentTarget.style.background = "rgba(248,250,252,0.04)";
-              e.currentTarget.style.color = "rgba(248,250,252,0.40)";
+              e.currentTarget.style.background = "rgba(255,107,53,0.15)";
+            }
+          },
+          "DIRECT ENGAGEMENT"
+        ), /* @__PURE__ */ import_react61.default.createElement(
+          "button",
+          {
+            style: {
+              flex: 1,
+              padding: "8px 0",
+              borderRadius: 4,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              cursor: "pointer",
+              fontFamily: "'JetBrains Mono', monospace",
+              background: pc.btnSec,
+              color: pc.btnSecTx,
+              border: "1px solid " + pc.btnSecBd,
+              transition: "all 0.15s"
             },
-            children: "VIEW HISTORICAL INTEL \u21BA"
-          }
-        ) })
-      ] })
-    ] }) });
+            onMouseEnter: (e) => {
+              e.currentTarget.style.background = "rgba(248,250,252,0.10)";
+              e.currentTarget.style.color = "white";
+            },
+            onMouseLeave: (e) => {
+              e.currentTarget.style.background = "rgba(248,250,252,0.05)";
+              e.currentTarget.style.color = "rgba(255,255,255,0.50)";
+            }
+          },
+          "VIEW AUDIT TRAIL"
+        )))))
+      );
+    })))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 300, flexShrink: 0, borderLeft: "1px solid " + pc.border, background: pc.feedBg, display: "flex", flexDirection: "column", overflow: "hidden", opacity: sectionsVisible ? 1 : 0, transition: "opacity 0.6s ease 0.2s" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px 16px 12px", borderBottom: "1px solid " + pc.border, flexShrink: 0, display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 22, height: 22, borderRadius: 5, background: "rgba(255,107,53,0.10)", border: "1px solid rgba(255,107,53,0.25)", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 11, height: 11, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.focus, fontWeight: 700, fontSize: 12, letterSpacing: "0.08em" } }, "INTELLIGENCE FEED"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", marginLeft: "auto", boxShadow: "0 0 6px #FF6B35", flexShrink: 0 } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto" } }, intelFeed.map((item, i) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: i,
+        style: {
+          padding: "14px 16px",
+          borderBottom: "1px solid " + pc.border2,
+          borderLeft: `2px solid ${i === 0 ? "#FF6B35" : "transparent"}`,
+          background: i === 0 ? "rgba(255,107,53,0.04)" : "transparent",
+          cursor: "pointer",
+          transition: "background 0.2s"
+        },
+        onMouseEnter: (e) => {
+          if (i !== 0) e.currentTarget.style.background = "rgba(255,255,255,0.025)";
+        },
+        onMouseLeave: (e) => {
+          if (i !== 0) e.currentTarget.style.background = "transparent";
+        }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: item.tagCol, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", marginBottom: 6 } }, item.ts, " \xB7 ", item.tag),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.body, fontWeight: 700, fontSize: 11, lineHeight: 1.4, marginBottom: 5 } }, item.title),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 10, lineHeight: 1.5, marginBottom: 8 } }, item.desc),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 5, flexWrap: "wrap" } }, item.badges?.map((b) => /* @__PURE__ */ import_react61.default.createElement("span", { key: b, style: {
+        fontSize: 8,
+        fontWeight: 600,
+        padding: "2px 7px",
+        borderRadius: 3,
+        background: "rgba(248,250,252,0.06)",
+        color: "rgba(248,250,252,0.40)",
+        border: "1px solid rgba(248,250,252,0.10)",
+        letterSpacing: "0.06em"
+      } }, b)))
+    ))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "12px 16px", borderTop: "1px solid " + pc.border, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        style: {
+          width: "100%",
+          padding: "9px",
+          borderRadius: 4,
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          cursor: "pointer",
+          background: "rgba(248,250,252,0.04)",
+          color: "rgba(248,250,252,0.40)",
+          border: "1px solid rgba(248,250,252,0.10)",
+          fontFamily: "'JetBrains Mono', monospace",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          transition: "all 0.15s"
+        },
+        onMouseEnter: (e) => {
+          e.currentTarget.style.background = "rgba(248,250,252,0.08)";
+          e.currentTarget.style.color = "rgba(248,250,252,0.65)";
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.background = "rgba(248,250,252,0.04)";
+          e.currentTarget.style.color = "rgba(248,250,252,0.40)";
+        }
+      },
+      "VIEW HISTORICAL INTEL \u21BA"
+    )))));
   }
   function MatchScoreBadge({ score }) {
     const S = 40, sw = 3.2, r2 = (S - sw * 2) / 2;
@@ -54290,47 +53243,41 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
     const fill = score / 100 * arc;
     const col = score >= 85 ? "#FF6B35" : score >= 75 ? "#CC5A25" : "#7A2820";
     const track = col + "28";
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", width: S, height: S, flexShrink: 0 }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { width: S, height: S, style: { transform: "rotate(135deg)", display: "block" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "circle",
-          {
-            cx: S / 2,
-            cy: S / 2,
-            r: r2,
-            fill: "none",
-            stroke: track,
-            strokeWidth: sw,
-            strokeDasharray: `${arc} ${full}`,
-            strokeLinecap: "round"
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "circle",
-          {
-            cx: S / 2,
-            cy: S / 2,
-            r: r2,
-            fill: "none",
-            stroke: col,
-            strokeWidth: sw,
-            strokeDasharray: `${fill} ${full}`,
-            strokeLinecap: "round"
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: col,
-        fontSize: 11,
-        fontWeight: 700,
-        lineHeight: 1
-      }, children: score })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: S, height: S, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("svg", { width: S, height: S, style: { transform: "rotate(135deg)", display: "block" } }, /* @__PURE__ */ import_react61.default.createElement(
+      "circle",
+      {
+        cx: S / 2,
+        cy: S / 2,
+        r: r2,
+        fill: "none",
+        stroke: track,
+        strokeWidth: sw,
+        strokeDasharray: `${arc} ${full}`,
+        strokeLinecap: "round"
+      }
+    ), /* @__PURE__ */ import_react61.default.createElement(
+      "circle",
+      {
+        cx: S / 2,
+        cy: S / 2,
+        r: r2,
+        fill: "none",
+        stroke: col,
+        strokeWidth: sw,
+        strokeDasharray: `${fill} ${full}`,
+        strokeLinecap: "round"
+      }
+    )), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      position: "absolute",
+      inset: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: col,
+      fontSize: 11,
+      fontWeight: 700,
+      lineHeight: 1
+    } }, score));
   }
   function OpportunitiesTab({ pipeline = [], addProject, scannerRunning = false, dark = true, selectedOpp, setSelectedOpp }) {
     const pc = mkPc(dark);
@@ -54351,177 +53298,143 @@ I've matched it to your client accounts \u2014 Tokyo Gas, Engie, and Vitol are y
       return () => clearInterval(iv);
     }, [scannerRunning]);
     if (selectedOpp) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProjectDetailPage, { opp: selectedOpp, pipeline, addProject, onBack: () => setSelectedOpp(null), dark, animateIn: selectedOpp.id === 13 });
+      return /* @__PURE__ */ import_react61.default.createElement(ProjectDetailPage, { opp: selectedOpp, pipeline, addProject, onBack: () => setSelectedOpp(null), dark, animateIn: selectedOpp.id === 13 });
     }
     if (visibleCount === 0) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dark ? "var(--c-opp-bg)" : "#ffffff", gap: 0, position: "relative", overflow: "hidden" }, children: [
-        dark && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-          position: "absolute",
-          inset: 0,
-          opacity: 0.07,
-          backgroundImage: "linear-gradient(#FF6B35 1px,transparent 1px),linear-gradient(90deg,#FF6B35 1px,transparent 1px)",
-          backgroundSize: "40px 40px"
-        } }),
-        dark && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 60% at 50% 50%,transparent 30%,#0a0f12 100%)" } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", width: 72, height: 72 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 72, height: 72, borderRadius: "50%", background: "rgba(255,107,53,0.06)", border: "1px solid rgba(255,107,53,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 28, height: 28, color: "rgba(255,107,53,0.35)" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", animation: "orbitDot 3s linear infinite" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "rgba(255,107,53,0.4)" } }) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { textAlign: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 13, fontWeight: 700, color: pc.label, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 3 }, children: "Scout" }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: pc.label, textAlign: "center", maxWidth: 280, lineHeight: 1.6 }, children: "Scan the market to discover live carbon credit opportunities." })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+      return /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dark ? "var(--c-opp-bg)" : "#ffffff", gap: 0, position: "relative", overflow: "hidden" } }, dark && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        position: "absolute",
+        inset: 0,
+        opacity: 0.07,
+        backgroundImage: "linear-gradient(#FF6B35 1px,transparent 1px),linear-gradient(90deg,#FF6B35 1px,transparent 1px)",
+        backgroundSize: "40px 40px"
+      } }), dark && /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 60% at 50% 50%,transparent 30%,#0a0f12 100%)" } }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: 72, height: 72 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 72, height: 72, borderRadius: "50%", background: "rgba(255,107,53,0.06)", border: "1px solid rgba(255,107,53,0.15)", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 28, height: 28, color: "rgba(255,107,53,0.35)" } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", animation: "orbitDot 3s linear infinite" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", top: 2, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "rgba(255,107,53,0.4)" } }))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "center" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: pc.label, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 3 } }, "Scout")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.label, textAlign: "center", maxWidth: 280, lineHeight: 1.6 } }, "Scan the market to discover live carbon credit opportunities.")), /* @__PURE__ */ import_react61.default.createElement("style", null, `
           /* keyframes defined globally */
-        ` })
-      ] });
+        `));
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-hidden flex flex-col", style: { background: "var(--c-opp-bg)" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-hidden flex flex-col", style: { background: "var(--c-opp-bg)" } }, /* @__PURE__ */ import_react61.default.createElement("style", null, `
         /* keyframes defined globally */
         .opp-flash-up   { animation: oppFlashUp   0.8s ease-out forwards; }
         .opp-flash-down { animation: oppFlashDown 0.8s ease-out forwards; }
         .opp-match-in   { animation: oppMatchIn   0.4s ease-out both; }
         .row-stream-in  { animation: rowStreamIn  0.38s cubic-bezier(0.22,1,0.36,1) both; }
-      ` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "12px 20px 10px", borderBottom: "1px solid var(--c-opp-border)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChartNoAxesColumn, { style: { width: 15, height: 15, color: "#FF6B35" } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--c-opp-text)", fontWeight: 700, fontSize: 13, letterSpacing: "0.03em" }, children: "Top Carbon Credit Opportunities" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, padding: "3px 8px", borderRadius: 4, background: "#FF6B3518", color: "#FF6B35", border: "1px solid #FF6B3530", letterSpacing: "0.1em" }, children: "LIVE FEED" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 600, padding: "3px 8px", borderRadius: 4, background: "var(--c-hover)", color: "var(--c-opp-sub)", border: "1px solid var(--c-opp-border)", letterSpacing: "0.06em" }, children: "24H RANGE" })
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-        display: "grid",
-        gridTemplateColumns: "2fr 1.1fr 1fr 0.8fr 0.7fr 0.8fr 1.8fr 110px",
-        padding: "8px 20px",
-        borderBottom: "1px solid var(--c-opp-border)",
-        background: "var(--c-opp-head)",
-        flexShrink: 0
-      }, children: ["PROJECT NAME", "TYPE", "COUNTRY", "REGISTRY", "PROJECT ID", "MATCH SCORE", "MATCH", ""].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--c-opp-head-text)", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }, children: h }, h)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, overflowY: "auto" }, children: rows.slice(0, visibleCount).map((row, index) => {
-        const inPipe = pipeline.some((p) => p.type === "supply" && p.id === row.id);
-        const isNewest = index === visibleCount - 1 && visibleCount < OPP_BASE.length + 1;
-        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            className: isNewest ? "row-stream-in" : "",
-            onClick: () => setSelectedOpp(row),
-            style: {
-              display: "grid",
-              gridTemplateColumns: "2fr 1.1fr 1fr 0.8fr 0.7fr 0.8fr 1.8fr 110px",
-              padding: "9px 20px",
-              borderBottom: "1px solid var(--c-opp-border)",
-              alignItems: "center",
-              cursor: "pointer",
-              transition: "background 0.2s"
-            },
-            onMouseEnter: (e) => e.currentTarget.style.background = "var(--c-opp-hover)",
-            onMouseLeave: (e) => e.currentTarget.style.background = "transparent",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 9, minWidth: 0 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  width: 22,
-                  height: 22,
-                  borderRadius: 5,
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: row.registry === "Verra" ? "rgba(107,127,107,0.12)" : "rgba(255,107,53,0.10)",
-                  border: `1px solid ${row.registry === "Verra" ? "rgba(107,127,107,0.25)" : "rgba(255,107,53,0.22)"}`
-                }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Leaf, { style: { width: 11, height: 11, color: row.registry === "Verra" ? "#6B7F6B" : "#FF6B35", flexShrink: 0 } }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--c-opp-text)", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: row.name })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "var(--c-opp-sub)", fontSize: 10, paddingRight: 6, lineHeight: 1.4 }, children: row.type }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 5 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12 }, children: row.flag }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "var(--c-opp-sub)", fontSize: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: row.country })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "var(--c-opp-sub)", fontSize: 10, whiteSpace: "nowrap" }, children: row.registry }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: "var(--c-opp-head-text)", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }, children: row.projectId }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MatchScoreBadge, { score: row.quality }, `${row.id}-${row.quality}`) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: row.matches.map((m, mi) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "span",
-                {
-                  className: "opp-match-in",
-                  style: {
-                    animationDelay: `${mi * 80}ms`,
-                    fontSize: 9,
-                    fontWeight: 600,
-                    padding: "3px 8px",
-                    borderRadius: 6,
-                    background: "rgba(0, 180, 130, 0.10)",
-                    color: "#8FAD8F",
-                    border: "1px solid rgba(0, 180, 130, 0.28)",
-                    backdropFilter: "blur(6px)",
-                    WebkitBackdropFilter: "blur(6px)",
-                    boxShadow: "0 1px 4px rgba(107,127,107,0.10), inset 0 1px 0 rgba(107,127,107,0.12)",
-                    whiteSpace: "nowrap",
-                    letterSpacing: "0.02em",
-                    display: "inline-block"
-                  },
-                  children: m
-                },
-                mi
-              )) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", justifyContent: "flex-end" }, children: inPipe ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                fontSize: 9,
-                fontWeight: 700,
-                padding: "4px 9px",
-                borderRadius: 4,
-                background: dark ? "rgba(70,90,70,0.35)" : "#F3F4F6",
-                color: dark ? "#9EBD9E" : "#4B5563",
-                border: dark ? "1px solid rgba(70,90,70,0.70)" : "1px solid #CBD5E1",
-                letterSpacing: "0.06em",
-                whiteSpace: "nowrap"
-              }, children: "\u2713 IN PIPELINE" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                "button",
-                {
-                  onClick: (e) => {
-                    e.stopPropagation();
-                    addProject && addProject({ ...row, pipelineRole: "supply", type: "supply", stage: "Prospect" });
-                  },
-                  style: {
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: "4px 9px",
-                    borderRadius: 4,
-                    background: "rgba(107,127,107,0.12)",
-                    color: "#6B7F6B",
-                    border: "1px solid rgba(107,127,107,0.35)",
-                    letterSpacing: "0.06em",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.15s"
-                  },
-                  onMouseEnter: (e) => {
-                    e.currentTarget.style.background = "rgba(107,127,107,0.22)";
-                    e.currentTarget.style.borderColor = "rgba(107,127,107,0.60)";
-                  },
-                  onMouseLeave: (e) => {
-                    e.currentTarget.style.background = "rgba(107,127,107,0.12)";
-                    e.currentTarget.style.borderColor = "rgba(107,127,107,0.30)";
-                  },
-                  children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { style: { width: 9, height: 9, flexShrink: 0 } }),
-                    " ADD PIPELINE"
-                  ]
-                }
-              ) })
-            ]
+      `), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "12px 20px 10px", borderBottom: "1px solid var(--c-opp-border)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(ChartNoAxesColumn, { style: { width: 15, height: 15, color: "#FF6B35" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "var(--c-opp-text)", fontWeight: 700, fontSize: 13, letterSpacing: "0.03em" } }, "Top Carbon Credit Opportunities"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, padding: "3px 8px", borderRadius: 4, background: "#FF6B3518", color: "#FF6B35", border: "1px solid #FF6B3530", letterSpacing: "0.1em" } }, "LIVE FEED"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 600, padding: "3px 8px", borderRadius: 4, background: "var(--c-hover)", color: "var(--c-opp-sub)", border: "1px solid var(--c-opp-border)", letterSpacing: "0.06em" } }, "24H RANGE"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "grid",
+      gridTemplateColumns: "2fr 1.1fr 1fr 0.8fr 0.7fr 0.8fr 1.8fr 110px",
+      padding: "8px 20px",
+      borderBottom: "1px solid var(--c-opp-border)",
+      background: "var(--c-opp-head)",
+      flexShrink: 0
+    } }, ["PROJECT NAME", "TYPE", "COUNTRY", "REGISTRY", "PROJECT ID", "MATCH SCORE", "MATCH", ""].map((h) => /* @__PURE__ */ import_react61.default.createElement("span", { key: h, style: { color: "var(--c-opp-head-text)", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" } }, h))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto" } }, rows.slice(0, visibleCount).map((row, index) => {
+      const inPipe = pipeline.some((p) => p.type === "supply" && p.id === row.id);
+      const isNewest = index === visibleCount - 1 && visibleCount < OPP_BASE.length + 1;
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: row.id,
+          className: isNewest ? "row-stream-in" : "",
+          onClick: () => setSelectedOpp(row),
+          style: {
+            display: "grid",
+            gridTemplateColumns: "2fr 1.1fr 1fr 0.8fr 0.7fr 0.8fr 1.8fr 110px",
+            padding: "9px 20px",
+            borderBottom: "1px solid var(--c-opp-border)",
+            alignItems: "center",
+            cursor: "pointer",
+            transition: "background 0.2s"
           },
-          row.id
-        );
-      }) })
-    ] });
+          onMouseEnter: (e) => e.currentTarget.style.background = "var(--c-opp-hover)",
+          onMouseLeave: (e) => e.currentTarget.style.background = "transparent"
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 9, minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+          width: 22,
+          height: 22,
+          borderRadius: 5,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: row.registry === "Verra" ? "rgba(107,127,107,0.12)" : "rgba(255,107,53,0.10)",
+          border: `1px solid ${row.registry === "Verra" ? "rgba(107,127,107,0.25)" : "rgba(255,107,53,0.22)"}`
+        } }, /* @__PURE__ */ import_react61.default.createElement(Leaf, { style: { width: 11, height: 11, color: row.registry === "Verra" ? "#6B7F6B" : "#FF6B35", flexShrink: 0 } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "var(--c-opp-text)", fontWeight: 600, fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, row.name)),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: "var(--c-opp-sub)", fontSize: 10, paddingRight: 6, lineHeight: 1.4 } }, row.type),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 5 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 12 } }, row.flag), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "var(--c-opp-sub)", fontSize: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, row.country)),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: "var(--c-opp-sub)", fontSize: 10, whiteSpace: "nowrap" } }, row.registry),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: "var(--c-opp-head-text)", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 } }, row.projectId),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement(MatchScoreBadge, { key: `${row.id}-${row.quality}`, score: row.quality })),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 } }, row.matches.map((m, mi) => /* @__PURE__ */ import_react61.default.createElement(
+          "span",
+          {
+            key: mi,
+            className: "opp-match-in",
+            style: {
+              animationDelay: `${mi * 80}ms`,
+              fontSize: 9,
+              fontWeight: 600,
+              padding: "3px 8px",
+              borderRadius: 6,
+              background: "rgba(0, 180, 130, 0.10)",
+              color: "#8FAD8F",
+              border: "1px solid rgba(0, 180, 130, 0.28)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              boxShadow: "0 1px 4px rgba(107,127,107,0.10), inset 0 1px 0 rgba(107,127,107,0.12)",
+              whiteSpace: "nowrap",
+              letterSpacing: "0.02em",
+              display: "inline-block"
+            }
+          },
+          m
+        ))),
+        /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "flex-end" } }, inPipe ? /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          fontSize: 9,
+          fontWeight: 700,
+          padding: "4px 9px",
+          borderRadius: 4,
+          background: dark ? "rgba(70,90,70,0.35)" : "#F3F4F6",
+          color: dark ? "#9EBD9E" : "#4B5563",
+          border: dark ? "1px solid rgba(70,90,70,0.70)" : "1px solid #CBD5E1",
+          letterSpacing: "0.06em",
+          whiteSpace: "nowrap"
+        } }, "\u2713 IN PIPELINE") : /* @__PURE__ */ import_react61.default.createElement(
+          "button",
+          {
+            onClick: (e) => {
+              e.stopPropagation();
+              addProject && addProject({ ...row, pipelineRole: "supply", type: "supply", stage: "Prospect" });
+            },
+            style: {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: 9,
+              fontWeight: 700,
+              padding: "4px 9px",
+              borderRadius: 4,
+              background: "rgba(107,127,107,0.12)",
+              color: "#6B7F6B",
+              border: "1px solid rgba(107,127,107,0.35)",
+              letterSpacing: "0.06em",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              transition: "all 0.15s"
+            },
+            onMouseEnter: (e) => {
+              e.currentTarget.style.background = "rgba(107,127,107,0.22)";
+              e.currentTarget.style.borderColor = "rgba(107,127,107,0.60)";
+            },
+            onMouseLeave: (e) => {
+              e.currentTarget.style.background = "rgba(107,127,107,0.12)";
+              e.currentTarget.style.borderColor = "rgba(107,127,107,0.30)";
+            }
+          },
+          /* @__PURE__ */ import_react61.default.createElement(Plus, { style: { width: 9, height: 9, flexShrink: 0 } }),
+          " ADD PIPELINE"
+        ))
+      );
+    })));
   }
   var SOUTH_BARITO_HIGHLIGHT = `Key Project Highlights \u2014 It covers 39,835 hectares of peatland and dryland forest located in the South Barito and Kapuas regencies.
 
@@ -54598,218 +53511,154 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       return () => clearTimeout(timer);
     }, [scanMsgIdx, scannerRunning]);
     const inPipeDetail = selectedOpp ? pipeline.some((p) => p.type === "supply" && p.id === selectedOpp.id) : false;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex flex-col h-full overflow-hidden relative", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-col h-full overflow-hidden relative" }, /* @__PURE__ */ import_react61.default.createElement("style", null, `
         /* keyframes defined globally */
-      ` }),
-      selectedOpp ? (
-        /* Project header card — replaces tab bar when detail is open */
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-          flexShrink: 0,
-          background: dark ? "#111111" : "#F3F4F6",
-          borderBottom: dark ? "1px solid rgba(248,250,252,0.08)" : "1px solid #E5E7EB",
-          padding: "10px 20px",
-          display: "flex",
-          alignItems: "center",
-          gap: 12
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-            "button",
-            {
-              onClick: () => setSelectedOpp(null),
-              style: {
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                fontSize: 10,
-                fontFamily: "'JetBrains Mono', monospace",
-                color: dark ? "rgba(248,250,252,0.45)" : "rgba(0,0,0,0.45)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                letterSpacing: "0.08em",
-                flexShrink: 0
-              },
-              children: "\u2190 BACK"
-            }
-          ),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: dark ? "rgba(248,250,252,0.20)" : "rgba(0,0,0,0.20)" }, children: "|" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            fontSize: 13,
-            fontWeight: 700,
-            color: dark ? "#FDFDFD" : "#111827",
-            letterSpacing: "-0.01em"
-          }, children: selectedOpp.name }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginLeft: 4 }, children: selectedOpp.matches.map((m, mi) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            fontSize: 9,
-            fontWeight: 600,
-            padding: "3px 9px",
-            borderRadius: 6,
-            background: "rgba(107,127,107,0.10)",
-            color: "#8FAD8F",
-            border: "1px solid rgba(107,127,107,0.28)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            boxShadow: "0 1px 4px rgba(107,127,107,0.10), inset 0 1px 0 rgba(107,127,107,0.12)",
-            whiteSpace: "nowrap",
-            letterSpacing: "0.02em"
-          }, children: m }, mi)) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { marginLeft: "auto", display: "flex", gap: 8, flexShrink: 0 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "button",
-              {
-                style: {
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "7px 14px",
-                  borderRadius: 4,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.10em",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  background: "rgba(107,127,107,0.75)",
-                  color: "#FDFDFD",
-                  border: "1px solid rgba(107,127,107,0.90)",
-                  transition: "opacity 0.15s"
-                },
-                onMouseEnter: (e) => e.currentTarget.style.opacity = "0.82",
-                onMouseLeave: (e) => e.currentTarget.style.opacity = "1",
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { style: { width: 11, height: 11, flexShrink: 0 } }),
-                  "DOWNLOAD REPORT"
-                ]
-              }
-            ),
-            inPipeDetail ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "7px 14px",
-              borderRadius: 4,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.10em",
-              fontFamily: "'JetBrains Mono', monospace",
-              background: dark ? "rgba(107,127,107,0.18)" : "#F3F4F6",
-              color: dark ? "#9EBD9E" : "#4B5563",
-              border: dark ? "1px solid rgba(107,127,107,0.35)" : "1px solid #CBD5E1"
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 11, height: 11, flexShrink: 0 } }),
-              "IN PIPELINE"
-            ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "button",
-              {
-                onClick: () => addProject && addProject({ ...selectedOpp, pipelineRole: "supply", type: "supply", stage: "Prospect" }),
-                style: {
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "7px 14px",
-                  borderRadius: 4,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: "0.10em",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                  background: "rgba(107,127,107,0.75)",
-                  color: "#FDFDFD",
-                  border: "1px solid rgba(107,127,107,0.90)",
-                  transition: "opacity 0.15s"
-                },
-                onMouseEnter: (e) => e.currentTarget.style.opacity = "0.82",
-                onMouseLeave: (e) => e.currentTarget.style.opacity = "1",
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { style: { width: 11, height: 11, flexShrink: 0 } }),
-                  "ADD TO PIPELINE"
-                ]
-              }
-            )
-          ] })
-        ] })
-      ) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `flex items-center border-b ${t.border} shrink-0 px-5`, style: { background: "var(--c-bg)" }, children: [
-        { id: "opportunities", label: "Opportunities" },
-        { id: "corporates", label: "Corporates" },
-        { id: "projects", label: "Projects" }
-      ].map(({ id, label }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      `), selectedOpp ? (
+      /* Project header card — replaces tab bar when detail is open */
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        flexShrink: 0,
+        background: dark ? "#111111" : "#F3F4F6",
+        borderBottom: dark ? "1px solid rgba(248,250,252,0.08)" : "1px solid #E5E7EB",
+        padding: "10px 20px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12
+      } }, /* @__PURE__ */ import_react61.default.createElement(
         "button",
         {
-          onClick: () => setActiveTab(id),
-          className: `px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap flex items-center gap-1.5
-                ${activeTab === id ? "border-[#6B7F6B] text-[#6B7F6B]" : `border-transparent ${t.muted}`}`,
-          children: label
+          onClick: () => setSelectedOpp(null),
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 10,
+            fontFamily: "'JetBrains Mono', monospace",
+            color: dark ? "rgba(248,250,252,0.45)" : "rgba(0,0,0,0.45)",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            letterSpacing: "0.08em",
+            flexShrink: 0
+          }
         },
-        id
-      )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 flex flex-col overflow-hidden", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: activeTab === "opportunities" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(OpportunitiesTab, { pipeline, addProject, scannerRunning: listingsStarted, dark, selectedOpp, setSelectedOpp }) }),
-        activeTab === "corporates" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-y-auto p-4", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-2xl ${t.card} border overflow-hidden`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "grid px-4 py-2.5 border-b", style: { gridTemplateColumns: "2fr 1.2fr 0.7fr 1fr 2.5fr auto", borderColor: "var(--c-border2)", background: "var(--c-card2)" }, children: ["Company", "Carbon Need", "ESG", "Warmth", "Matched Projects", "Action"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] font-bold uppercase tracking-wide ${t.muted}`, children: h }, h)) }),
-          LEADS.map((lead) => {
-            const inPipe = pipeline.some((p) => p.type === "demand" && p.id === lead.id);
-            return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "div",
-              {
-                className: `grid px-4 py-3 border-b ${t.hover} items-center`,
-                style: { gridTemplateColumns: "2fr 1.2fr 0.7fr 1fr 2.5fr auto", borderColor: "var(--c-border2)" },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-base", children: lead.flag }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-bold ${t.text}`, children: lead.company }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.muted}`, children: lead.industry })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.sub}`, children: lead.need }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] font-bold ${t.text}`, children: lead.esg }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-bold w-fit ${t[lead.warmth]}`, children: lead.warmth.toUpperCase() }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.muted}`, children: [
-                    lead.signals[0].slice(0, 50),
-                    "\u2026"
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: inPipe ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.inPipeline}`, children: "\u2713 IN PIPELINE" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => addLead(lead), className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.ctaBg}`, children: "+ Add" }) })
-                ]
-              },
-              lead.id
-            );
-          })
-        ] }) }),
-        activeTab === "projects" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-y-auto p-4", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "grid grid-cols-2 gap-3", children: PROJECTS.map((proj) => {
-          const inPipe = pipeline.some((p) => p.type === "supply" && p.id === proj.id);
-          return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-2xl p-4 ${t.card} ${t.cardHov} border`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-start justify-between mb-2", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-bold ${t.text} mb-0.5`, children: proj.name }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.muted}`, children: [
-                  proj.flag,
-                  " ",
-                  proj.country,
-                  " \xB7 ",
-                  proj.registry
-                ] })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-bold ${t.verra}`, children: proj.registry })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.sub} mb-3`, children: [
-              proj.description.slice(0, 100),
-              "\u2026"
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: `text-[10px] font-bold ${t.accent}`, children: [
-                proj.price,
-                "/t \xB7 Q",
-                proj.quality
-              ] }),
-              inPipe ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.inPipeline}`, children: "\u2713 IN PIPELINE" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => addProject(proj), className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.ctaBg}`, children: "+ Add to Pipeline" })
-            ] })
-          ] }, proj.id);
-        }) }) })
-      ] })
-    ] });
+        "\u2190 BACK"
+      ), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: dark ? "rgba(248,250,252,0.20)" : "rgba(0,0,0,0.20)" } }, "|"), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: dark ? "#FDFDFD" : "#111827",
+        letterSpacing: "-0.01em"
+      } }, selectedOpp.name), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 5, marginLeft: 4 } }, selectedOpp.matches.map((m, mi) => /* @__PURE__ */ import_react61.default.createElement("span", { key: mi, style: {
+        fontSize: 9,
+        fontWeight: 600,
+        padding: "3px 9px",
+        borderRadius: 6,
+        background: "rgba(107,127,107,0.10)",
+        color: "#8FAD8F",
+        border: "1px solid rgba(107,127,107,0.28)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        boxShadow: "0 1px 4px rgba(107,127,107,0.10), inset 0 1px 0 rgba(107,127,107,0.12)",
+        whiteSpace: "nowrap",
+        letterSpacing: "0.02em"
+      } }, m))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 8, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          style: {
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "7px 14px",
+            borderRadius: 4,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.10em",
+            fontFamily: "'JetBrains Mono', monospace",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            background: "rgba(107,127,107,0.75)",
+            color: "#FDFDFD",
+            border: "1px solid rgba(107,127,107,0.90)",
+            transition: "opacity 0.15s"
+          },
+          onMouseEnter: (e) => e.currentTarget.style.opacity = "0.82",
+          onMouseLeave: (e) => e.currentTarget.style.opacity = "1"
+        },
+        /* @__PURE__ */ import_react61.default.createElement(Download, { style: { width: 11, height: 11, flexShrink: 0 } }),
+        "DOWNLOAD REPORT"
+      ), inPipeDetail ? /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "7px 14px",
+        borderRadius: 4,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.10em",
+        fontFamily: "'JetBrains Mono', monospace",
+        background: dark ? "rgba(107,127,107,0.18)" : "#F3F4F6",
+        color: dark ? "#9EBD9E" : "#4B5563",
+        border: dark ? "1px solid rgba(107,127,107,0.35)" : "1px solid #CBD5E1"
+      } }, /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 11, height: 11, flexShrink: 0 } }), "IN PIPELINE") : /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: () => addProject && addProject({ ...selectedOpp, pipelineRole: "supply", type: "supply", stage: "Prospect" }),
+          style: {
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "7px 14px",
+            borderRadius: 4,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.10em",
+            fontFamily: "'JetBrains Mono', monospace",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            background: "rgba(107,127,107,0.75)",
+            color: "#FDFDFD",
+            border: "1px solid rgba(107,127,107,0.90)",
+            transition: "opacity 0.15s"
+          },
+          onMouseEnter: (e) => e.currentTarget.style.opacity = "0.82",
+          onMouseLeave: (e) => e.currentTarget.style.opacity = "1"
+        },
+        /* @__PURE__ */ import_react61.default.createElement(Plus, { style: { width: 11, height: 11, flexShrink: 0 } }),
+        "ADD TO PIPELINE"
+      )))
+    ) : /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex items-center border-b ${t.border} shrink-0 px-5`, style: { background: "var(--c-bg)" } }, [
+      { id: "opportunities", label: "Opportunities" },
+      { id: "corporates", label: "Corporates" },
+      { id: "projects", label: "Projects" }
+    ].map(({ id, label }) => /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        key: id,
+        onClick: () => setActiveTab(id),
+        className: `px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap flex items-center gap-1.5
+                ${activeTab === id ? "border-[#6B7F6B] text-[#6B7F6B]" : `border-transparent ${t.muted}`}`
+      },
+      label
+    ))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 flex flex-col overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: activeTab === "opportunities" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement(OpportunitiesTab, { pipeline, addProject, scannerRunning: listingsStarted, dark, selectedOpp, setSelectedOpp })), activeTab === "corporates" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto p-4" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `rounded-2xl ${t.card} border overflow-hidden` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid px-4 py-2.5 border-b", style: { gridTemplateColumns: "2fr 1.2fr 0.7fr 1fr 2.5fr auto", borderColor: "var(--c-border2)", background: "var(--c-card2)" } }, ["Company", "Carbon Need", "ESG", "Warmth", "Matched Projects", "Action"].map((h) => /* @__PURE__ */ import_react61.default.createElement("div", { key: h, className: `text-[10px] font-bold uppercase tracking-wide ${t.muted}` }, h))), LEADS.map((lead) => {
+      const inPipe = pipeline.some((p) => p.type === "demand" && p.id === lead.id);
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: lead.id,
+          className: `grid px-4 py-3 border-b ${t.hover} items-center`,
+          style: { gridTemplateColumns: "2fr 1.2fr 0.7fr 1fr 2.5fr auto", borderColor: "var(--c-border2)" }
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-base" }, lead.flag), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-bold ${t.text}` }, lead.company), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted}` }, lead.industry))),
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.sub}` }, lead.need),
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] font-bold ${t.text}` }, lead.esg),
+        /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-bold w-fit ${t[lead.warmth]}` }, lead.warmth.toUpperCase()),
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted}` }, lead.signals[0].slice(0, 50), "\u2026"),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, inPipe ? /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.inPipeline}` }, "\u2713 IN PIPELINE") : /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => addLead(lead), className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.ctaBg}` }, "+ Add"))
+      );
+    }))), activeTab === "projects" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto p-4" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid grid-cols-2 gap-3" }, PROJECTS.map((proj) => {
+      const inPipe = pipeline.some((p) => p.type === "supply" && p.id === proj.id);
+      return /* @__PURE__ */ import_react61.default.createElement("div", { key: proj.id, className: `rounded-2xl p-4 ${t.card} ${t.cardHov} border` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-start justify-between mb-2" }, /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-bold ${t.text} mb-0.5` }, proj.name), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted}` }, proj.flag, " ", proj.country, " \xB7 ", proj.registry)), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-bold ${t.verra}` }, proj.registry)), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.sub} mb-3` }, proj.description.slice(0, 100), "\u2026"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] font-bold ${t.accent}` }, proj.price, "/t \xB7 Q", proj.quality), inPipe ? /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.inPipeline}` }, "\u2713 IN PIPELINE") : /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => addProject(proj), className: `text-[9px] px-2 py-1 rounded-lg font-bold ${t.ctaBg}` }, "+ Add to Pipeline")));
+    })))));
   }
   function Pipeline({ t, dark, pipeline, setPipeline }) {
     const stages = ["Prospect", "Qualified", "Negotiating", "Closed", "Client"];
@@ -54819,88 +53668,32 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       setPipeline((prev) => prev.map((p) => p === item ? { ...p, stage: next } : p));
     };
     const stageColor = { Prospect: t.muted, Qualified: "text-amber-400", Negotiating: t.aiAccent, Closed: t.verified, Client: t.verified };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "p-3 space-y-3 h-full flex flex-col overflow-hidden", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between shrink-0", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: `text-sm ${t.sub}`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `font-bold ${t.text}`, children: pipeline.length }),
-          " items \u2014 ",
-          " ",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: t.aiAccent, children: [
-            pipeline.filter((p) => p.type === "demand").length,
-            " demand"
-          ] }),
-          " & ",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: t.verified, children: [
-            pipeline.filter((p) => p.type === "supply").length,
-            " supply"
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setPipeline([]), className: `text-xs ${t.muted} ${t.hover} px-3 py-1.5 rounded-lg border ${t.border}`, children: "Clear" })
-      ] }),
-      pipeline.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `flex-1 rounded-2xl ${t.card} border flex items-center justify-center`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "text-center", style: { maxWidth: 280 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 56, height: 56, borderRadius: "50%", background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.18)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GitMerge, { style: { width: 22, height: 22, color: "#FF6B35" } }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-sm font-bold ${t.text}`, style: { marginBottom: 6 }, children: "No deals in pipeline yet" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", { className: `text-xs ${t.muted}`, style: { lineHeight: 1.65 }, children: [
-          "Go to ",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#FF6B35", fontWeight: 600 }, children: "Discovery" }),
-          " and click ",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#FF6B35", fontWeight: 600 }, children: "Add to Pipeline" }),
-          " on any project or corporate to start tracking deals here."
-        ] })
-      ] }) }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 grid grid-cols-4 gap-3 overflow-hidden", children: stages.map((stage) => {
-        const items = pipeline.filter((p) => p.stage === stage);
-        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-2xl p-3 ${t.kCol} border flex flex-col overflow-hidden`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center justify-between mb-3 px-1 shrink-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs font-bold uppercase tracking-wider ${stageColor[stage]}`, children: stage }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: t.tag, children: items.length })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto space-y-2", children: [
-            items.map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-xl p-3 ${t.kCard} border`, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-start gap-2 mb-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.type === "demand" ? "bg-[#FF6B35]" : "bg-[#FF6B35]"}` }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 min-w-0", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-bold ${t.text} leading-tight`, children: item.type === "demand" ? item.company || item.name : item.name }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.muted} mt-0.5`, children: item.type === "demand" ? item.industry || "Corporate" : item.projCategory || "Carbon Project" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[9px] px-1.5 py-0.5 rounded-full font-semibold
-                          ${item.type === "demand" ? dark ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#FF6B35]/10 text-[#FF6B35]" : dark ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#364A36]/25 text-[#9EBD9E]"}`, children: item.type === "demand" ? "D" : "S" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.muted} mb-2`, children: [
-                item.flag,
-                " ",
-                item.type === "demand" ? item.need || "\u2014" : item.credits || item.projectId || "\u2014"
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-1", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "button",
-                  {
-                    onClick: () => move(item, -1),
-                    disabled: stage === "Prospect",
-                    className: `flex-1 text-[10px] py-1 rounded-lg border ${t.border} ${t.muted} ${t.hover} disabled:opacity-25 transition-all`,
-                    children: "\u2190 Back"
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "button",
-                  {
-                    onClick: () => move(item, 1),
-                    disabled: stage === "Closed",
-                    className: `flex-1 text-[10px] py-1 rounded-lg ${dark ? "bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20 hover:bg-[#FF6B35]/20" : "bg-[#364A36]/25 text-[#9EBD9E] border border-[#364A36]/50 hover:bg-[#364A36]/30"} disabled:opacity-25 transition-all`,
-                    children: "Advance \u2192"
-                  }
-                )
-              ] })
-            ] }, i)),
-            items.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-center py-6 text-xs ${t.muted} rounded-xl border-2 border-dashed ${t.border}`, children: "Empty" })
-          ] })
-        ] }, stage);
-      }) })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "p-3 space-y-3 h-full flex flex-col overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center justify-between shrink-0" }, /* @__PURE__ */ import_react61.default.createElement("p", { className: `text-sm ${t.sub}` }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `font-bold ${t.text}` }, pipeline.length), " items \u2014 ", " ", /* @__PURE__ */ import_react61.default.createElement("span", { className: t.aiAccent }, pipeline.filter((p) => p.type === "demand").length, " demand"), " & ", /* @__PURE__ */ import_react61.default.createElement("span", { className: t.verified }, pipeline.filter((p) => p.type === "supply").length, " supply")), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setPipeline([]), className: `text-xs ${t.muted} ${t.hover} px-3 py-1.5 rounded-lg border ${t.border}` }, "Clear")), pipeline.length === 0 ? /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex-1 rounded-2xl ${t.card} border flex items-center justify-center` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "text-center", style: { maxWidth: 280 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 56, height: 56, borderRadius: "50%", background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.18)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" } }, /* @__PURE__ */ import_react61.default.createElement(GitMerge, { style: { width: 22, height: 22, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-sm font-bold ${t.text}`, style: { marginBottom: 6 } }, "No deals in pipeline yet"), /* @__PURE__ */ import_react61.default.createElement("p", { className: `text-xs ${t.muted}`, style: { lineHeight: 1.65 } }, "Go to ", /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", fontWeight: 600 } }, "Discovery"), " and click ", /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", fontWeight: 600 } }, "Add to Pipeline"), " on any project or corporate to start tracking deals here."))) : /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 grid grid-cols-4 gap-3 overflow-hidden" }, stages.map((stage) => {
+      const items = pipeline.filter((p) => p.stage === stage);
+      return /* @__PURE__ */ import_react61.default.createElement("div", { key: stage, className: `rounded-2xl p-3 ${t.kCol} border flex flex-col overflow-hidden` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center justify-between mb-3 px-1 shrink-0" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold uppercase tracking-wider ${stageColor[stage]}` }, stage), /* @__PURE__ */ import_react61.default.createElement("span", { className: t.tag }, items.length)), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto space-y-2" }, items.map((item, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, className: `rounded-xl p-3 ${t.kCard} border` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-start gap-2 mb-2" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.type === "demand" ? "bg-[#FF6B35]" : "bg-[#FF6B35]"}` }), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-bold ${t.text} leading-tight` }, item.type === "demand" ? item.company || item.name : item.name), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} mt-0.5` }, item.type === "demand" ? item.industry || "Corporate" : item.projCategory || "Carbon Project")), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[9px] px-1.5 py-0.5 rounded-full font-semibold
+                          ${item.type === "demand" ? dark ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#FF6B35]/10 text-[#FF6B35]" : dark ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#364A36]/25 text-[#9EBD9E]"}` }, item.type === "demand" ? "D" : "S")), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} mb-2` }, item.flag, " ", item.type === "demand" ? item.need || "\u2014" : item.credits || item.projectId || "\u2014"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex gap-1" }, /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: () => move(item, -1),
+          disabled: stage === "Prospect",
+          className: `flex-1 text-[10px] py-1 rounded-lg border ${t.border} ${t.muted} ${t.hover} disabled:opacity-25 transition-all`
+        },
+        "\u2190 Back"
+      ), /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: () => move(item, 1),
+          disabled: stage === "Closed",
+          className: `flex-1 text-[10px] py-1 rounded-lg ${dark ? "bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20 hover:bg-[#FF6B35]/20" : "bg-[#364A36]/25 text-[#9EBD9E] border border-[#364A36]/50 hover:bg-[#364A36]/30"} disabled:opacity-25 transition-all`
+        },
+        "Advance \u2192"
+      )))), items.length === 0 && /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-center py-6 text-xs ${t.muted} rounded-xl border-2 border-dashed ${t.border}` }, "Empty")));
+    })));
   }
   var ACTIVE_CAMPAIGNS = [
-    { id: 1, name: "Microsoft Q4 Carbon Removal Outreach", strategy: "REDD+ Priority", volume: 4200, successRate: 87.3, status: "Active", target: "Microsoft", contact: "Melanie Nakagawa", steps: 5, completed: 3 },
-    { id: 2, name: "Amazon Climate Pledge \u2014 REDD+ Proposal", strategy: "High Volume", volume: 9800, successRate: 82.1, status: "Active", target: "Amazon", contact: "Kara Hurst", steps: 4, completed: 2 },
-    { id: 3, name: "Shell NbS Strategy Alignment", strategy: "Coastal Barrier", volume: 18e3, successRate: 74.5, status: "Paused", target: "Shell PLC", contact: "Anna Mascolo", steps: 6, completed: 4 },
+    { id: 1, name: "Microdyne Systems Q4 Carbon Removal Outreach", strategy: "REDD+ Priority", volume: 4200, successRate: 87.3, status: "Active", target: "Microdyne Systems", contact: "Melanie Nakagawa", steps: 5, completed: 3 },
+    { id: 2, name: "Amazia Cloud Climate Pledge \u2014 REDD+ Proposal", strategy: "High Volume", volume: 9800, successRate: 82.1, status: "Active", target: "Amazia Cloud", contact: "Kara Hurst", steps: 4, completed: 2 },
+    { id: 3, name: "Shellion Energy NbS Strategy Alignment", strategy: "Coastal Barrier", volume: 18e3, successRate: 74.5, status: "Paused", target: "Shellion Energy PLC", contact: "Anna Mascolo", steps: 6, completed: 4 },
     { id: 4, name: "Unilever SBTi Offset Sourcing", strategy: "Balanced Yield", volume: 5500, successRate: 0, status: "Draft", target: "Unilever", contact: "Rebecca Marmot", steps: 4, completed: 0 },
     { id: 5, name: "BP Scope 3 Offset Programme", strategy: "Aggressive Cover", volume: 11e3, successRate: 68.9, status: "Active", target: "BP PLC", contact: "Giulia Chierchia", steps: 3, completed: 1 }
   ];
@@ -55014,246 +53807,132 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       onClose();
     };
     const statusPalette = { Active: "bg-[#FF6B35] text-white", Paused: "bg-[#CC5A25] text-white", Draft: "bg-[#ddd] text-[#666]" };
-    const closeX = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "15", height: "15", viewBox: "0 0 16 16", fill: "none", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 4L4 12M4 4l8 8", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round" }) });
+    const closeX = /* @__PURE__ */ import_react61.default.createElement("svg", { width: "15", height: "15", viewBox: "0 0 16 16", fill: "none" }, /* @__PURE__ */ import_react61.default.createElement("path", { d: "M12 4L4 12M4 4l8 8", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round" }));
     const isTemplate = isNew && campaign != null;
     const title = readOnly ? campaign?.name : isNew ? "New Campaign" : form.name;
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+    return /* @__PURE__ */ import_react61.default.createElement(
       "div",
       {
         className: "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]",
-        onClick: (e) => e.target === e.currentTarget && onClose(),
-        children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "w-[920px] rounded-2xl shadow-2xl bg-[#282C32] border border-[#2A2D38] flex flex-col overflow-hidden", style: { maxHeight: "90vh" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "px-7 pt-6 pb-4 border-b border-[#2A2D38] flex items-start justify-between shrink-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "min-w-0 flex-1 pr-4", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2 mb-1", children: [
-                !isNew && form.status && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${statusPalette[form.status] || "bg-[#eee] text-[#999]"}`, children: form.status }),
-                isTemplate && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { className: "w-2.5 h-2.5" }),
-                  "From Template"
-                ] }),
-                readOnly && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[10px] px-2 py-0.5 rounded-full bg-[#1E2126] text-[#999] border border-[#2A2D38]", children: "Historical \xB7 Read-only" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: "text-[15px] font-bold text-[#111] truncate", children: title }),
-              !isNew && (form.target || form.contact) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "text-xs text-[#999] mt-0.5", children: [form.target, form.contact].filter(Boolean).join(" \xB7 ") }),
-              isNew && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "text-xs text-[#aaa] mt-0.5", children: "Fill in the details or describe changes in the chat panel." })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, className: "w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#1E2126] text-[#bbb] hover:text-[#555] transition-colors shrink-0", children: closeX })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex flex-1 overflow-hidden", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto px-7 py-5 border-r border-[#2A2D38]", children: [
-              isNew && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "mb-5", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-2", children: "Campaign Type" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "grid grid-cols-2 gap-3", children: [
-                  { id: "corporate", icon: Building2, label: "Corporates", sub: "Buy-side \xB7 ESG & offset procurement" },
-                  { id: "project", icon: TreePine, label: "Projects", sub: "Supply-side \xB7 Carbon credit generation" }
-                ].map(({ id, icon: Icon2, label, sub }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                  "button",
-                  {
-                    onClick: () => {
-                      set3("type", id);
-                      set3("target", "");
-                      set3("contact", "");
-                    },
-                    className: `text-left p-4 rounded-xl border-2 transition-all flex items-start gap-3
-                        ${form.type === id ? "border-[#FF6B35] bg-[#FF6B35]/5" : "border-[#2A2D38] bg-[#282C32] hover:border-[#3A3D4A]"}`,
-                    children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${form.type === id ? "bg-[#FF6B35]/15" : "bg-[#f5f0ec]"}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { className: `w-4 h-4 ${form.type === id ? "text-[#FF6B35]" : "text-[#8b5e3c]"}` }) }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-sm font-bold ${form.type === id ? "text-[#FF6B35]" : "text-[#111]"}`, children: label }),
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "text-[10px] text-[#aaa] mt-0.5 leading-relaxed", children: sub })
-                      ] })
-                    ]
-                  },
-                  id
-                )) })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "grid grid-cols-2 gap-x-5 gap-y-4", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "col-span-2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Campaign Name" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "input",
-                    {
-                      value: form.name,
-                      onChange: (e) => set3("name", e.target.value),
-                      disabled: readOnly,
-                      placeholder: "e.g. Microsoft Q4 Carbon Removal Outreach",
-                      className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
-                    }
-                  )
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: form.type === "project" ? "Target Project" : "Target Company" }),
-                  isNew && form.type ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                    "select",
-                    {
-                      value: form.target,
-                      onChange: (e) => {
-                        const opt = targets.find((o) => o.label === e.target.value);
-                        set3("target", e.target.value);
-                        set3("contact", opt?.contact || "");
-                      },
-                      className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all appearance-none cursor-pointer",
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: "", children: "Select\u2026" }),
-                        targets.map((o) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { value: o.label, children: o.label }, o.label))
-                      ]
-                    }
-                  ) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "input",
-                    {
-                      value: form.target || "",
-                      onChange: (e) => set3("target", e.target.value),
-                      disabled: readOnly || isNew && !form.type,
-                      placeholder: "Company or project name",
-                      className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
-                    }
-                  )
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Contact" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "input",
-                    {
-                      value: form.contact || "",
-                      onChange: (e) => set3("contact", e.target.value),
-                      disabled: readOnly,
-                      placeholder: "Contact name",
-                      className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
-                    }
-                  )
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Matching Strategy" }),
-                  readOnly ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "px-3.5 py-2.5 rounded-xl border border-[#2A2D38] bg-[#fafafa] text-sm text-[#888]", children: form.strategy }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "select",
-                    {
-                      value: form.strategy,
-                      onChange: (e) => set3("strategy", e.target.value),
-                      className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all appearance-none cursor-pointer",
-                      children: STRATEGIES.map((s2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", { children: s2 }, s2))
-                    }
-                  )
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Target Volume (Units)" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "input",
-                    {
-                      type: "number",
-                      value: form.volume || "",
-                      onChange: (e) => set3("volume", e.target.value),
-                      disabled: readOnly,
-                      placeholder: "e.g. 5000",
-                      className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
-                    }
-                  )
-                ] }),
-                !isNew && !readOnly && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "col-span-2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Status" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex gap-2", children: ["Active", "Paused", "Draft"].map((s2) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "button",
-                    {
-                      onClick: () => set3("status", s2),
-                      className: `flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all
-                          ${form.status === s2 ? s2 === "Active" ? "bg-[#FF6B35] text-white border-[#FF6B35] shadow-[0_2px_8px_rgba(34,197,94,0.28)]" : s2 === "Paused" ? "bg-[#CC5A25] text-white border-[#CC5A25]" : "bg-[#555] text-white border-[#555]" : "bg-[#282C32] text-[#999] border-[#2A2D38] hover:border-[#ccc] hover:text-[#555]"}`,
-                      children: s2
-                    },
-                    s2
-                  )) })
-                ] }),
-                form.successRate != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Success Rate" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-[#2A2D38] bg-[#fafafa]", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-sm font-bold ${form.successRate > 0 ? "text-[#FF6B35]" : "text-[#ccc]"}`, children: form.successRate > 0 ? `${form.successRate}%` : "\u2014" }),
-                    form.successRate > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 h-1.5 rounded-full bg-[#2A2D38] overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "h-full rounded-full bg-[#FF6B35]", style: { width: `${form.successRate}%` } }) })
-                  ] })
-                ] }),
-                form.steps != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5", children: "Steps Progress" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-[#2A2D38] bg-[#fafafa]", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-sm font-bold text-[#111]", children: [
-                      form.completed || 0,
-                      "/",
-                      form.steps
-                    ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex gap-1 flex-1", children: Array.from({ length: form.steps }).map((_, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `flex-1 h-2 rounded-full transition-colors ${i < (form.completed || 0) ? "bg-[#FF6B35]" : "bg-[#2A2D38]"}` }, i)) })
-                  ] })
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "w-[276px] shrink-0 flex flex-col bg-[#fafafa]", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "px-4 py-3 border-b border-[#2A2D38] shrink-0", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2 mb-0.5", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-xs font-semibold text-[#111]", children: "AI Assistant" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "text-[10px] text-[#bbb] pl-7 leading-relaxed", children: readOnly ? "Ask anything about this campaign." : "Describe changes in plain English and I'll update the fields." })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto px-3 py-3 space-y-2.5", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2 items-start", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0 mt-0.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "bg-[#282C32] border border-[#2A2D38] rounded-2xl rounded-tl-sm px-3 py-2 text-[11px] text-[#555] leading-relaxed max-w-[85%]", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "font-semibold text-[#111] block mb-0.5", children: "Here to help" }),
-                    readOnly ? "This is a historical campaign. Ask me anything about its performance." : 'Try: "Change status to Active", "Update volume to 15,000", "Switch to High Volume", or "Rename to\u2026"'
-                  ] })
-                ] }),
-                chatMsgs.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex items-end gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`, children: [
-                  m.role === "ai" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0 mb-0.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `max-w-[82%] px-3 py-2 rounded-2xl text-[11px] leading-relaxed
-                    ${m.role === "user" ? "bg-[#FF6B35] text-white rounded-br-sm" : "bg-[#282C32] border border-[#2A2D38] text-[#555] rounded-tl-sm"}`, children: m.text })
-                ] }, i)),
-                typing && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-end gap-2", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0 mb-0.5", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { className: "w-2.5 h-2.5 text-white" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "bg-[#282C32] border border-[#2A2D38] rounded-2xl rounded-tl-sm px-3 py-2.5 flex gap-1 items-center", children: [0, 1, 2].map((j) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-1.5 h-1.5 rounded-full bg-[#ddd] animate-bounce", style: { animationDelay: `${j * 0.14}s` } }, j)) })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: chatBottomRef })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "px-3 pb-3 pt-2 shrink-0 border-t border-[#2A2D38]", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex gap-2 items-end", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "textarea",
-                  {
-                    value: chatInput,
-                    onChange: (e) => setChatInput(e.target.value),
-                    onKeyDown: (e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendChat();
-                      }
-                    },
-                    placeholder: readOnly ? "Ask about this campaign\u2026" : "e.g. change status to active\u2026",
-                    rows: 2,
-                    className: "flex-1 resize-none bg-[#282C32] border border-[#2A2D38] rounded-xl px-3 py-2 text-[11px] text-[#111] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#ccc] leading-relaxed"
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                  "button",
-                  {
-                    onClick: sendChat,
-                    className: "w-8 h-8 rounded-xl bg-[#FF6B35] hover:bg-[#E55520] flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(255,107,53,0.35)] transition-all",
-                    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { className: "w-3.5 h-3.5 text-white" })
-                  }
-                )
-              ] }) })
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "px-7 py-4 border-t border-[#2A2D38] flex items-center justify-between shrink-0 bg-[#282C32]", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: onClose, className: "px-4 py-2 rounded-xl text-xs font-semibold text-[#999] hover:text-[#555] hover:bg-[#1E2126] transition-colors", children: readOnly ? "Close" : "Discard" }),
-            !readOnly && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-3", children: [
-              isNew && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[10px] text-[#ccc]", children: "Will be saved as Draft" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "button",
-                {
-                  onClick: handleSave,
-                  disabled: !canSave,
-                  className: `px-5 py-2 rounded-xl text-xs font-semibold transition-all
-                  ${canSave ? isNew ? "bg-[#FF6B35] hover:bg-[#E55520] text-white shadow-[0_2px_8px_rgba(255,107,53,0.40)]" : "bg-[#FF6B35] hover:bg-[#E55520] text-white shadow-[0_2px_8px_rgba(34,197,94,0.30)]" : "bg-[#eee] text-[#bbb] cursor-not-allowed"}`,
-                  children: isNew ? "Create Campaign" : "Save Changes"
-                }
-              )
-            ] })
-          ] })
-        ] })
-      }
+        onClick: (e) => e.target === e.currentTarget && onClose()
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-[920px] rounded-2xl shadow-2xl bg-[#282C32] border border-[#2A2D38] flex flex-col overflow-hidden", style: { maxHeight: "90vh" } }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-7 pt-6 pb-4 border-b border-[#2A2D38] flex items-start justify-between shrink-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "min-w-0 flex-1 pr-4" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2 mb-1" }, !isNew && form.status && /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${statusPalette[form.status] || "bg-[#eee] text-[#999]"}` }, form.status), isTemplate && /* @__PURE__ */ import_react61.default.createElement("span", { className: "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20" }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { className: "w-2.5 h-2.5" }), "From Template"), readOnly && /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-[10px] px-2 py-0.5 rounded-full bg-[#1E2126] text-[#999] border border-[#2A2D38]" }, "Historical \xB7 Read-only")), /* @__PURE__ */ import_react61.default.createElement("h2", { className: "text-[15px] font-bold text-[#111] truncate" }, title), !isNew && (form.target || form.contact) && /* @__PURE__ */ import_react61.default.createElement("p", { className: "text-xs text-[#999] mt-0.5" }, [form.target, form.contact].filter(Boolean).join(" \xB7 ")), isNew && /* @__PURE__ */ import_react61.default.createElement("p", { className: "text-xs text-[#aaa] mt-0.5" }, "Fill in the details or describe changes in the chat panel.")), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: onClose, className: "w-7 h-7 flex items-center justify-center rounded-full hover:bg-[#1E2126] text-[#bbb] hover:text-[#555] transition-colors shrink-0" }, closeX)), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-1 overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto px-7 py-5 border-r border-[#2A2D38]" }, isNew && /* @__PURE__ */ import_react61.default.createElement("div", { className: "mb-5" }, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-2" }, "Campaign Type"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid grid-cols-2 gap-3" }, [
+        { id: "corporate", icon: Building2, label: "Corporates", sub: "Buy-side \xB7 ESG & offset procurement" },
+        { id: "project", icon: TreePine, label: "Projects", sub: "Supply-side \xB7 Carbon credit generation" }
+      ].map(({ id, icon: Icon2, label, sub }) => /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          key: id,
+          onClick: () => {
+            set3("type", id);
+            set3("target", "");
+            set3("contact", "");
+          },
+          className: `text-left p-4 rounded-xl border-2 transition-all flex items-start gap-3
+                        ${form.type === id ? "border-[#FF6B35] bg-[#FF6B35]/5" : "border-[#2A2D38] bg-[#282C32] hover:border-[#3A3D4A]"}`
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${form.type === id ? "bg-[#FF6B35]/15" : "bg-[#f5f0ec]"}` }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { className: `w-4 h-4 ${form.type === id ? "text-[#FF6B35]" : "text-[#8b5e3c]"}` })),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-sm font-bold ${form.type === id ? "text-[#FF6B35]" : "text-[#111]"}` }, label), /* @__PURE__ */ import_react61.default.createElement("div", { className: "text-[10px] text-[#aaa] mt-0.5 leading-relaxed" }, sub))
+      )))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid grid-cols-2 gap-x-5 gap-y-4" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "col-span-2" }, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Campaign Name"), /* @__PURE__ */ import_react61.default.createElement(
+        "input",
+        {
+          value: form.name,
+          onChange: (e) => set3("name", e.target.value),
+          disabled: readOnly,
+          placeholder: "e.g. Microdyne Systems Q4 Carbon Removal Outreach",
+          className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
+        }
+      )), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, form.type === "project" ? "Target Project" : "Target Company"), isNew && form.type ? /* @__PURE__ */ import_react61.default.createElement(
+        "select",
+        {
+          value: form.target,
+          onChange: (e) => {
+            const opt = targets.find((o) => o.label === e.target.value);
+            set3("target", e.target.value);
+            set3("contact", opt?.contact || "");
+          },
+          className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all appearance-none cursor-pointer"
+        },
+        /* @__PURE__ */ import_react61.default.createElement("option", { value: "" }, "Select\u2026"),
+        targets.map((o) => /* @__PURE__ */ import_react61.default.createElement("option", { key: o.label, value: o.label }, o.label))
+      ) : /* @__PURE__ */ import_react61.default.createElement(
+        "input",
+        {
+          value: form.target || "",
+          onChange: (e) => set3("target", e.target.value),
+          disabled: readOnly || isNew && !form.type,
+          placeholder: "Company or project name",
+          className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
+        }
+      )), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Contact"), /* @__PURE__ */ import_react61.default.createElement(
+        "input",
+        {
+          value: form.contact || "",
+          onChange: (e) => set3("contact", e.target.value),
+          disabled: readOnly,
+          placeholder: "Contact name",
+          className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
+        }
+      )), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Matching Strategy"), readOnly ? /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-3.5 py-2.5 rounded-xl border border-[#2A2D38] bg-[#fafafa] text-sm text-[#888]" }, form.strategy) : /* @__PURE__ */ import_react61.default.createElement(
+        "select",
+        {
+          value: form.strategy,
+          onChange: (e) => set3("strategy", e.target.value),
+          className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all appearance-none cursor-pointer"
+        },
+        STRATEGIES.map((s2) => /* @__PURE__ */ import_react61.default.createElement("option", { key: s2 }, s2))
+      )), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Target Volume (Units)"), /* @__PURE__ */ import_react61.default.createElement(
+        "input",
+        {
+          type: "number",
+          value: form.volume || "",
+          onChange: (e) => set3("volume", e.target.value),
+          disabled: readOnly,
+          placeholder: "e.g. 5000",
+          className: "w-full px-3.5 py-2.5 rounded-xl border border-[#2A2D38] text-sm text-[#111] bg-[#282C32] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#3A3D4A] disabled:bg-[#fafafa] disabled:text-[#888]"
+        }
+      )), !isNew && !readOnly && /* @__PURE__ */ import_react61.default.createElement("div", { className: "col-span-2" }, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Status"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex gap-2" }, ["Active", "Paused", "Draft"].map((s2) => /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          key: s2,
+          onClick: () => set3("status", s2),
+          className: `flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all
+                          ${form.status === s2 ? s2 === "Active" ? "bg-[#FF6B35] text-white border-[#FF6B35] shadow-[0_2px_8px_rgba(34,197,94,0.28)]" : s2 === "Paused" ? "bg-[#CC5A25] text-white border-[#CC5A25]" : "bg-[#555] text-white border-[#555]" : "bg-[#282C32] text-[#999] border-[#2A2D38] hover:border-[#ccc] hover:text-[#555]"}`
+        },
+        s2
+      )))), form.successRate != null && /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Success Rate"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-[#2A2D38] bg-[#fafafa]" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-sm font-bold ${form.successRate > 0 ? "text-[#FF6B35]" : "text-[#ccc]"}` }, form.successRate > 0 ? `${form.successRate}%` : "\u2014"), form.successRate > 0 && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 h-1.5 rounded-full bg-[#2A2D38] overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "h-full rounded-full bg-[#FF6B35]", style: { width: `${form.successRate}%` } })))), form.steps != null && /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("label", { className: "text-[10px] font-bold text-[#aaa] uppercase tracking-wider block mb-1.5" }, "Steps Progress"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-[#2A2D38] bg-[#fafafa]" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-sm font-bold text-[#111]" }, form.completed || 0, "/", form.steps), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex gap-1 flex-1" }, Array.from({ length: form.steps }).map((_, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, className: `flex-1 h-2 rounded-full transition-colors ${i < (form.completed || 0) ? "bg-[#FF6B35]" : "bg-[#2A2D38]"}` }))))))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-[276px] shrink-0 flex flex-col bg-[#fafafa]" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-4 py-3 border-b border-[#2A2D38] shrink-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2 mb-0.5" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0" }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-xs font-semibold text-[#111]" }, "AI Assistant")), /* @__PURE__ */ import_react61.default.createElement("p", { className: "text-[10px] text-[#bbb] pl-7 leading-relaxed" }, readOnly ? "Ask anything about this campaign." : "Describe changes in plain English and I'll update the fields.")), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto px-3 py-3 space-y-2.5" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex gap-2 items-start" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0 mt-0.5" }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), /* @__PURE__ */ import_react61.default.createElement("div", { className: "bg-[#282C32] border border-[#2A2D38] rounded-2xl rounded-tl-sm px-3 py-2 text-[11px] text-[#555] leading-relaxed max-w-[85%]" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "font-semibold text-[#111] block mb-0.5" }, "Here to help"), readOnly ? "This is a historical campaign. Ask me anything about its performance." : 'Try: "Change status to Active", "Update volume to 15,000", "Switch to High Volume", or "Rename to\u2026"')), chatMsgs.map((m, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, className: `flex items-end gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}` }, m.role === "ai" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0 mb-0.5" }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), /* @__PURE__ */ import_react61.default.createElement("div", { className: `max-w-[82%] px-3 py-2 rounded-2xl text-[11px] leading-relaxed
+                    ${m.role === "user" ? "bg-[#FF6B35] text-white rounded-br-sm" : "bg-[#282C32] border border-[#2A2D38] text-[#555] rounded-tl-sm"}` }, m.text))), typing && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-end gap-2" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-5 h-5 rounded-full bg-gradient-to-br from-[#FF6B35] to-[#ef4444] flex items-center justify-center shrink-0 mb-0.5" }, /* @__PURE__ */ import_react61.default.createElement(Brain, { className: "w-2.5 h-2.5 text-white" })), /* @__PURE__ */ import_react61.default.createElement("div", { className: "bg-[#282C32] border border-[#2A2D38] rounded-2xl rounded-tl-sm px-3 py-2.5 flex gap-1 items-center" }, [0, 1, 2].map((j) => /* @__PURE__ */ import_react61.default.createElement("span", { key: j, className: "w-1.5 h-1.5 rounded-full bg-[#ddd] animate-bounce", style: { animationDelay: `${j * 0.14}s` } })))), /* @__PURE__ */ import_react61.default.createElement("div", { ref: chatBottomRef })), /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-3 pb-3 pt-2 shrink-0 border-t border-[#2A2D38]" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex gap-2 items-end" }, /* @__PURE__ */ import_react61.default.createElement(
+        "textarea",
+        {
+          value: chatInput,
+          onChange: (e) => setChatInput(e.target.value),
+          onKeyDown: (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              sendChat();
+            }
+          },
+          placeholder: readOnly ? "Ask about this campaign\u2026" : "e.g. change status to active\u2026",
+          rows: 2,
+          className: "flex-1 resize-none bg-[#282C32] border border-[#2A2D38] rounded-xl px-3 py-2 text-[11px] text-[#111] outline-none focus:border-[#FF6B35] focus:ring-2 focus:ring-[#FF6B35]/10 transition-all placeholder-[#ccc] leading-relaxed"
+        }
+      ), /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: sendChat,
+          className: "w-8 h-8 rounded-xl bg-[#FF6B35] hover:bg-[#E55520] flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(255,107,53,0.35)] transition-all"
+        },
+        /* @__PURE__ */ import_react61.default.createElement(Send, { className: "w-3.5 h-3.5 text-white" })
+      ))))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "px-7 py-4 border-t border-[#2A2D38] flex items-center justify-between shrink-0 bg-[#282C32]" }, /* @__PURE__ */ import_react61.default.createElement("button", { onClick: onClose, className: "px-4 py-2 rounded-xl text-xs font-semibold text-[#999] hover:text-[#555] hover:bg-[#1E2126] transition-colors" }, readOnly ? "Close" : "Discard"), !readOnly && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-3" }, isNew && /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-[10px] text-[#ccc]" }, "Will be saved as Draft"), /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          onClick: handleSave,
+          disabled: !canSave,
+          className: `px-5 py-2 rounded-xl text-xs font-semibold transition-all
+                  ${canSave ? isNew ? "bg-[#FF6B35] hover:bg-[#E55520] text-white shadow-[0_2px_8px_rgba(255,107,53,0.40)]" : "bg-[#FF6B35] hover:bg-[#E55520] text-white shadow-[0_2px_8px_rgba(34,197,94,0.30)]" : "bg-[#eee] text-[#bbb] cursor-not-allowed"}`
+        },
+        isNew ? "Create Campaign" : "Save Changes"
+      ))))
     );
   }
   function CampaignsPage({ t, dark, showModal, setShowModal, campaignTemplate, setCampaignTemplate }) {
@@ -55282,154 +53961,88 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     );
     const COL_ACTIVE = "2.6fr 1.4fr 1.1fr 1.3fr 0.7fr";
     const COL_HIST = "2.6fr 1.4fr 1.1fr 1.3fr";
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex flex-col flex-1 overflow-hidden", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `shrink-0 border-b ${t.border} ${dark ? "bg-[#0e0e0e]" : "bg-[#282C32]"}`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-3 px-6 pt-5 pb-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { className: `text-base font-bold ${t.text} flex-1`, children: "Campaigns" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex items-center gap-2 px-3 py-1.5 rounded-xl border ${t.border} ${dark ? "bg-[#161616]" : "bg-[#1E2126]"}`, style: { width: 160 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: `w-3.5 h-3.5 ${t.muted} shrink-0` }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              "input",
-              {
-                value: search,
-                onChange: (e) => setSearch(e.target.value),
-                placeholder: "Search\u2026",
-                className: `flex-1 bg-transparent text-xs outline-none ${t.text} min-w-0`
-              }
-            )
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setShowModal(true), className: "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#FF6B35] hover:bg-[#E55520] text-white transition-all shadow-[0_2px_8px_rgba(255,107,53,0.40)] hover:shadow-[0_3px_12px_rgba(255,107,53,0.55)] whitespace-nowrap shrink-0", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "w-3.5 h-3.5" }),
-            "New Campaign"
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center px-6", children: [
-          [
-            { id: "active", label: "Active Campaigns", count: campaigns.length },
-            { id: "historical", label: "Historical Performance", count: HISTORICAL_CAMPAIGNS.length }
-          ].map(({ id, label, count }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-            "button",
-            {
-              onClick: () => setActiveTab(id),
-              className: `flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap
-                ${activeTab === id ? "border-[#6B7F6B] text-[#6B7F6B]" : `border-transparent ${t.muted}`}`,
-              children: [
-                label,
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-1.5 py-0.5 rounded-full font-bold
-                ${activeTab === id ? "bg-[#6B7F6B]/15 text-[#6B7F6B]" : dark ? "bg-white/[0.06] text-white/35" : "bg-gray-100 text-slate-500"}`, children: count })
-              ]
-            },
-            id
-          )),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1" }),
-          [
-            { icon: Funnel, label: "Filter" },
-            { icon: SlidersHorizontal, label: "Sort" },
-            { icon: Download, label: "Export" }
-          ].map(({ icon: Icon2, label }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `flex items-center gap-1.5 px-3 py-1.5 mb-0.5 rounded-lg text-xs font-medium border ${t.border} ${t.card} ${t.sub} ${t.hover} transition-colors`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { className: "w-3.5 h-3.5" }),
-            label
-          ] }, label))
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `sticky top-0 z-10 border-b ${t.border} ${dark ? "bg-[#111]" : "bg-[#1E2126]"}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "div",
-          {
-            style: { display: "grid", gridTemplateColumns: activeTab === "active" ? COL_ACTIVE : COL_HIST },
-            className: "px-6 py-2.5 gap-4",
-            children: (activeTab === "active" ? ["Campaign Name", "Matching Strategy", "Matched Volume", "Success Rate", "Status"] : ["Campaign Name", "Matching Strategy", "Matched Volume", "Success Rate"]).map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] font-bold uppercase tracking-wider ${t.muted}`, children: h }, h))
-          }
-        ) }),
-        activeTab === "active" ? filteredActive.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            onClick: () => openDetail(c2, false),
-            style: { display: "grid", gridTemplateColumns: COL_ACTIVE },
-            className: `px-6 py-3.5 gap-4 items-center cursor-pointer transition-colors ${t.hover} ${i < filteredActive.length - 1 ? `border-b ${t.border}` : ""}`,
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2.5 min-w-0", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `w-2 h-2 rounded-full shrink-0 ${dark ? "bg-[#444]" : "bg-[#ccc]"}` }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "min-w-0", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-semibold ${t.text} truncate`, children: c2.name }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.muted} mt-0.5`, children: [
-                    c2.target,
-                    " \xB7 ",
-                    c2.contact
-                  ] })
-                ] })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs ${t.sub}`, children: c2.strategy }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs font-bold ${t.text}`, children: c2.volume.toLocaleString() }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs ${t.muted}`, children: " Units" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs font-bold ${c2.successRate > 0 ? "text-[#FF6B35]" : t.muted}`, children: c2.successRate > 0 ? `${c2.successRate}%` : "\u2014" }),
-                c2.successRate > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `flex-1 h-1.5 rounded-full overflow-hidden max-w-[80px] ${dark ? "bg-[#252525]" : "bg-[#2A2D38]"}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "h-full rounded-full bg-[#FF6B35]", style: { width: `${c2.successRate}%` } }) })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${statusColor[c2.status]}`, children: c2.status }) })
-            ]
-          },
-          c2.id
-        )) : filteredHistorical.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "div",
-          {
-            onClick: () => openDetail(c2, true),
-            style: { display: "grid", gridTemplateColumns: COL_HIST },
-            className: `px-6 py-3.5 gap-4 items-center cursor-pointer transition-colors ${t.hover} ${i < filteredHistorical.length - 1 ? `border-b ${t.border}` : ""}`,
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2.5 min-w-0", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `w-2 h-2 rounded-full shrink-0 ${dark ? "bg-[#444]" : "bg-[#ccc]"}` }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-semibold ${t.text} truncate`, children: c2.name })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs ${t.sub}`, children: c2.strategy }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs font-bold ${t.text}`, children: c2.volume.toLocaleString() }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs ${t.muted}`, children: " Units" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: "text-xs font-bold text-[#FF6B35]", children: [
-                  c2.successRate,
-                  "%"
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `flex-1 h-1.5 rounded-full overflow-hidden max-w-[100px] ${dark ? "bg-[#252525]" : "bg-[#2A2D38]"}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "h-full rounded-full bg-[#FF6B35]", style: { width: `${c2.successRate}%` } }) })
-              ] })
-            ]
-          },
-          c2.id
-        )),
-        (activeTab === "active" && filteredActive.length === 0 || activeTab === "historical" && filteredHistorical.length === 0) && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex flex-col items-center justify-center py-16 ${t.muted}`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: "w-8 h-8 mb-3 opacity-30" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "text-sm font-medium", children: "No campaigns match your search" })
-        ] })
-      ] }),
-      showModal && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        CampaignModal,
-        {
-          t,
-          campaign: campaignTemplate || null,
-          isNew: true,
-          readOnly: false,
-          onClose: () => {
-            setShowModal(false);
-            setCampaignTemplate?.(null);
-          },
-          onSave: addCampaign
-        }
-      ),
-      selectedCampaign && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-        CampaignModal,
-        {
-          t,
-          campaign: selectedCampaign,
-          isNew: false,
-          readOnly: selectedIsReadOnly,
-          onClose: () => setSelectedCampaign(null),
-          onSave: updateCampaign
-        }
-      )
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-col flex-1 overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `shrink-0 border-b ${t.border} ${dark ? "bg-[#0e0e0e]" : "bg-[#282C32]"}` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-3 px-6 pt-5 pb-3" }, /* @__PURE__ */ import_react61.default.createElement("h2", { className: `text-base font-bold ${t.text} flex-1` }, "Campaigns"), /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex items-center gap-2 px-3 py-1.5 rounded-xl border ${t.border} ${dark ? "bg-[#161616]" : "bg-[#1E2126]"}`, style: { width: 160 } }, /* @__PURE__ */ import_react61.default.createElement(Search, { className: `w-3.5 h-3.5 ${t.muted} shrink-0` }), /* @__PURE__ */ import_react61.default.createElement(
+      "input",
+      {
+        value: search,
+        onChange: (e) => setSearch(e.target.value),
+        placeholder: "Search\u2026",
+        className: `flex-1 bg-transparent text-xs outline-none ${t.text} min-w-0`
+      }
+    )), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setShowModal(true), className: "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#FF6B35] hover:bg-[#E55520] text-white transition-all shadow-[0_2px_8px_rgba(255,107,53,0.40)] hover:shadow-[0_3px_12px_rgba(255,107,53,0.55)] whitespace-nowrap shrink-0" }, /* @__PURE__ */ import_react61.default.createElement(Plus, { className: "w-3.5 h-3.5" }), "New Campaign")), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center px-6" }, [
+      { id: "active", label: "Active Campaigns", count: campaigns.length },
+      { id: "historical", label: "Historical Performance", count: HISTORICAL_CAMPAIGNS.length }
+    ].map(({ id, label, count }) => /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        key: id,
+        onClick: () => setActiveTab(id),
+        className: `flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap
+                ${activeTab === id ? "border-[#6B7F6B] text-[#6B7F6B]" : `border-transparent ${t.muted}`}`
+      },
+      label,
+      /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-1.5 py-0.5 rounded-full font-bold
+                ${activeTab === id ? "bg-[#6B7F6B]/15 text-[#6B7F6B]" : dark ? "bg-white/[0.06] text-white/35" : "bg-gray-100 text-slate-500"}` }, count)
+    )), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1" }), [
+      { icon: Funnel, label: "Filter" },
+      { icon: SlidersHorizontal, label: "Sort" },
+      { icon: Download, label: "Export" }
+    ].map(({ icon: Icon2, label }) => /* @__PURE__ */ import_react61.default.createElement("button", { key: label, className: `flex items-center gap-1.5 px-3 py-1.5 mb-0.5 rounded-lg text-xs font-medium border ${t.border} ${t.card} ${t.sub} ${t.hover} transition-colors` }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { className: "w-3.5 h-3.5" }), label)))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `sticky top-0 z-10 border-b ${t.border} ${dark ? "bg-[#111]" : "bg-[#1E2126]"}` }, /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        style: { display: "grid", gridTemplateColumns: activeTab === "active" ? COL_ACTIVE : COL_HIST },
+        className: "px-6 py-2.5 gap-4"
+      },
+      (activeTab === "active" ? ["Campaign Name", "Matching Strategy", "Matched Volume", "Success Rate", "Status"] : ["Campaign Name", "Matching Strategy", "Matched Volume", "Success Rate"]).map((h) => /* @__PURE__ */ import_react61.default.createElement("div", { key: h, className: `text-[10px] font-bold uppercase tracking-wider ${t.muted}` }, h))
+    )), activeTab === "active" ? filteredActive.map((c2, i) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: c2.id,
+        onClick: () => openDetail(c2, false),
+        style: { display: "grid", gridTemplateColumns: COL_ACTIVE },
+        className: `px-6 py-3.5 gap-4 items-center cursor-pointer transition-colors ${t.hover} ${i < filteredActive.length - 1 ? `border-b ${t.border}` : ""}`
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2.5 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `w-2 h-2 rounded-full shrink-0 ${dark ? "bg-[#444]" : "bg-[#ccc]"}` }), /* @__PURE__ */ import_react61.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-semibold ${t.text} truncate` }, c2.name), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} mt-0.5` }, c2.target, " \xB7 ", c2.contact))),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs ${t.sub}` }, c2.strategy),
+      /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold ${t.text}` }, c2.volume.toLocaleString()), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs ${t.muted}` }, " Units")),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold ${c2.successRate > 0 ? "text-[#FF6B35]" : t.muted}` }, c2.successRate > 0 ? `${c2.successRate}%` : "\u2014"), c2.successRate > 0 && /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex-1 h-1.5 rounded-full overflow-hidden max-w-[80px] ${dark ? "bg-[#252525]" : "bg-[#2A2D38]"}` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "h-full rounded-full bg-[#FF6B35]", style: { width: `${c2.successRate}%` } }))),
+      /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${statusColor[c2.status]}` }, c2.status))
+    )) : filteredHistorical.map((c2, i) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: c2.id,
+        onClick: () => openDetail(c2, true),
+        style: { display: "grid", gridTemplateColumns: COL_HIST },
+        className: `px-6 py-3.5 gap-4 items-center cursor-pointer transition-colors ${t.hover} ${i < filteredHistorical.length - 1 ? `border-b ${t.border}` : ""}`
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2.5 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `w-2 h-2 rounded-full shrink-0 ${dark ? "bg-[#444]" : "bg-[#ccc]"}` }), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-semibold ${t.text} truncate` }, c2.name)),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs ${t.sub}` }, c2.strategy),
+      /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold ${t.text}` }, c2.volume.toLocaleString()), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs ${t.muted}` }, " Units")),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-xs font-bold text-[#FF6B35]" }, c2.successRate, "%"), /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex-1 h-1.5 rounded-full overflow-hidden max-w-[100px] ${dark ? "bg-[#252525]" : "bg-[#2A2D38]"}` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "h-full rounded-full bg-[#FF6B35]", style: { width: `${c2.successRate}%` } })))
+    )), (activeTab === "active" && filteredActive.length === 0 || activeTab === "historical" && filteredHistorical.length === 0) && /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex flex-col items-center justify-center py-16 ${t.muted}` }, /* @__PURE__ */ import_react61.default.createElement(Search, { className: "w-8 h-8 mb-3 opacity-30" }), /* @__PURE__ */ import_react61.default.createElement("div", { className: "text-sm font-medium" }, "No campaigns match your search"))), showModal && /* @__PURE__ */ import_react61.default.createElement(
+      CampaignModal,
+      {
+        t,
+        campaign: campaignTemplate || null,
+        isNew: true,
+        readOnly: false,
+        onClose: () => {
+          setShowModal(false);
+          setCampaignTemplate?.(null);
+        },
+        onSave: addCampaign
+      }
+    ), selectedCampaign && /* @__PURE__ */ import_react61.default.createElement(
+      CampaignModal,
+      {
+        t,
+        campaign: selectedCampaign,
+        isNew: false,
+        readOnly: selectedIsReadOnly,
+        onClose: () => setSelectedCampaign(null),
+        onSave: updateCampaign
+      }
+    ));
   }
   var CHAT_REPLIES = [
     "Thanks for the update \u2014 we'll review internally and get back to you.",
@@ -55502,237 +54115,185 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       WebkitBackdropFilter: "blur(24px)",
       borderLeft: "1px solid rgba(248,250,252,0.10)"
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-        position: "fixed",
-        top: 44,
-        right: 0,
-        bottom: 0,
-        zIndex: 200,
-        width: 380,
-        transform: open ? "translateX(0)" : "translateX(calc(100% - 56px))",
-        transition: "transform 0.38s cubic-bezier(0.34,1.56,0.64,1)",
-        display: "flex",
-        flexDirection: "column",
-        ...glass,
-        boxShadow: open ? "-8px 0 40px rgba(0,0,0,0.45)" : "none"
-      }, children: [
-        !open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { onClick: () => setOpen(true), style: {
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 56,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
+    return /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      position: "fixed",
+      top: 44,
+      right: 0,
+      bottom: 0,
+      zIndex: 200,
+      width: 380,
+      transform: open ? "translateX(0)" : "translateX(calc(100% - 56px))",
+      transition: "transform 0.38s cubic-bezier(0.34,1.56,0.64,1)",
+      display: "flex",
+      flexDirection: "column",
+      ...glass,
+      boxShadow: open ? "-8px 0 40px rgba(0,0,0,0.45)" : "none"
+    } }, !open && /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setOpen(true), style: {
+      position: "absolute",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 56,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      borderRight: "1px solid rgba(248,250,252,0.08)"
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative" } }, /* @__PURE__ */ import_react61.default.createElement(MessageSquare, { style: { width: 18, height: 18, color: "rgba(248,250,252,0.55)" } }), unread > 0 && /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      position: "absolute",
+      top: -5,
+      right: -5,
+      width: 14,
+      height: 14,
+      borderRadius: "50%",
+      background: "#FF6B35",
+      border: "2px solid rgba(14,16,20,0.88)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 7,
+      fontWeight: 800,
+      color: "#fff",
+      animation: "qBlink 1.4s ease-in-out infinite",
+      boxShadow: "0 0 8px rgba(255,107,53,0.6)"
+    } }, unread)), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 8,
+      fontWeight: 700,
+      color: "rgba(248,250,252,0.35)",
+      fontFamily: "'JetBrains Mono',monospace",
+      letterSpacing: "0.10em",
+      writingMode: "vertical-rl",
+      transform: "rotate(180deg)"
+    } }, "MSGS")), open && /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      padding: "14px 16px",
+      borderBottom: "1px solid rgba(248,250,252,0.08)",
+      flexShrink: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: 10
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      background: "linear-gradient(135deg,#FF6B35,#CC5A25)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 11,
+      fontWeight: 800,
+      color: "#fff",
+      flexShrink: 0
+    } }, (clientName || "?").slice(0, 2).toUpperCase()), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "rgba(248,250,252,0.90)" } }, clientName), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 5, marginTop: 2 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#6B7F6B", animation: "breathe 2s ease-in-out infinite" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, color: "#6B7F6B", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em" } }, "ACTIVE"))), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setOpen(false), style: {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      color: "rgba(248,250,252,0.35)",
+      fontSize: 18,
+      lineHeight: 1,
+      padding: "2px 6px"
+    } }, "\xD7")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 } }, messages.map((m) => /* @__PURE__ */ import_react61.default.createElement("div", { key: m.id, style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: m.type === "internal" ? "flex-end" : "flex-start"
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      fontSize: 9,
+      color: "rgba(248,250,252,0.30)",
+      marginBottom: 3,
+      fontFamily: "'JetBrains Mono',monospace"
+    } }, m.sender, " \xB7 ", m.time), m.text && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      maxWidth: "85%",
+      padding: "9px 12px",
+      borderRadius: m.type === "internal" ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
+      fontSize: 12,
+      lineHeight: 1.55,
+      color: "rgba(248,250,252,0.85)",
+      background: m.type === "internal" ? "rgba(255,107,53,0.12)" : "rgba(248,250,252,0.07)",
+      border: m.type === "internal" ? "1px solid rgba(255,107,53,0.25)" : "1px solid rgba(248,250,252,0.10)"
+    } }, m.text), m.file && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      marginTop: 4,
+      padding: "8px 12px",
+      borderRadius: 8,
+      maxWidth: "85%",
+      background: "rgba(248,250,252,0.06)",
+      border: "1px solid rgba(248,250,252,0.12)",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      cursor: "pointer"
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      width: 28,
+      height: 28,
+      borderRadius: 5,
+      background: "rgba(255,107,53,0.15)",
+      border: "1px solid rgba(255,107,53,0.30)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    } }, /* @__PURE__ */ import_react61.default.createElement(FileText, { style: { width: 13, height: 13, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: "rgba(248,250,252,0.80)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, m.file.name), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: "rgba(248,250,252,0.35)", marginTop: 1 } }, m.file.size)), /* @__PURE__ */ import_react61.default.createElement(Download, { style: { width: 12, height: 12, color: "rgba(248,250,252,0.35)", flexShrink: 0 } })))), /* @__PURE__ */ import_react61.default.createElement("div", { ref: bottomRef })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "10px 14px", borderTop: "1px solid rgba(248,250,252,0.08)", flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "flex",
+      alignItems: "flex-end",
+      gap: 8,
+      background: "rgba(248,250,252,0.05)",
+      border: "1px solid rgba(248,250,252,0.10)",
+      borderRadius: 10,
+      padding: "8px 10px"
+    } }, /* @__PURE__ */ import_react61.default.createElement("input", { type: "file", ref: fileRef, onChange: handleFile, style: { display: "none" } }), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => fileRef.current?.click(), style: { background: "none", border: "none", cursor: "pointer", padding: 2, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(Upload, { style: { width: 14, height: 14, color: "rgba(248,250,252,0.35)" } })), /* @__PURE__ */ import_react61.default.createElement(
+      "textarea",
+      {
+        value: input,
+        onChange: (e) => setInput(e.target.value),
+        onKeyDown: (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMsg(input);
+          }
+        },
+        placeholder: `Message ${clientName}\u2026`,
+        rows: 1,
+        style: {
+          flex: 1,
           background: "none",
           border: "none",
-          cursor: "pointer",
-          borderRight: "1px solid rgba(248,250,252,0.08)"
-        }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MessageSquare, { style: { width: 18, height: 18, color: "rgba(248,250,252,0.55)" } }),
-            unread > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              position: "absolute",
-              top: -5,
-              right: -5,
-              width: 14,
-              height: 14,
-              borderRadius: "50%",
-              background: "#FF6B35",
-              border: "2px solid rgba(14,16,20,0.88)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 7,
-              fontWeight: 800,
-              color: "#fff",
-              animation: "qBlink 1.4s ease-in-out infinite",
-              boxShadow: "0 0 8px rgba(255,107,53,0.6)"
-            }, children: unread })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-            fontSize: 8,
-            fontWeight: 700,
-            color: "rgba(248,250,252,0.35)",
-            fontFamily: "'JetBrains Mono',monospace",
-            letterSpacing: "0.10em",
-            writingMode: "vertical-rl",
-            transform: "rotate(180deg)"
-          }, children: "MSGS" })
-        ] }),
-        open && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-            padding: "14px 16px",
-            borderBottom: "1px solid rgba(248,250,252,0.08)",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 10
-          }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: "linear-gradient(135deg,#FF6B35,#CC5A25)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 11,
-              fontWeight: 800,
-              color: "#fff",
-              flexShrink: 0
-            }, children: (clientName || "?").slice(0, 2).toUpperCase() }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 700, color: "rgba(248,250,252,0.90)" }, children: clientName }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 5, marginTop: 2 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#6B7F6B", animation: "breathe 2s ease-in-out infinite" } }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, color: "#6B7F6B", fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em" }, children: "ACTIVE" })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setOpen(false), style: {
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "rgba(248,250,252,0.35)",
-              fontSize: 18,
-              lineHeight: 1,
-              padding: "2px 6px"
-            }, children: "\xD7" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }, children: [
-            messages.map((m) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-              display: "flex",
-              flexDirection: "column",
-              alignItems: m.type === "internal" ? "flex-end" : "flex-start"
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                fontSize: 9,
-                color: "rgba(248,250,252,0.30)",
-                marginBottom: 3,
-                fontFamily: "'JetBrains Mono',monospace"
-              }, children: [
-                m.sender,
-                " \xB7 ",
-                m.time
-              ] }),
-              m.text && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                maxWidth: "85%",
-                padding: "9px 12px",
-                borderRadius: m.type === "internal" ? "12px 12px 3px 12px" : "12px 12px 12px 3px",
-                fontSize: 12,
-                lineHeight: 1.55,
-                color: "rgba(248,250,252,0.85)",
-                background: m.type === "internal" ? "rgba(255,107,53,0.12)" : "rgba(248,250,252,0.07)",
-                border: m.type === "internal" ? "1px solid rgba(255,107,53,0.25)" : "1px solid rgba(248,250,252,0.10)"
-              }, children: m.text }),
-              m.file && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                marginTop: 4,
-                padding: "8px 12px",
-                borderRadius: 8,
-                maxWidth: "85%",
-                background: "rgba(248,250,252,0.06)",
-                border: "1px solid rgba(248,250,252,0.12)",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer"
-              }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  width: 28,
-                  height: 28,
-                  borderRadius: 5,
-                  background: "rgba(255,107,53,0.15)",
-                  border: "1px solid rgba(255,107,53,0.30)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0
-                }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, { style: { width: 13, height: 13, color: "#FF6B35" } }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontWeight: 600, color: "rgba(248,250,252,0.80)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: m.file.name }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, color: "rgba(248,250,252,0.35)", marginTop: 1 }, children: m.file.size })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { style: { width: 12, height: 12, color: "rgba(248,250,252,0.35)", flexShrink: 0 } })
-              ] })
-            ] }, m.id)),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: bottomRef })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "10px 14px", borderTop: "1px solid rgba(248,250,252,0.08)", flexShrink: 0 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-              display: "flex",
-              alignItems: "flex-end",
-              gap: 8,
-              background: "rgba(248,250,252,0.05)",
-              border: "1px solid rgba(248,250,252,0.10)",
-              borderRadius: 10,
-              padding: "8px 10px"
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { type: "file", ref: fileRef, onChange: handleFile, style: { display: "none" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => fileRef.current?.click(), style: { background: "none", border: "none", cursor: "pointer", padding: 2, flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { style: { width: 14, height: 14, color: "rgba(248,250,252,0.35)" } }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                "textarea",
-                {
-                  value: input,
-                  onChange: (e) => setInput(e.target.value),
-                  onKeyDown: (e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      sendMsg(input);
-                    }
-                  },
-                  placeholder: `Message ${clientName}\u2026`,
-                  rows: 1,
-                  style: {
-                    flex: 1,
-                    background: "none",
-                    border: "none",
-                    outline: "none",
-                    resize: "none",
-                    fontSize: 12,
-                    color: "rgba(248,250,252,0.80)",
-                    fontFamily: "'Inter',system-ui,sans-serif",
-                    maxHeight: 80,
-                    lineHeight: 1.5
-                  }
-                }
-              ),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => sendMsg(input), disabled: !input.trim(), style: {
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                flexShrink: 0,
-                background: input.trim() ? "#FF6B35" : "rgba(248,250,252,0.08)",
-                border: "none",
-                cursor: input.trim() ? "pointer" : "default",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 0.2s",
-                boxShadow: input.trim() ? "0 2px 8px rgba(255,107,53,0.40)" : "none"
-              }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Send, { style: { width: 13, height: 13, color: input.trim() ? "#fff" : "rgba(248,250,252,0.25)" } }) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-              fontSize: 9,
-              color: "rgba(248,250,252,0.20)",
-              marginTop: 6,
-              textAlign: "center",
-              fontFamily: "'JetBrains Mono',monospace"
-            }, children: "End-to-end encrypted \xB7 Internal + External visible" })
-          ] })
-        ] })
-      ] }),
-      open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-        position: "fixed",
-        inset: 0,
-        zIndex: 199,
-        pointerEvents: "none",
-        background: "rgba(0,0,0,0.15)"
-      } })
-    ] });
+          outline: "none",
+          resize: "none",
+          fontSize: 12,
+          color: "rgba(248,250,252,0.80)",
+          fontFamily: "'Inter',system-ui,sans-serif",
+          maxHeight: 80,
+          lineHeight: 1.5
+        }
+      }
+    ), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => sendMsg(input), disabled: !input.trim(), style: {
+      width: 28,
+      height: 28,
+      borderRadius: 7,
+      flexShrink: 0,
+      background: input.trim() ? "#FF6B35" : "rgba(248,250,252,0.08)",
+      border: "none",
+      cursor: input.trim() ? "pointer" : "default",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "background 0.2s",
+      boxShadow: input.trim() ? "0 2px 8px rgba(255,107,53,0.40)" : "none"
+    } }, /* @__PURE__ */ import_react61.default.createElement(Send, { style: { width: 13, height: 13, color: input.trim() ? "#fff" : "rgba(248,250,252,0.25)" } }))), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      fontSize: 9,
+      color: "rgba(248,250,252,0.20)",
+      marginTop: 6,
+      textAlign: "center",
+      fontFamily: "'JetBrains Mono',monospace"
+    } }, "End-to-end encrypted \xB7 Internal + External visible")))), open && /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 199,
+      pointerEvents: "none",
+      background: "rgba(0,0,0,0.15)"
+    } }));
   }
   var CORP_JOURNEY_STAGES = [
     { id: "lead", label: "Lead" },
@@ -55851,389 +54412,182 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       }, 3500);
       return () => clearInterval(iv);
     }, []);
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, background: pc.pageBg }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClientChatDrawer, { clientName: corp.company || corp.name, dark }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flexShrink: 0, padding: "13px 20px", paddingRight: 72, borderBottom: "1px solid var(--c-border2)", background: "var(--c-card2)", display: "flex", alignItems: "center", gap: 12 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "button",
-          {
-            onClick: onBack,
-            style: { padding: "6px 12px", borderRadius: 8, background: "var(--c-card3)", border: "1px solid var(--c-border2)", color: pc.sub, fontSize: 11, fontWeight: 600, cursor: "pointer" },
-            children: "\u2190 Back"
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#FF6B35,#CC5A25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: pc.focus, flexShrink: 0 }, children: (corp.company || corp.name || "?").slice(0, 2).toUpperCase() }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 14, fontWeight: 800, color: pc.focus }, children: [
-            corp.flag,
-            " ",
-            corp.company || corp.name
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11, color: pc.label }, children: [
-            corp.industry || "Corporate",
-            corp.ticker ? ` \xB7 ${corp.ticker}` : ""
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, padding: "3px 10px", borderRadius: 999, fontWeight: 700, background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" }, children: corp.stage || "Prospect" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1 } }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-          "button",
-          {
-            style: {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "8px 16px",
-              borderRadius: 6,
-              cursor: "pointer",
-              background: "#FF6B35",
-              border: "1px solid #FF6B35",
-              color: "#FDFDFD",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              fontFamily: "'JetBrains Mono', monospace",
-              textTransform: "uppercase",
-              boxShadow: "0 2px 10px rgba(255,107,53,0.35)",
-              transition: "opacity 0.15s"
-            },
-            onMouseEnter: (e) => e.currentTarget.style.opacity = "0.85",
-            onMouseLeave: (e) => e.currentTarget.style.opacity = "1",
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 12, height: 12, flexShrink: 0 } }),
-              "SEND NDA NOW"
-            ]
-          }
-        )
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flexShrink: 0, padding: "14px 84px 10px 28px", borderBottom: "1px solid var(--c-border2)", background: "var(--c-card2)" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", alignItems: "center" }, children: CORP_JOURNEY_STAGES.map((s2, idx) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", flex: idx < CORP_JOURNEY_STAGES.length - 1 ? 1 : "none" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flexShrink: 0 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-            width: 30,
-            height: 30,
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: idx < step ? dark ? "#364A36" : "#E0EDE0" : idx === step ? "#FF6B35" : dark ? "#1D2028" : "#F3F4F6",
-            border: idx < step ? "2px solid #5A7A5A" : idx === step ? "2px solid #FF6B35" : "2px solid " + (dark ? "#2A2D38" : "#CBD5E1"),
-            color: idx < step ? dark ? "#9EBD9E" : "#6B7F6B" : idx === step ? "#fff" : dark ? "rgba(248,250,252,0.42)" : "#64748B",
-            fontSize: 11,
-            fontWeight: 800,
-            flexShrink: 0,
-            boxShadow: idx === step ? "0 0 14px rgba(255,107,53,0.45)" : "none"
-          }, children: idx < step ? "\u2713" : idx + 1 }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "center" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontWeight: 600, whiteSpace: "nowrap", color: idx < step ? dark ? "#9EBD9E" : "#6B7F6B" : idx === step ? "#FF6B35" : dark ? "rgba(248,250,252,0.45)" : "#64748B" }, children: s2.label }),
-            s2.optional && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 7, color: dark ? "rgba(248,250,252,0.30)" : "#9CA3AF", letterSpacing: "0.06em", marginTop: 1 }, children: "OPTIONAL" })
-          ] })
-        ] }),
-        idx < CORP_JOURNEY_STAGES.length - 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, height: 2, margin: "0 5px 18px", background: idx < step ? "#5A7A5A" : dark ? "#2A2D38" : "#E5E7EB", minWidth: 6 } })
-      ] }, s2.id)) }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, display: "flex", minHeight: 0, overflow: "hidden", paddingRight: 56 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, overflowY: "auto", padding: "20px 20px 28px" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, padding: "16px 20px", marginBottom: 16, display: "flex", alignItems: "center", gap: 16 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 54, height: 54, borderRadius: 14, background: "var(--c-card2)", border: "2px solid #FF6B35", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#FF6B35", flexShrink: 0 }, children: (corp.contact?.name || "?").split(" ").map((n) => n[0]).join("").slice(0, 2) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 14, fontWeight: 800, color: pc.focus, marginBottom: 2 }, children: corp.contact?.name || "\u2014" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: pc.sub, marginBottom: 10 }, children: corp.contact?.title || "" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-                  "a",
-                  {
-                    href: corp.contact?.url || "#",
-                    target: "_blank",
-                    rel: "noopener noreferrer",
-                    style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, padding: "5px 11px", borderRadius: 8, background: "rgba(10,102,194,0.15)", border: "1px solid rgba(10,102,194,0.35)", color: "#5BA3D9", textDecoration: "none" },
-                    children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "currentColor", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" }) }),
-                      "View LinkedIn"
-                    ]
-                  }
-                ),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, padding: "5px 11px", borderRadius: 8, background: "rgba(107,127,107,0.12)", border: "1px solid rgba(107,127,107,0.30)", color: "#6B7F6B", cursor: "pointer" }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, { style: { width: 11, height: 11 } }),
-                  "Send Email"
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, padding: "5px 11px", borderRadius: 8, background: dark ? "rgba(42,45,56,0.8)" : "#F3F4F6", border: "1px solid " + (dark ? "var(--c-border2)" : "#CBD5E1"), color: pc.sub, cursor: "pointer" }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Phone, { style: { width: 11, height: 11 } }),
-                  "Schedule Call"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "right", flexShrink: 0, paddingLeft: 8 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, marginBottom: 2 }, children: "Carbon Need" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 16, fontWeight: 800, color: pc.focus, marginBottom: 4 }, children: corp.need || "\u2014" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label, lineHeight: 1.5, maxWidth: 160 }, children: corp.commitment || "" }),
-              corp.emissions && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 10, color: pc.label, marginTop: 4 }, children: [
-                corp.emissions,
-                "/yr"
-              ] })
-            ] })
-          ] }),
-          corp.signals?.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, padding: "14px 18px", marginBottom: 16 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }, children: "Intelligence Signals" }),
-            corp.signals.map((sig, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: 8, marginBottom: i < corp.signals.length - 1 ? 8 : 0 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 5, height: 5, borderRadius: "50%", background: "#FF6B35", marginTop: 5, flexShrink: 0 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: pc.sub, lineHeight: 1.55 }, children: sig })
-            ] }, i))
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, padding: "14px 18px", marginBottom: 16 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }, children: "Initial Name Screening" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 12,
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: dark ? "rgba(143,173,143,0.07)" : "rgba(143,173,143,0.08)",
-              border: `1px solid ${dark ? "rgba(143,173,143,0.20)" : "rgba(143,173,143,0.25)"}`
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 30, height: 30, borderRadius: "50%", background: "rgba(143,173,143,0.15)", border: "1px solid rgba(143,173,143,0.30)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 14, height: 14, color: "#7EB87E" } }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 800, color: "#7EB87E", lineHeight: 1.2 }, children: "CLEARED" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, color: pc.sub, marginTop: 1 }, children: [
-                  "Refinitiv World-Check \xB7 Screened ",
-                  (/* @__PURE__ */ new Date()).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                ] })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                fontSize: 8,
-                fontWeight: 700,
-                padding: "3px 8px",
-                borderRadius: 3,
-                background: "rgba(143,173,143,0.12)",
-                color: "#7EB87E",
-                border: "1px solid rgba(143,173,143,0.25)",
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: "0.10em",
-                flexShrink: 0
-              }, children: "NO ISSUES" })
-            ] }),
-            [
-              { label: "Adverse Media", status: "Clear" },
-              { label: "Global Sanctions List", status: "Clear" },
-              { label: "PEP Screening", status: "Clear" },
-              { label: "Regulatory Watch List", status: "Clear" }
-            ].map(({ label, status }, i, arr) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "6px 2px",
-              borderBottom: i < arr.length - 1 ? `1px solid ${dark ? "rgba(248,250,252,0.06)" : "#F3F4F6"}` : "none"
-            }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, color: pc.sub }, children: label }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, fontWeight: 700, color: "#7EB87E", display: "flex", alignItems: "center", gap: 4 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { style: { width: 10, height: 10 } }),
-                status
-              ] })
-            ] }, label))
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, overflow: "hidden" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "14px 20px", borderBottom: "1px solid var(--c-border2)", display: "flex", alignItems: "center", gap: 10 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 30, height: 30, borderRadius: 9, background: "rgba(255,107,53,0.12)", border: "1px solid rgba(255,107,53,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Brain, { style: { width: 14, height: 14, color: "#FF6B35" } }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, fontWeight: 800, color: pc.focus }, children: "Nexus Docs" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.label }, children: "AI-driven collection & review across the deal lifecycle" })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1 } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: dark ? "rgba(70,90,70,0.35)" : "rgba(107,127,107,0.10)", border: dark ? "1px solid rgba(90,110,90,0.3)" : "1px solid rgba(107,127,107,0.25)", color: dark ? "#9EBD9E" : "#374151" }, children: [
-                doneDocs.length,
-                "/",
-                CORP_DOCS.length,
-                " Complete"
-              ] })
-            ] }),
-            CORP_DOCS.map((doc, i) => {
-              const done = doneDocs.includes(doc.stage);
-              const isNext = !done && i === nextDocIdx;
-              return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                padding: "16px 20px",
-                borderBottom: i < CORP_DOCS.length - 1 ? "1px solid var(--c-border2)" : "none",
-                background: isNext ? "rgba(255,107,53,0.04)" : "transparent",
-                display: "flex",
-                gap: 14,
-                alignItems: "flex-start"
-              }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  flexShrink: 0,
-                  marginTop: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: done ? "rgba(70,90,70,0.45)" : isNext ? "rgba(255,107,53,0.15)" : dark ? "#1D2028" : "#F3F4F6",
-                  border: done ? "1px solid rgba(90,110,90,0.45)" : isNext ? "1px solid rgba(255,107,53,0.35)" : "1px solid " + (dark ? "var(--c-border2)" : "#E5E7EB")
-                }, children: done ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 14, color: dark ? "#9EBD9E" : "#6B7F6B" }, children: "\u2713" }) : isNext ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 11, color: "#FF6B35" }, children: "\u25B6" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { style: { width: 12, height: 12, color: pc.label } }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 5, flexWrap: "wrap" }, children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 12, fontWeight: 700, color: done ? dark ? "#9EBD9E" : "#6B7F6B" : isNext ? dark ? "#fff" : "#111827" : dark ? "rgba(248,250,252,0.48)" : "#64748B" }, children: doc.label }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: dark ? "rgba(42,45,56,0.8)" : "#F3F4F6", border: "1px solid " + (dark ? "var(--c-border2)" : "#CBD5E1"), color: pc.label }, children: doc.abbr }),
-                    done && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: dark ? "rgba(70,90,70,0.4)" : "#F0F7F0", border: dark ? "1px solid rgba(90,110,90,0.4)" : "1px solid #C8E6C8", color: dark ? "#9EBD9E" : "#5A6E5A" }, children: "SIGNED" }),
-                    isNext && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(255,107,53,0.12)", border: "1px solid rgba(255,107,53,0.3)", color: "#FF6B35" }, children: "ACTION REQUIRED" })
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, color: pc.label, lineHeight: 1.6, marginBottom: 8 }, children: doc.desc }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: {
-                    fontSize: 10,
-                    lineHeight: 1.5,
-                    padding: "7px 10px",
-                    borderRadius: 8,
-                    marginBottom: 10,
-                    background: isNext ? "rgba(255,107,53,0.07)" : dark ? "rgba(42,45,56,0.4)" : "#F9FAFB",
-                    border: `1px solid ${isNext ? "rgba(255,107,53,0.18)" : dark ? "#2A2D38" : "#E5E7EB"}`,
-                    color: isNext ? "rgba(255,107,53,0.85)" : dark ? "rgba(248,250,252,0.48)" : "#64748B"
-                  }, children: [
-                    "\u{1F916} ",
-                    doc.ai
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 7, flexWrap: "wrap" }, children: done ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "5px 12px", borderRadius: 7, background: dark ? "rgba(70,90,70,0.3)" : "#F0F7F0", border: "1px solid " + (dark ? "rgba(90,110,90,0.4)" : "#C8E6C8"), color: dark ? "#9EBD9E" : "#5A6E5A", cursor: "pointer" }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, { style: { width: 10, height: 10 } }),
-                      "View Signed"
-                    ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "5px 12px", borderRadius: 7, background: dark ? "rgba(42,45,56,0.8)" : "#F3F4F6", border: "1px solid " + (dark ? "var(--c-border2)" : "#CBD5E1"), color: pc.label, cursor: "pointer" }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { style: { width: 10, height: 10 } }),
-                      "Download"
-                    ] })
-                  ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { style: {
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      padding: "5px 12px",
-                      borderRadius: 7,
-                      cursor: isNext ? "pointer" : "not-allowed",
-                      background: isNext ? "rgba(255,107,53,0.12)" : dark ? "rgba(42,45,56,0.5)" : "#F3F4F6",
-                      border: isNext ? "1px solid rgba(255,107,53,0.35)" : "1px solid var(--c-border2)",
-                      color: isNext ? "#FF6B35" : dark ? "rgba(248,250,252,0.18)" : "#64748B"
-                    }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { style: { width: 10, height: 10 } }),
-                      doc.file,
-                      " ",
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { opacity: 0.55, marginLeft: 3 }, children: [
-                        "(",
-                        doc.size,
-                        ")"
-                      ] })
-                    ] }),
-                    isNext && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "5px 12px", borderRadius: 7, background: "rgba(255,107,53,0.14)", border: "1px solid rgba(255,107,53,0.3)", color: "#FF6B35", cursor: "pointer" }, children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { style: { width: 10, height: 10 } }),
-                      "AI Auto-Fill"
-                    ] })
-                  ] }) })
-                ] })
-              ] }, doc.stage);
-            })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 300, flexShrink: 0, borderLeft: "1px solid " + pc.border, background: pc.feedBg, display: "flex", flexDirection: "column", overflow: "hidden" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "16px 16px 12px", borderBottom: "1px solid " + pc.border, flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 22, height: 22, borderRadius: 5, background: "rgba(255,107,53,0.10)", border: "1px solid rgba(255,107,53,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 11, height: 11, color: "#FF6B35" } }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.feedHd, fontWeight: 700, fontSize: 12, letterSpacing: "0.08em" }, children: "INTELLIGENCE FEED" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => setFeedActive((a2) => !a2), style: {
-              marginLeft: "auto",
-              flexShrink: 0,
-              width: 32,
-              height: 18,
-              borderRadius: 999,
-              background: feedActive ? "#FF6B35" : dark ? "rgba(248,250,252,0.10)" : "#CBD5E1",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              position: "relative",
-              boxShadow: feedActive ? "0 0 8px rgba(255,107,53,0.55)" : "none",
-              transition: "background 0.22s, box-shadow 0.22s"
-            }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-              position: "absolute",
-              top: 2,
-              borderRadius: "50%",
-              width: 14,
-              height: 14,
-              background: "#FDFDFD",
-              left: feedActive ? 16 : 2,
-              transition: "left 0.22s",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
-            } }) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { padding: "12px 16px", borderBottom: "1px solid " + pc.border, flexShrink: 0 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: dark ? "rgba(255,107,53,0.08)" : "rgba(255,107,53,0.05)", border: "1px solid rgba(255,107,53,0.22)", borderRadius: 10, padding: "10px 12px", marginBottom: 8, boxShadow: "0 2px 14px rgba(255,107,53,0.12)" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 700, color: "#FF6B35", marginBottom: 6 }, children: "Close Probability" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, height: 5, borderRadius: 3, background: dark ? "rgba(248,250,252,0.06)" : "#E5E7EB", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: `${corp.score || 70}%`, height: "100%", background: "linear-gradient(90deg,#FF6B35,#CC5A25)", borderRadius: 3 } }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 13, fontWeight: 800, color: "#FF6B35", minWidth: 34 }, children: [
-                  corp.score || 70,
-                  "%"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: dark ? "rgba(107,127,107,0.10)" : "rgba(107,127,107,0.05)", border: "1px solid rgba(107,127,107,0.25)", borderRadius: 10, padding: "10px 12px", marginBottom: 8, boxShadow: "0 2px 14px rgba(107,127,107,0.10)" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 700, color: dark ? "#9EBD9E" : "#6B7F6B" }, children: "Doc Completeness" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 9, fontWeight: 700, color: dark ? "#9EBD9E" : "#374151" }, children: [
-                  doneDocs.length,
-                  "/",
-                  CORP_DOCS.length,
-                  " Complete"
-                ] })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, height: 5, borderRadius: 3, background: dark ? "rgba(248,250,252,0.06)" : "#E5E7EB", overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: `${Math.round(doneDocs.length / CORP_DOCS.length * 100)}%`, height: "100%", background: `linear-gradient(90deg,${dark ? "#5A7A5A" : "#6B7F6B"},${dark ? "#9EBD9E" : "#7A9D7A"})`, borderRadius: 3 } }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 13, fontWeight: 800, color: dark ? "#9EBD9E" : "#6B7F6B", minWidth: 34 }, children: [
-                  Math.round(doneDocs.length / CORP_DOCS.length * 100),
-                  "%"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { background: dark ? "rgba(204,90,37,0.10)" : "rgba(204,90,37,0.05)", border: "1px solid rgba(204,90,37,0.22)", borderRadius: 10, padding: "10px 12px", boxShadow: "0 2px 14px rgba(204,90,37,0.10)" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 11, fontWeight: 700, color: "#F0A080", marginBottom: 4 }, children: "Deal Risk" }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, color: pc.sub, lineHeight: 1.5 }, children: corp.warmth === "cold" ? "\u26A0 Low engagement \u2014 consider outreach acceleration" : corp.warmth === "warm" ? "\u2022 Moderate engagement \u2014 maintain momentum" : "\u2713 High engagement \u2014 strong buying signals detected" })
-            ] })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { flex: 1, overflowY: "auto" }, children: feedActive ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
-            [...log2].reverse().map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "div",
-              {
-                style: {
-                  padding: "12px 16px",
-                  borderBottom: "1px solid " + pc.feedBd,
-                  borderLeft: `2px solid ${i === 0 ? "#FF6B35" : "transparent"}`,
-                  background: i === 0 ? "rgba(255,107,53,0.04)" : "transparent",
-                  cursor: "pointer",
-                  transition: "background 0.2s"
-                },
-                onMouseEnter: (e) => {
-                  if (i !== 0) e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)";
-                },
-                onMouseLeave: (e) => {
-                  if (i !== 0) e.currentTarget.style.background = "transparent";
-                },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { color: i === 0 ? "#FF6B35" : pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", marginBottom: 4 }, children: [
-                    l.ts,
-                    " \xB7 AGENT LOG"
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: i === 0 ? pc.feedHd : pc.sub, fontSize: 11, lineHeight: 1.45 }, children: l.text })
-                ]
-              },
-              i
-            )),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { padding: "10px 16px", fontSize: 9, color: "rgba(255,107,53,0.5)", fontFamily: "'JetBrains Mono', monospace" }, children: "\u2588" })
-          ] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "32px 20px", gap: 8, minHeight: 120 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, { style: { width: 22, height: 22, color: dark ? "rgba(255,255,255,0.15)" : "#CBD5E1" } }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, color: pc.label, textAlign: "center", lineHeight: 1.5 }, children: [
-              "Intelligence feed paused.",
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("br", {}),
-              "Toggle on to resume live updates."
-            ] })
-          ] }) })
-        ] })
-      ] })
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, background: pc.pageBg } }, /* @__PURE__ */ import_react61.default.createElement(ClientChatDrawer, { clientName: corp.company || corp.name, dark }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flexShrink: 0, padding: "13px 20px", paddingRight: 72, borderBottom: "1px solid var(--c-border2)", background: "var(--c-card2)", display: "flex", alignItems: "center", gap: 12 } }, /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        onClick: onBack,
+        style: { padding: "6px 12px", borderRadius: 8, background: "var(--c-card3)", border: "1px solid var(--c-border2)", color: pc.sub, fontSize: 11, fontWeight: 600, cursor: "pointer" }
+      },
+      "\u2190 Back"
+    ), /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#FF6B35,#CC5A25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: pc.focus, flexShrink: 0 } }, (corp.company || corp.name || "?").slice(0, 2).toUpperCase()), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: pc.focus } }, corp.flag, " ", corp.company || corp.name), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.label } }, corp.industry || "Corporate", corp.ticker ? ` \xB7 ${corp.ticker}` : "")), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, padding: "3px 10px", borderRadius: 999, fontWeight: 700, background: "rgba(255,107,53,0.12)", color: "#FF6B35", border: "1px solid rgba(255,107,53,0.25)" } }, corp.stage || "Prospect"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1 } }), /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          padding: "8px 16px",
+          borderRadius: 6,
+          cursor: "pointer",
+          background: "#FF6B35",
+          border: "1px solid #FF6B35",
+          color: "#FDFDFD",
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          fontFamily: "'JetBrains Mono', monospace",
+          textTransform: "uppercase",
+          boxShadow: "0 2px 10px rgba(255,107,53,0.35)",
+          transition: "opacity 0.15s"
+        },
+        onMouseEnter: (e) => e.currentTarget.style.opacity = "0.85",
+        onMouseLeave: (e) => e.currentTarget.style.opacity = "1"
+      },
+      /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 12, height: 12, flexShrink: 0 } }),
+      "SEND NDA NOW"
+    )), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flexShrink: 0, padding: "14px 84px 10px 28px", borderBottom: "1px solid var(--c-border2)", background: "var(--c-card2)" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center" } }, CORP_JOURNEY_STAGES.map((s2, idx) => /* @__PURE__ */ import_react61.default.createElement("div", { key: s2.id, style: { display: "flex", alignItems: "center", flex: idx < CORP_JOURNEY_STAGES.length - 1 ? 1 : "none" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      width: 30,
+      height: 30,
+      borderRadius: "50%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: idx < step ? dark ? "#364A36" : "#E0EDE0" : idx === step ? "#FF6B35" : dark ? "#1D2028" : "#F3F4F6",
+      border: idx < step ? "2px solid #5A7A5A" : idx === step ? "2px solid #FF6B35" : "2px solid " + (dark ? "#2A2D38" : "#CBD5E1"),
+      color: idx < step ? dark ? "#9EBD9E" : "#6B7F6B" : idx === step ? "#fff" : dark ? "rgba(248,250,252,0.42)" : "#64748B",
+      fontSize: 11,
+      fontWeight: 800,
+      flexShrink: 0,
+      boxShadow: idx === step ? "0 0 14px rgba(255,107,53,0.45)" : "none"
+    } }, idx < step ? "\u2713" : idx + 1), /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "center" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontWeight: 600, whiteSpace: "nowrap", color: idx < step ? dark ? "#9EBD9E" : "#6B7F6B" : idx === step ? "#FF6B35" : dark ? "rgba(248,250,252,0.45)" : "#64748B" } }, s2.label), s2.optional && /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 7, color: dark ? "rgba(248,250,252,0.30)" : "#9CA3AF", letterSpacing: "0.06em", marginTop: 1 } }, "OPTIONAL"))), idx < CORP_JOURNEY_STAGES.length - 1 && /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, height: 2, margin: "0 5px 18px", background: idx < step ? "#5A7A5A" : dark ? "#2A2D38" : "#E5E7EB", minWidth: 6 } }))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, display: "flex", minHeight: 0, overflow: "hidden", paddingRight: 56 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto", padding: "20px 20px 28px" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, padding: "16px 20px", marginBottom: 16, display: "flex", alignItems: "center", gap: 16 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 54, height: 54, borderRadius: 14, background: "var(--c-card2)", border: "2px solid #FF6B35", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#FF6B35", flexShrink: 0 } }, (corp.contact?.name || "?").split(" ").map((n) => n[0]).join("").slice(0, 2)), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: pc.focus, marginBottom: 2 } }, corp.contact?.name || "\u2014"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.sub, marginBottom: 10 } }, corp.contact?.title || ""), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } }, /* @__PURE__ */ import_react61.default.createElement(
+      "a",
+      {
+        href: corp.contact?.url || "#",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, padding: "5px 11px", borderRadius: 8, background: "rgba(10,102,194,0.15)", border: "1px solid rgba(10,102,194,0.35)", color: "#5BA3D9", textDecoration: "none" }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "currentColor" }, /* @__PURE__ */ import_react61.default.createElement("path", { d: "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" })),
+      "View LinkedIn"
+    ), /* @__PURE__ */ import_react61.default.createElement("button", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, padding: "5px 11px", borderRadius: 8, background: "rgba(107,127,107,0.12)", border: "1px solid rgba(107,127,107,0.30)", color: "#6B7F6B", cursor: "pointer" } }, /* @__PURE__ */ import_react61.default.createElement(Mail, { style: { width: 11, height: 11 } }), "Send Email"), /* @__PURE__ */ import_react61.default.createElement("button", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, padding: "5px 11px", borderRadius: 8, background: dark ? "rgba(42,45,56,0.8)" : "#F3F4F6", border: "1px solid " + (dark ? "var(--c-border2)" : "#CBD5E1"), color: pc.sub, cursor: "pointer" } }, /* @__PURE__ */ import_react61.default.createElement(Phone, { style: { width: 11, height: 11 } }), "Schedule Call"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "right", flexShrink: 0, paddingLeft: 8 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginBottom: 2 } }, "Carbon Need"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: pc.focus, marginBottom: 4 } }, corp.need || "\u2014"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, lineHeight: 1.5, maxWidth: 160 } }, corp.commitment || ""), corp.emissions && /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label, marginTop: 4 } }, corp.emissions, "/yr"))), corp.signals?.length > 0 && /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, padding: "14px 18px", marginBottom: 16 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 } }, "Intelligence Signals"), corp.signals.map((sig, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: { display: "flex", alignItems: "flex-start", gap: 8, marginBottom: i < corp.signals.length - 1 ? 8 : 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 5, height: 5, borderRadius: "50%", background: "#FF6B35", marginTop: 5, flexShrink: 0 } }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.sub, lineHeight: 1.55 } }, sig)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, padding: "14px 18px", marginBottom: 16 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: pc.label, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 } }, "Initial Name Screening"), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 12,
+      padding: "10px 12px",
+      borderRadius: 10,
+      background: dark ? "rgba(143,173,143,0.07)" : "rgba(143,173,143,0.08)",
+      border: `1px solid ${dark ? "rgba(143,173,143,0.20)" : "rgba(143,173,143,0.25)"}`
+    } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 30, height: 30, borderRadius: "50%", background: "rgba(143,173,143,0.15)", border: "1px solid rgba(143,173,143,0.30)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 14, height: 14, color: "#7EB87E" } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#7EB87E", lineHeight: 1.2 } }, "CLEARED"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, color: pc.sub, marginTop: 1 } }, "Refinitiv World-Check \xB7 Screened ", (/* @__PURE__ */ new Date()).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }))), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      fontSize: 8,
+      fontWeight: 700,
+      padding: "3px 8px",
+      borderRadius: 3,
+      background: "rgba(143,173,143,0.12)",
+      color: "#7EB87E",
+      border: "1px solid rgba(143,173,143,0.25)",
+      fontFamily: "'JetBrains Mono', monospace",
+      letterSpacing: "0.10em",
+      flexShrink: 0
+    } }, "NO ISSUES")), [
+      { label: "Adverse Media", status: "Clear" },
+      { label: "Global Sanctions List", status: "Clear" },
+      { label: "PEP Screening", status: "Clear" },
+      { label: "Regulatory Watch List", status: "Clear" }
+    ].map(({ label, status }, i, arr) => /* @__PURE__ */ import_react61.default.createElement("div", { key: label, style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "6px 2px",
+      borderBottom: i < arr.length - 1 ? `1px solid ${dark ? "rgba(248,250,252,0.06)" : "#F3F4F6"}` : "none"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: pc.sub } }, label), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, color: "#7EB87E", display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { style: { width: 10, height: 10 } }), status)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: "var(--c-card3)", border: "1px solid var(--c-border2)", borderRadius: 16, overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "14px 20px", borderBottom: "1px solid var(--c-border2)", display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 30, height: 30, borderRadius: 9, background: "rgba(255,107,53,0.12)", border: "1px solid rgba(255,107,53,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement(Brain, { style: { width: 14, height: 14, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: pc.focus } }, "Nexus Docs"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.label } }, "AI-driven collection & review across the deal lifecycle")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1 } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: dark ? "rgba(70,90,70,0.35)" : "rgba(107,127,107,0.10)", border: dark ? "1px solid rgba(90,110,90,0.3)" : "1px solid rgba(107,127,107,0.25)", color: dark ? "#9EBD9E" : "#374151" } }, doneDocs.length, "/", CORP_DOCS.length, " Complete")), CORP_DOCS.map((doc, i) => {
+      const done = doneDocs.includes(doc.stage);
+      const isNext = !done && i === nextDocIdx;
+      return /* @__PURE__ */ import_react61.default.createElement("div", { key: doc.stage, style: {
+        padding: "16px 20px",
+        borderBottom: i < CORP_DOCS.length - 1 ? "1px solid var(--c-border2)" : "none",
+        background: isNext ? "rgba(255,107,53,0.04)" : "transparent",
+        display: "flex",
+        gap: 14,
+        alignItems: "flex-start"
+      } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        flexShrink: 0,
+        marginTop: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: done ? "rgba(70,90,70,0.45)" : isNext ? "rgba(255,107,53,0.15)" : dark ? "#1D2028" : "#F3F4F6",
+        border: done ? "1px solid rgba(90,110,90,0.45)" : isNext ? "1px solid rgba(255,107,53,0.35)" : "1px solid " + (dark ? "var(--c-border2)" : "#E5E7EB")
+      } }, done ? /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 14, color: dark ? "#9EBD9E" : "#6B7F6B" } }, "\u2713") : isNext ? /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 11, color: "#FF6B35" } }, "\u25B6") : /* @__PURE__ */ import_react61.default.createElement(Lock, { style: { width: 12, height: 12, color: pc.label } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 5, flexWrap: "wrap" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: done ? dark ? "#9EBD9E" : "#6B7F6B" : isNext ? dark ? "#fff" : "#111827" : dark ? "rgba(248,250,252,0.48)" : "#64748B" } }, doc.label), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: dark ? "rgba(42,45,56,0.8)" : "#F3F4F6", border: "1px solid " + (dark ? "var(--c-border2)" : "#CBD5E1"), color: pc.label } }, doc.abbr), done && /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: dark ? "rgba(70,90,70,0.4)" : "#F0F7F0", border: dark ? "1px solid rgba(90,110,90,0.4)" : "1px solid #C8E6C8", color: dark ? "#9EBD9E" : "#5A6E5A" } }, "SIGNED"), isNext && /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(255,107,53,0.12)", border: "1px solid rgba(255,107,53,0.3)", color: "#FF6B35" } }, "ACTION REQUIRED")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: pc.label, lineHeight: 1.6, marginBottom: 8 } }, doc.desc), /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        fontSize: 10,
+        lineHeight: 1.5,
+        padding: "7px 10px",
+        borderRadius: 8,
+        marginBottom: 10,
+        background: isNext ? "rgba(255,107,53,0.07)" : dark ? "rgba(42,45,56,0.4)" : "#F9FAFB",
+        border: `1px solid ${isNext ? "rgba(255,107,53,0.18)" : dark ? "#2A2D38" : "#E5E7EB"}`,
+        color: isNext ? "rgba(255,107,53,0.85)" : dark ? "rgba(248,250,252,0.48)" : "#64748B"
+      } }, "\u{1F916} ", doc.ai), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 7, flexWrap: "wrap" } }, done ? /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, /* @__PURE__ */ import_react61.default.createElement("button", { style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "5px 12px", borderRadius: 7, background: dark ? "rgba(70,90,70,0.3)" : "#F0F7F0", border: "1px solid " + (dark ? "rgba(90,110,90,0.4)" : "#C8E6C8"), color: dark ? "#9EBD9E" : "#5A6E5A", cursor: "pointer" } }, /* @__PURE__ */ import_react61.default.createElement(Eye, { style: { width: 10, height: 10 } }), "View Signed"), /* @__PURE__ */ import_react61.default.createElement("button", { style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "5px 12px", borderRadius: 7, background: dark ? "rgba(42,45,56,0.8)" : "#F3F4F6", border: "1px solid " + (dark ? "var(--c-border2)" : "#CBD5E1"), color: pc.label, cursor: "pointer" } }, /* @__PURE__ */ import_react61.default.createElement(Download, { style: { width: 10, height: 10 } }), "Download")) : /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, /* @__PURE__ */ import_react61.default.createElement("button", { style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 10,
+        fontWeight: 600,
+        padding: "5px 12px",
+        borderRadius: 7,
+        cursor: isNext ? "pointer" : "not-allowed",
+        background: isNext ? "rgba(255,107,53,0.12)" : dark ? "rgba(42,45,56,0.5)" : "#F3F4F6",
+        border: isNext ? "1px solid rgba(255,107,53,0.35)" : "1px solid var(--c-border2)",
+        color: isNext ? "#FF6B35" : dark ? "rgba(248,250,252,0.18)" : "#64748B"
+      } }, /* @__PURE__ */ import_react61.default.createElement(Download, { style: { width: 10, height: 10 } }), doc.file, " ", /* @__PURE__ */ import_react61.default.createElement("span", { style: { opacity: 0.55, marginLeft: 3 } }, "(", doc.size, ")")), isNext && /* @__PURE__ */ import_react61.default.createElement("button", { style: { display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "5px 12px", borderRadius: 7, background: "rgba(255,107,53,0.14)", border: "1px solid rgba(255,107,53,0.3)", color: "#FF6B35", cursor: "pointer" } }, /* @__PURE__ */ import_react61.default.createElement(Sparkles, { style: { width: 10, height: 10 } }), "AI Auto-Fill")))));
+    }))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 300, flexShrink: 0, borderLeft: "1px solid " + pc.border, background: pc.feedBg, display: "flex", flexDirection: "column", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "16px 16px 12px", borderBottom: "1px solid " + pc.border, flexShrink: 0, display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 22, height: 22, borderRadius: 5, background: "rgba(255,107,53,0.10)", border: "1px solid rgba(255,107,53,0.25)", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 11, height: 11, color: "#FF6B35" } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.feedHd, fontWeight: 700, fontSize: 12, letterSpacing: "0.08em" } }, "INTELLIGENCE FEED"), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => setFeedActive((a2) => !a2), style: {
+      marginLeft: "auto",
+      flexShrink: 0,
+      width: 32,
+      height: 18,
+      borderRadius: 999,
+      background: feedActive ? "#FF6B35" : dark ? "rgba(248,250,252,0.10)" : "#CBD5E1",
+      border: "none",
+      cursor: "pointer",
+      padding: 0,
+      position: "relative",
+      boxShadow: feedActive ? "0 0 8px rgba(255,107,53,0.55)" : "none",
+      transition: "background 0.22s, box-shadow 0.22s"
+    } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+      position: "absolute",
+      top: 2,
+      borderRadius: "50%",
+      width: 14,
+      height: 14,
+      background: "#FDFDFD",
+      left: feedActive ? 16 : 2,
+      transition: "left 0.22s",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
+    } }))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "12px 16px", borderBottom: "1px solid " + pc.border, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: dark ? "rgba(255,107,53,0.08)" : "rgba(255,107,53,0.05)", border: "1px solid rgba(255,107,53,0.22)", borderRadius: 10, padding: "10px 12px", marginBottom: 8, boxShadow: "0 2px 14px rgba(255,107,53,0.12)" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#FF6B35", marginBottom: 6 } }, "Close Probability"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, height: 5, borderRadius: 3, background: dark ? "rgba(248,250,252,0.06)" : "#E5E7EB", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: `${corp.score || 70}%`, height: "100%", background: "linear-gradient(90deg,#FF6B35,#CC5A25)", borderRadius: 3 } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: "#FF6B35", minWidth: 34 } }, corp.score || 70, "%"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: dark ? "rgba(107,127,107,0.10)" : "rgba(107,127,107,0.05)", border: "1px solid rgba(107,127,107,0.25)", borderRadius: 10, padding: "10px 12px", marginBottom: 8, boxShadow: "0 2px 14px rgba(107,127,107,0.10)" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: dark ? "#9EBD9E" : "#6B7F6B" } }, "Doc Completeness"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 9, fontWeight: 700, color: dark ? "#9EBD9E" : "#374151" } }, doneDocs.length, "/", CORP_DOCS.length, " Complete")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, height: 5, borderRadius: 3, background: dark ? "rgba(248,250,252,0.06)" : "#E5E7EB", overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: `${Math.round(doneDocs.length / CORP_DOCS.length * 100)}%`, height: "100%", background: `linear-gradient(90deg,${dark ? "#5A7A5A" : "#6B7F6B"},${dark ? "#9EBD9E" : "#7A9D7A"})`, borderRadius: 3 } })), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: dark ? "#9EBD9E" : "#6B7F6B", minWidth: 34 } }, Math.round(doneDocs.length / CORP_DOCS.length * 100), "%"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { background: dark ? "rgba(204,90,37,0.10)" : "rgba(204,90,37,0.05)", border: "1px solid rgba(204,90,37,0.22)", borderRadius: 10, padding: "10px 12px", boxShadow: "0 2px 14px rgba(204,90,37,0.10)" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#F0A080", marginBottom: 4 } }, "Deal Risk"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, color: pc.sub, lineHeight: 1.5 } }, corp.warmth === "cold" ? "\u26A0 Low engagement \u2014 consider outreach acceleration" : corp.warmth === "warm" ? "\u2022 Moderate engagement \u2014 maintain momentum" : "\u2713 High engagement \u2014 strong buying signals detected"))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, overflowY: "auto" } }, feedActive ? /* @__PURE__ */ import_react61.default.createElement(import_react61.default.Fragment, null, [...log2].reverse().map((l, i) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: i,
+        style: {
+          padding: "12px 16px",
+          borderBottom: "1px solid " + pc.feedBd,
+          borderLeft: `2px solid ${i === 0 ? "#FF6B35" : "transparent"}`,
+          background: i === 0 ? "rgba(255,107,53,0.04)" : "transparent",
+          cursor: "pointer",
+          transition: "background 0.2s"
+        },
+        onMouseEnter: (e) => {
+          if (i !== 0) e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)";
+        },
+        onMouseLeave: (e) => {
+          if (i !== 0) e.currentTarget.style.background = "transparent";
+        }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: i === 0 ? "#FF6B35" : pc.label, fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", marginBottom: 4 } }, l.ts, " \xB7 AGENT LOG"),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: i === 0 ? pc.feedHd : pc.sub, fontSize: 11, lineHeight: 1.45 } }, l.text)
+    )), /* @__PURE__ */ import_react61.default.createElement("div", { style: { padding: "10px 16px", fontSize: 9, color: "rgba(255,107,53,0.5)", fontFamily: "'JetBrains Mono', monospace" } }, "\u2588")) : /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "32px 20px", gap: 8, minHeight: 120 } }, /* @__PURE__ */ import_react61.default.createElement(Activity, { style: { width: 22, height: 22, color: dark ? "rgba(255,255,255,0.15)" : "#CBD5E1" } }), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: pc.label, textAlign: "center", lineHeight: 1.5 } }, "Intelligence feed paused.", /* @__PURE__ */ import_react61.default.createElement("br", null), "Toggle on to resume live updates."))))));
   }
   function ClientsPage({ t, dark, pipeline, setPage: setPage2 }) {
     const [tab, setTab] = (0, import_react60.useState)("corporates");
@@ -56241,7 +54595,7 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     const corporates = pipeline.filter((p) => p.type === "demand");
     const projects = pipeline.filter((p) => p.type === "supply");
     if (selectedCorporate) {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CorporateDetailPage, { corp: selectedCorporate, onBack: () => setSelectedCorporate(null), t });
+      return /* @__PURE__ */ import_react61.default.createElement(CorporateDetailPage, { corp: selectedCorporate, onBack: () => setSelectedCorporate(null), t });
     }
     const stageColor = (stage) => {
       if (stage === "Client") return "bg-[#6B7F6B]/25 text-[#9EBD9E] border-[#6B7F6B]/50";
@@ -56252,189 +54606,117 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     };
     const warmthDot = (w) => w === "hot" ? "bg-[#FF6B35]" : w === "warm" ? "bg-[#CC5A25]" : "bg-[#2A2D38]";
     function EmptyState() {
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex flex-col items-center justify-center h-full gap-5", style: { minHeight: 320 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `/* keyframes defined globally */` }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { position: "relative", width: 72, height: 72 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-            width: 72,
-            height: 72,
-            borderRadius: "50%",
-            background: "rgba(255,107,53,0.07)",
-            border: "1px solid rgba(255,107,53,0.18)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Target, { style: { width: 28, height: 28, color: "rgba(255,107,53,0.45)", animation: "qBlink 1.8s cubic-bezier(0.4,0,0.2,1) infinite" } }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", animation: "orbitDot 3s linear infinite" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { position: "absolute", top: 3, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "rgba(255,107,53,0.45)" } }) })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { textAlign: "center" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 14, fontWeight: 700, color: dark ? "rgba(255,255,255,0.85)" : "#111827", marginBottom: 8, letterSpacing: "0.01em" }, children: "Nexus" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 11, color: dark ? "rgba(248,250,252,0.40)" : "#64748B", maxWidth: 260, lineHeight: 1.65 }, children: [
-            "Go to ",
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#FF6B35", fontWeight: 600 }, children: "Discovery" }),
-            " and click ",
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: "#FF6B35", fontWeight: 600 }, children: "Add to Pipeline" }),
-            " on any corporates or projects for Nexus to track"
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "button",
-          {
-            onClick: () => setPage2("discovery"),
-            style: {
-              padding: "7px 18px",
-              borderRadius: 6,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.10em",
-              fontFamily: "'JetBrains Mono', monospace",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              background: "rgba(107,127,107,0.75)",
-              color: "#FDFDFD",
-              border: "1px solid rgba(107,127,107,0.90)"
-            },
-            children: "\u2192 GO TO DISCOVERY"
-          }
-        )
-      ] });
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex flex-col h-full overflow-hidden", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "grid grid-cols-4 gap-3 p-4 pb-0 shrink-0", children: [
-        { label: "Corporates", value: corporates.length, icon: Building2, color: "text-[#FF6B35]", bg: "bg-[#FF6B35]/10" },
-        { label: "Projects", value: projects.length, icon: TreePine, color: "text-[#9EBD9E]", bg: "bg-[#364A36]/25" },
-        { label: "Total in Pipeline", value: pipeline.length, icon: Briefcase, color: "text-[#FF6B35]", bg: "bg-[#FF6B35]/10" },
-        { label: "Active Stages", value: pipeline.filter((p) => p.stage !== "Prospect").length, icon: TrendingUp, color: "text-[#9EBD9E]", bg: "bg-[#364A36]/25" }
-      ].map(({ label, value, icon: Icon2, color: color2, bg }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-xl p-3.5 ${t.card} border flex items-center gap-3`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { className: `w-4 h-4 ${color2}` }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xl font-black ${t.text} leading-none`, children: value }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs ${t.sub} mt-0.5`, children: label })
-        ] })
-      ] }, label)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `flex items-center border-b ${t.border} px-4 mt-4 shrink-0`, children: [
-        { id: "corporates", label: "Corporates", count: corporates.length, icon: Building2 },
-        { id: "projects", label: "Projects", count: projects.length, icon: TreePine }
-      ].map(({ id, label, count, icon: Icon2 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+      return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-col items-center justify-center h-full gap-5", style: { minHeight: 320 } }, /* @__PURE__ */ import_react61.default.createElement("style", null, `/* keyframes defined globally */`), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "relative", width: 72, height: 72 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        width: 72,
+        height: 72,
+        borderRadius: "50%",
+        background: "rgba(255,107,53,0.07)",
+        border: "1px solid rgba(255,107,53,0.18)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      } }, /* @__PURE__ */ import_react61.default.createElement(Target, { style: { width: 28, height: 28, color: "rgba(255,107,53,0.45)", animation: "qBlink 1.8s cubic-bezier(0.4,0,0.2,1) infinite" } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%", animation: "orbitDot 3s linear infinite" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { position: "absolute", top: 3, left: "50%", transform: "translateX(-50%)", width: 6, height: 6, borderRadius: "50%", background: "rgba(255,107,53,0.45)" } }))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { textAlign: "center" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: dark ? "rgba(255,255,255,0.85)" : "#111827", marginBottom: 8, letterSpacing: "0.01em" } }, "Nexus"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 11, color: dark ? "rgba(248,250,252,0.40)" : "#64748B", maxWidth: 260, lineHeight: 1.65 } }, "Go to ", /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", fontWeight: 600 } }, "Discovery"), " and click ", /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", fontWeight: 600 } }, "Add to Pipeline"), " on any corporates or projects for Nexus to track")), /* @__PURE__ */ import_react61.default.createElement(
         "button",
         {
-          onClick: () => setTab(id),
-          className: `flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors
-              ${tab === id ? "border-[#6B7F6B] text-[#6B7F6B]" : `border-transparent ${t.muted} hover:${dark ? "text-white/70" : "text-gray-600"}`}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { className: "w-3.5 h-3.5" }),
-            label,
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center
-              ${tab === id ? "bg-[#6B7F6B]/15 text-[#6B7F6B]" : dark ? "bg-white/[0.06] text-white/35" : "bg-gray-100 text-slate-500"}`, children: count })
-          ]
+          onClick: () => setPage2("discovery"),
+          style: {
+            padding: "7px 18px",
+            borderRadius: 6,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.10em",
+            fontFamily: "'JetBrains Mono', monospace",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            background: "rgba(107,127,107,0.75)",
+            color: "#FDFDFD",
+            border: "1px solid rgba(107,127,107,0.90)"
+          }
         },
-        id
-      )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto p-4", children: [
-        tab === "corporates" && (corporates.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-2xl ${t.card} border overflow-hidden`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-            "div",
-            {
-              className: `grid px-4 py-2.5 border-b ${t.border} bg-[#1E2126]`,
-              style: { gridTemplateColumns: "2fr 1.4fr 1.2fr 1fr 1.2fr auto" },
-              children: ["Company", "Commitment", "Carbon Need", "Stage", "Contact", "Actions"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] font-bold uppercase tracking-wide ${t.muted}`, children: h }, h))
-            }
-          ),
-          corporates.map((c2, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-            "div",
-            {
-              onClick: () => setSelectedCorporate(c2),
-              className: `grid px-4 py-3.5 items-center ${t.hover} cursor-pointer ${i < corporates.length - 1 ? `border-b ${t.border}` : ""}`,
-              style: { gridTemplateColumns: "2fr 1.4fr 1.2fr 1fr 1.2fr auto" },
-              children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2.5 min-w-0", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#CC5A25] flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-[0_2px_8px_rgba(255,107,53,0.25)]", children: (c2.company || c2.name || "?").slice(0, 2).toUpperCase() }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "min-w-0", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-1.5", children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: `text-xs font-bold ${t.text} truncate`, children: [
-                        c2.flag,
-                        " ",
-                        c2.company || c2.name
-                      ] }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `w-1.5 h-1.5 rounded-full flex-shrink-0 ${warmthDot(c2.warmth)}` })
-                    ] }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.muted} truncate`, children: c2.industry || "Corporate" })
-                  ] })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.sub} leading-snug pr-3 truncate`, children: c2.commitment || "Net Zero 2040" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-semibold text-[#FF6B35]`, children: c2.need || c2.emissions || "\u2014" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold border ${stageColor(c2.stage)}`, children: c2.stage || "Prospect" }) }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "min-w-0", children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] font-semibold ${t.text} truncate`, children: c2.contact?.name || "\u2014" }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.muted} truncate`, children: c2.contact?.title || "" })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-1 shrink-0", onClick: (e) => e.stopPropagation(), children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Mail, { className: `w-3 h-3 ${t.muted}` }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "a",
-                    {
-                      href: c2.contact?.url || "#",
-                      target: "_blank",
-                      rel: "noopener noreferrer",
-                      className: `p-1.5 rounded-lg ${t.hover} border ${t.border} flex items-center`,
-                      children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ExternalLink, { className: `w-3 h-3 ${t.muted}` })
-                    }
-                  ),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Ellipsis, { className: `w-3 h-3 ${t.muted}` }) })
-                ] })
-              ]
-            },
-            `${c2.type}-${c2.id}-${i}`
-          ))
-        ] })),
-        tab === "projects" && (projects.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, {}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-2xl ${t.card} border overflow-hidden`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-            "div",
-            {
-              className: `grid px-4 py-2.5 border-b ${t.border} bg-[#1E2126]`,
-              style: { gridTemplateColumns: "2fr 1.3fr 1fr 1fr 1fr auto" },
-              children: ["Project", "Type", "Match Score", "Agent Rating", "Stage", "Actions"].map((h) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] font-bold uppercase tracking-wide ${t.muted}`, children: h }, h))
-            }
-          ),
-          projects.map((p, i) => {
-            const extra = PROJECT_EXTRAS[p.id];
-            return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-              "div",
-              {
-                className: `grid px-4 py-3.5 items-center ${t.hover} cursor-pointer ${i < projects.length - 1 ? `border-b ${t.border}` : ""}`,
-                style: { gridTemplateColumns: "2fr 1.3fr 1fr 1fr 1fr auto" },
-                children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2.5 min-w-0", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${t.card} border`, children: p.icon || "\u{1F33F}" }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "min-w-0", children: [
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-bold ${t.text} truncate`, children: p.name }),
-                      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.muted} truncate`, children: extra?.location || extra?.registry || "\u2014" })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-[10px] ${t.sub} pr-3 truncate`, children: p.projCategory || p.type }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MatchScoreBadge, { score: p.quality || 80 }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-                    "span",
-                    {
-                      className: "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                      style: { background: (p.agentCol || "#FF6B35") + "18", color: p.agentCol || "#FF6B35", borderColor: (p.agentCol || "#FF6B35") + "35" },
-                      children: p.agent || "\u2014"
-                    }
-                  ) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold border ${stageColor(p.stage)}`, children: p.stage || "Prospect" }) }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-1 shrink-0", children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Eye, { className: `w-3 h-3 ${t.muted}` }) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: `w-3 h-3 ${t.muted}` }) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Ellipsis, { className: `w-3 h-3 ${t.muted}` }) })
-                  ] })
-                ]
-              },
-              `${p.type}-${p.id}-${i}`
-            );
-          })
-        ] }))
-      ] })
-    ] });
+        "\u2192 GO TO DISCOVERY"
+      ));
+    }
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex flex-col h-full overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid grid-cols-4 gap-3 p-4 pb-0 shrink-0" }, [
+      { label: "Corporates", value: corporates.length, icon: Building2, color: "text-[#FF6B35]", bg: "bg-[#FF6B35]/10" },
+      { label: "Projects", value: projects.length, icon: TreePine, color: "text-[#9EBD9E]", bg: "bg-[#364A36]/25" },
+      { label: "Total in Pipeline", value: pipeline.length, icon: Briefcase, color: "text-[#FF6B35]", bg: "bg-[#FF6B35]/10" },
+      { label: "Active Stages", value: pipeline.filter((p) => p.stage !== "Prospect").length, icon: TrendingUp, color: "text-[#9EBD9E]", bg: "bg-[#364A36]/25" }
+    ].map(({ label, value, icon: Icon2, color: color2, bg }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: label, className: `rounded-xl p-3.5 ${t.card} border flex items-center gap-3` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0` }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { className: `w-4 h-4 ${color2}` })), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xl font-black ${t.text} leading-none` }, value), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs ${t.sub} mt-0.5` }, label))))), /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex items-center border-b ${t.border} px-4 mt-4 shrink-0` }, [
+      { id: "corporates", label: "Corporates", count: corporates.length, icon: Building2 },
+      { id: "projects", label: "Projects", count: projects.length, icon: TreePine }
+    ].map(({ id, label, count, icon: Icon2 }) => /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        key: id,
+        onClick: () => setTab(id),
+        className: `flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors
+              ${tab === id ? "border-[#6B7F6B] text-[#6B7F6B]" : `border-transparent ${t.muted} hover:${dark ? "text-white/70" : "text-gray-600"}`}`
+      },
+      /* @__PURE__ */ import_react61.default.createElement(Icon2, { className: "w-3.5 h-3.5" }),
+      label,
+      /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center
+              ${tab === id ? "bg-[#6B7F6B]/15 text-[#6B7F6B]" : dark ? "bg-white/[0.06] text-white/35" : "bg-gray-100 text-slate-500"}` }, count)
+    ))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto p-4" }, tab === "corporates" && (corporates.length === 0 ? /* @__PURE__ */ import_react61.default.createElement(EmptyState, null) : /* @__PURE__ */ import_react61.default.createElement("div", { className: `rounded-2xl ${t.card} border overflow-hidden` }, /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        className: `grid px-4 py-2.5 border-b ${t.border} bg-[#1E2126]`,
+        style: { gridTemplateColumns: "2fr 1.4fr 1.2fr 1fr 1.2fr auto" }
+      },
+      ["Company", "Commitment", "Carbon Need", "Stage", "Contact", "Actions"].map((h) => /* @__PURE__ */ import_react61.default.createElement("div", { key: h, className: `text-[10px] font-bold uppercase tracking-wide ${t.muted}` }, h))
+    ), corporates.map((c2, i) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: `${c2.type}-${c2.id}-${i}`,
+        onClick: () => setSelectedCorporate(c2),
+        className: `grid px-4 py-3.5 items-center ${t.hover} cursor-pointer ${i < corporates.length - 1 ? `border-b ${t.border}` : ""}`,
+        style: { gridTemplateColumns: "2fr 1.4fr 1.2fr 1fr 1.2fr auto" }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2.5 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6B35] to-[#CC5A25] flex items-center justify-center text-[10px] font-black text-white shrink-0 shadow-[0_2px_8px_rgba(255,107,53,0.25)]" }, (c2.company || c2.name || "?").slice(0, 2).toUpperCase()), /* @__PURE__ */ import_react61.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold ${t.text} truncate` }, c2.flag, " ", c2.company || c2.name), /* @__PURE__ */ import_react61.default.createElement("span", { className: `w-1.5 h-1.5 rounded-full flex-shrink-0 ${warmthDot(c2.warmth)}` })), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} truncate` }, c2.industry || "Corporate"))),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.sub} leading-snug pr-3 truncate` }, c2.commitment || "Net Zero 2040"),
+      /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-semibold text-[#FF6B35]` }, c2.need || c2.emissions || "\u2014")),
+      /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold border ${stageColor(c2.stage)}` }, c2.stage || "Prospect")),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] font-semibold ${t.text} truncate` }, c2.contact?.name || "\u2014"), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} truncate` }, c2.contact?.title || "")),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-1 shrink-0", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ import_react61.default.createElement("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}` }, /* @__PURE__ */ import_react61.default.createElement(Mail, { className: `w-3 h-3 ${t.muted}` })), /* @__PURE__ */ import_react61.default.createElement(
+        "a",
+        {
+          href: c2.contact?.url || "#",
+          target: "_blank",
+          rel: "noopener noreferrer",
+          className: `p-1.5 rounded-lg ${t.hover} border ${t.border} flex items-center`
+        },
+        /* @__PURE__ */ import_react61.default.createElement(ExternalLink, { className: `w-3 h-3 ${t.muted}` })
+      ), /* @__PURE__ */ import_react61.default.createElement("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}` }, /* @__PURE__ */ import_react61.default.createElement(Ellipsis, { className: `w-3 h-3 ${t.muted}` })))
+    )))), tab === "projects" && (projects.length === 0 ? /* @__PURE__ */ import_react61.default.createElement(EmptyState, null) : /* @__PURE__ */ import_react61.default.createElement("div", { className: `rounded-2xl ${t.card} border overflow-hidden` }, /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        className: `grid px-4 py-2.5 border-b ${t.border} bg-[#1E2126]`,
+        style: { gridTemplateColumns: "2fr 1.3fr 1fr 1fr 1fr auto" }
+      },
+      ["Project", "Type", "Match Score", "Agent Rating", "Stage", "Actions"].map((h) => /* @__PURE__ */ import_react61.default.createElement("div", { key: h, className: `text-[10px] font-bold uppercase tracking-wide ${t.muted}` }, h))
+    ), projects.map((p, i) => {
+      const extra = PROJECT_EXTRAS[p.id];
+      return /* @__PURE__ */ import_react61.default.createElement(
+        "div",
+        {
+          key: `${p.type}-${p.id}-${i}`,
+          className: `grid px-4 py-3.5 items-center ${t.hover} cursor-pointer ${i < projects.length - 1 ? `border-b ${t.border}` : ""}`,
+          style: { gridTemplateColumns: "2fr 1.3fr 1fr 1fr 1fr auto" }
+        },
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2.5 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${t.card} border` }, p.icon || "\u{1F33F}"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-bold ${t.text} truncate` }, p.name), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted} truncate` }, extra?.location || extra?.registry || "\u2014"))),
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.sub} pr-3 truncate` }, p.projCategory || p.type),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement(MatchScoreBadge, { score: p.quality || 80 })),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement(
+          "span",
+          {
+            className: "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+            style: { background: (p.agentCol || "#FF6B35") + "18", color: p.agentCol || "#FF6B35", borderColor: (p.agentCol || "#FF6B35") + "35" }
+          },
+          p.agent || "\u2014"
+        )),
+        /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-[10px] px-2 py-0.5 rounded-full font-semibold border ${stageColor(p.stage)}` }, p.stage || "Prospect")),
+        /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-1 shrink-0" }, /* @__PURE__ */ import_react61.default.createElement("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}` }, /* @__PURE__ */ import_react61.default.createElement(Eye, { className: `w-3 h-3 ${t.muted}` })), /* @__PURE__ */ import_react61.default.createElement("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}` }, /* @__PURE__ */ import_react61.default.createElement(Download, { className: `w-3 h-3 ${t.muted}` })), /* @__PURE__ */ import_react61.default.createElement("button", { className: `p-1.5 rounded-lg ${t.hover} border ${t.border}` }, /* @__PURE__ */ import_react61.default.createElement(Ellipsis, { className: `w-3 h-3 ${t.muted}` })))
+      );
+    })))));
   }
   var DATA_ROOM_FOLDERS = [
     {
@@ -56445,7 +54727,7 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       size: "84 MB",
       colorFn: (d) => d ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#364A36]/25 text-[#9EBD9E]",
       files: [
-        { name: "Amazon Rainforest REDD+ \u2014 VCS Certificate.pdf", size: "2.4 MB", date: "Mar 12", locked: false },
+        { name: "Amazia Cloud Rainforest REDD+ \u2014 VCS Certificate.pdf", size: "2.4 MB", date: "Mar 12", locked: false },
         { name: "Indonesia Blue Carbon \u2014 Project Design Document.pdf", size: "8.1 MB", date: "Feb 28", locked: false },
         { name: "Congo Basin REDD+ \u2014 Monitoring Report 2024.pdf", size: "5.3 MB", date: "Apr 1", locked: false },
         { name: "Kenya Turkana Wind \u2014 Gold Standard Certification.pdf", size: "1.8 MB", date: "Jan 15", locked: true }
@@ -56459,9 +54741,9 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       size: "12 MB",
       colorFn: (d) => d ? "bg-[#FF6B35]/10 text-[#FF6B35]" : "bg-[#FF6B35]/10 text-[#FF6B35]",
       files: [
-        { name: "Microsoft \xD7 Amazon REDD+ \u2014 Draft Term Sheet v2.docx", size: "320 KB", date: "Apr 18", locked: false },
-        { name: "Amazon \xD7 Congo Basin \u2014 LOI Signed.pdf", size: "180 KB", date: "Apr 10", locked: false },
-        { name: "Shell \xD7 Congo Basin \u2014 NDA Executed.pdf", size: "95 KB", date: "Mar 22", locked: true }
+        { name: "Microdyne Systems \xD7 Amazia Cloud REDD+ \u2014 Draft Term Sheet v2.docx", size: "320 KB", date: "Apr 18", locked: false },
+        { name: "Amazia Cloud \xD7 Congo Basin \u2014 LOI Signed.pdf", size: "180 KB", date: "Apr 10", locked: false },
+        { name: "Shellion Energy \xD7 Congo Basin \u2014 NDA Executed.pdf", size: "95 KB", date: "Mar 22", locked: true }
       ]
     },
     {
@@ -56499,85 +54781,25 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     };
     const totalFiles = DATA_ROOM_FOLDERS.reduce((s2, f) => s2 + f.count, 0);
     const totalSize = "280 MB";
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "p-4 max-w-5xl mx-auto space-y-4", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "grid grid-cols-4 gap-3", children: [
-        { label: "Total Files", value: totalFiles, icon: FileText, color: t.aiAccent, bg: dark ? "bg-[#FF6B35]/10" : "bg-[#FF6B35]/10" },
-        { label: "Folders", value: DATA_ROOM_FOLDERS.length, icon: Folder, color: t.verified, bg: dark ? "bg-[#FF6B35]/10" : "bg-[#364A36]/25" },
-        { label: "Storage Used", value: totalSize, icon: FolderOpen, color: t.aiAccent, bg: dark ? "bg-[#FF6B35]/10" : "bg-[#FF6B35]/10" },
-        { label: "Locked Files", value: DATA_ROOM_FOLDERS.reduce((s2, f) => s2 + f.files.filter((x2) => x2.locked).length, 0), icon: Lock, color: t.sub, bg: dark ? "bg-[#252525]" : "bg-[#1E2126]" }
-      ].map(({ label, value, icon: Icon2, color: color2, bg }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-xl p-3.5 ${t.card} border flex items-center gap-3`, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Icon2, { className: `w-4 h-4 ${color2}` }) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xl font-black ${t.text} leading-none`, children: value }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs ${t.sub} mt-0.5`, children: label })
-        ] })
-      ] }, label)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${t.card} border flex-1 max-w-64`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: `w-3.5 h-3.5 ${t.muted}` }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", { placeholder: "Search files\u2026", className: `bg-transparent text-xs flex-1 focus:outline-none ${t.text}` })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1" }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#FF6B35] hover:bg-[#E55520] text-white transition-colors`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "w-3 h-3" }),
-          "Upload"
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold ${t.card} border ${t.sub} ${t.hover}`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "w-3 h-3" }),
-          "New Folder"
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "grid grid-cols-4 gap-3 mb-4", children: DATA_ROOM_FOLDERS.map((folder) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "button",
-        {
-          onClick: () => setActiveFolder(activeFolder === folder.id ? null : folder.id),
-          className: `rounded-2xl p-4 ${activeFolder === folder.id ? dark ? "bg-[#FF6B35]/10 border-[#FF6B35]/30" : "bg-[#FF6B35]/10 border-[#FF6B35]/40" : `${t.card}`} border text-left transition-all ${t.cardHov}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-10 h-10 rounded-xl mb-3 flex items-center justify-center ${folderIconBg(folder.id)}`, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Folder, { className: "w-5 h-5" }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-bold ${t.text} leading-tight mb-1`, children: folder.name }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.muted}`, children: [
-              folder.count,
-              " files \xB7 ",
-              folder.size
-            ] })
-          ]
-        },
-        folder.id
-      )) }),
-      activeFolder && (() => {
-        const folder = DATA_ROOM_FOLDERS.find((f) => f.id === activeFolder);
-        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `rounded-2xl ${t.card} border overflow-hidden`, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `px-4 py-3 border-b ${t.border} flex items-center gap-2 ${dark ? "bg-[#141414]" : "bg-[#1E2126]"}`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Folder, { className: `w-4 h-4 ${t.aiAccent}` }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `text-xs font-bold ${t.text}`, children: folder.name }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { className: t.tag, children: [
-              folder.files.length,
-              " files"
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg ${t.hover} border ${t.border} ${t.sub}`, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Funnel, { className: "w-2.5 h-2.5" }),
-              "Filter"
-            ] })
-          ] }),
-          folder.files.map((file, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex items-center gap-3 px-4 py-3 ${t.hover} cursor-pointer ${i < folder.files.length - 1 ? `border-b ${t.border}` : ""}`, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${dark ? "bg-[#2A2D38]" : "bg-[#1E2126]"} border ${t.border}`, children: file.locked ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Lock, { className: `w-3.5 h-3.5 ${t.muted}` }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, { className: `w-3.5 h-3.5 ${t.aiAccent}` }) }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 min-w-0", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: `text-xs font-medium ${t.text} truncate`, children: file.name }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `text-[10px] ${t.muted}`, children: [
-                file.size,
-                " \xB7 ",
-                file.date
-              ] })
-            ] }),
-            file.locked ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "text-[10px] px-1.5 py-0.5 rounded-full bg-[#1E2126] text-white/45 border border-[#2A2D38] font-semibold", children: "NDA Required" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", { className: `flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg ${t.hover} border ${t.border} ${t.sub}`, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "w-2.5 h-2.5" }),
-              "Download"
-            ] })
-          ] }, i))
-        ] });
-      })()
-    ] });
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "p-4 max-w-5xl mx-auto space-y-4" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid grid-cols-4 gap-3" }, [
+      { label: "Total Files", value: totalFiles, icon: FileText, color: t.aiAccent, bg: dark ? "bg-[#FF6B35]/10" : "bg-[#FF6B35]/10" },
+      { label: "Folders", value: DATA_ROOM_FOLDERS.length, icon: Folder, color: t.verified, bg: dark ? "bg-[#FF6B35]/10" : "bg-[#364A36]/25" },
+      { label: "Storage Used", value: totalSize, icon: FolderOpen, color: t.aiAccent, bg: dark ? "bg-[#FF6B35]/10" : "bg-[#FF6B35]/10" },
+      { label: "Locked Files", value: DATA_ROOM_FOLDERS.reduce((s2, f) => s2 + f.files.filter((x2) => x2.locked).length, 0), icon: Lock, color: t.sub, bg: dark ? "bg-[#252525]" : "bg-[#1E2126]" }
+    ].map(({ label, value, icon: Icon2, color: color2, bg }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: label, className: `rounded-xl p-3.5 ${t.card} border flex items-center gap-3` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0` }, /* @__PURE__ */ import_react61.default.createElement(Icon2, { className: `w-4 h-4 ${color2}` })), /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xl font-black ${t.text} leading-none` }, value), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs ${t.sub} mt-0.5` }, label))))), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${t.card} border flex-1 max-w-64` }, /* @__PURE__ */ import_react61.default.createElement(Search, { className: `w-3.5 h-3.5 ${t.muted}` }), /* @__PURE__ */ import_react61.default.createElement("input", { placeholder: "Search files\u2026", className: `bg-transparent text-xs flex-1 focus:outline-none ${t.text}` })), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1" }), /* @__PURE__ */ import_react61.default.createElement("button", { className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#FF6B35] hover:bg-[#E55520] text-white transition-colors` }, /* @__PURE__ */ import_react61.default.createElement(Upload, { className: "w-3 h-3" }), "Upload"), /* @__PURE__ */ import_react61.default.createElement("button", { className: `flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold ${t.card} border ${t.sub} ${t.hover}` }, /* @__PURE__ */ import_react61.default.createElement(Plus, { className: "w-3 h-3" }), "New Folder")), /* @__PURE__ */ import_react61.default.createElement("div", { className: "grid grid-cols-4 gap-3 mb-4" }, DATA_ROOM_FOLDERS.map((folder) => /* @__PURE__ */ import_react61.default.createElement(
+      "button",
+      {
+        key: folder.id,
+        onClick: () => setActiveFolder(activeFolder === folder.id ? null : folder.id),
+        className: `rounded-2xl p-4 ${activeFolder === folder.id ? dark ? "bg-[#FF6B35]/10 border-[#FF6B35]/30" : "bg-[#FF6B35]/10 border-[#FF6B35]/40" : `${t.card}`} border text-left transition-all ${t.cardHov}`
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-10 h-10 rounded-xl mb-3 flex items-center justify-center ${folderIconBg(folder.id)}` }, /* @__PURE__ */ import_react61.default.createElement(Folder, { className: "w-5 h-5" })),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-bold ${t.text} leading-tight mb-1` }, folder.name),
+      /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted}` }, folder.count, " files \xB7 ", folder.size)
+    ))), activeFolder && (() => {
+      const folder = DATA_ROOM_FOLDERS.find((f) => f.id === activeFolder);
+      return /* @__PURE__ */ import_react61.default.createElement("div", { className: `rounded-2xl ${t.card} border overflow-hidden` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `px-4 py-3 border-b ${t.border} flex items-center gap-2 ${dark ? "bg-[#141414]" : "bg-[#1E2126]"}` }, /* @__PURE__ */ import_react61.default.createElement(Folder, { className: `w-4 h-4 ${t.aiAccent}` }), /* @__PURE__ */ import_react61.default.createElement("span", { className: `text-xs font-bold ${t.text}` }, folder.name), /* @__PURE__ */ import_react61.default.createElement("span", { className: t.tag }, folder.files.length, " files"), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1" }), /* @__PURE__ */ import_react61.default.createElement("button", { className: `flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg ${t.hover} border ${t.border} ${t.sub}` }, /* @__PURE__ */ import_react61.default.createElement(Funnel, { className: "w-2.5 h-2.5" }), "Filter")), folder.files.map((file, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, className: `flex items-center gap-3 px-4 py-3 ${t.hover} cursor-pointer ${i < folder.files.length - 1 ? `border-b ${t.border}` : ""}` }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${dark ? "bg-[#2A2D38]" : "bg-[#1E2126]"} border ${t.border}` }, file.locked ? /* @__PURE__ */ import_react61.default.createElement(Lock, { className: `w-3.5 h-3.5 ${t.muted}` }) : /* @__PURE__ */ import_react61.default.createElement(FileText, { className: `w-3.5 h-3.5 ${t.aiAccent}` })), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-xs font-medium ${t.text} truncate` }, file.name), /* @__PURE__ */ import_react61.default.createElement("div", { className: `text-[10px] ${t.muted}` }, file.size, " \xB7 ", file.date)), file.locked ? /* @__PURE__ */ import_react61.default.createElement("span", { className: "text-[10px] px-1.5 py-0.5 rounded-full bg-[#1E2126] text-white/45 border border-[#2A2D38] font-semibold" }, "NDA Required") : /* @__PURE__ */ import_react61.default.createElement("button", { className: `flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg ${t.hover} border ${t.border} ${t.sub}` }, /* @__PURE__ */ import_react61.default.createElement(Download, { className: "w-2.5 h-2.5" }), "Download"))));
+    })());
   }
   var AGENTS_DATA = [
     { id: "PROMETHEUS_04", code: "XA-4819", status: "ACTIVE", icon: "\u2699", successRate: 99.2, trend: "up", efficiency: 0.84, markets: ["EU_ETS", "VCM"], uptime: "142D 04H", lastActive: null, desc: "High-frequency arbitrage scanner targeting EU registry price dislocations." },
@@ -56588,11 +54810,11 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
   ];
   var AGENT_LOG_TEMPLATES = [
     "[SCAN] Querying Verra registry API \u2014 endpoint /issuances",
-    "[MATCH] Counterparty found: Microsoft Corp \u2014 confidence 0.94",
+    "[MATCH] Counterparty found: Microdyne Systems Corp \u2014 confidence 0.94",
     "[PRICE] Spot price update: VCM nature-based \u2192 $18.40/tCO\u2082e",
     "[ARBIT] Price delta detected: EU_ETS vs ACR \u2014 spread +4.2%",
     "[VALID] Additionality check passed for project GAB-442",
-    "[ALERT] New RFP detected: Shell PLC \u2014 800K tCO\u2082e annual",
+    "[ALERT] New RFP detected: Shellion Energy PLC \u2014 800K tCO\u2082e annual",
     "[SYNC] Registry sync complete \u2014 1,204 new records ingested",
     "[OPT] Portfolio rebalance triggered \u2014 efficiency +0.03 XEF"
   ];
@@ -56648,213 +54870,79 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     if (selectedAgent) {
       const ag = agents.find((a2) => a2.id === selectedAgent) || agents[0];
       const perf = [{ t: "MON", v: 91 }, { t: "TUE", v: 94 }, { t: "WED", v: 88 }, { t: "THU", v: 97 }, { t: "FRI", v: 96 }, { t: "SAT", v: 92 }, { t: "SUN", v: ag.successRate }];
-      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto p-5", style: { fontFamily: "'Inter',monospace" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "button",
-          {
-            onClick: () => setSelectedAgent(null),
-            style: { display: "flex", alignItems: "center", gap: 8, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "#FF6B35", marginBottom: 20, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.12em", textTransform: "uppercase" },
-            children: "\u2190 BACK_TO_FLEET"
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: 56, height: 56, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, background: cBg2, border: `1px solid ${cBd}`, flexShrink: 0 }, children: ag.icon }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1 }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.focus, fontWeight: 900, letterSpacing: "0.14em", fontSize: 17, fontFamily: "'JetBrains Mono', monospace" }, children: ag.id }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: {
-                fontSize: 9,
-                fontWeight: 700,
-                padding: "2px 8px",
-                borderRadius: 3,
-                letterSpacing: "0.12em",
-                fontFamily: "'JetBrains Mono', monospace",
-                background: ag.status === "ACTIVE" ? "rgba(255,107,53,0.18)" : dark ? "rgba(42,45,56,0.8)" : "#F3F4F6",
-                color: ag.status === "ACTIVE" ? "#FF6B35" : dark ? "rgba(248,250,252,0.45)" : "#64748B",
-                border: ag.status === "ACTIVE" ? "1px solid rgba(255,107,53,0.35)" : dark ? "1px solid #3A3D4A" : "1px solid #CBD5E1"
-              }, children: ag.status }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }, children: [
-                "ID: ",
-                ag.code
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { color: pc.sub, fontSize: 12 }, children: ag.desc })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: () => toggleAgent(ag), style: { padding: "8px 16px", borderRadius: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", background: ag.status === "ACTIVE" ? "#CC5A25" : "#FF6B35", color: "#FDFDFD", border: "none" }, children: ag.status === "ACTIVE" ? "PAUSE_AGENT" : "RESUME_AGENT" })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }, children: [{ k: "SUCCESS_RATE", v: ag.successRate + "%" }, { k: "EFFICIENCY", v: ag.efficiency + " XEF" }, { k: "MARKET_SCOPE", v: ag.markets.join(" / ") }, { k: ag.uptime ? "UPTIME" : "LAST_ACTIVE", v: ag.uptime || ag.lastActive }].map(({ k: k2, v }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 12, background: cBg2, border: `1px solid ${cBd}` }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 4 }, children: k2 }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.focus, fontWeight: 900, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }, children: v })
-        ] }, k2)) }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", gap: 0, marginBottom: 16, borderBottom: `1px solid ${cBd}` }, children: ["OVERVIEW", "ACTIVITY_LOG", "CONFIGURATION"].map((tab) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-          "button",
-          {
-            onClick: () => setDetailTab(tab.toLowerCase().replace("_", "")),
-            style: {
-              padding: "8px 16px",
-              fontSize: 10,
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.12em",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              borderBottom: `2px solid ${detailTab === tab.toLowerCase().replace("_", "") ? "#6B7F6B" : "transparent"}`,
-              color: detailTab === tab.toLowerCase().replace("_", "") ? "#6B7F6B" : pc.sub,
-              marginBottom: -1,
-              transition: "color 0.15s"
-            },
-            children: tab
-          },
-          tab
-        )) }),
-        detailTab === "overview" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 12 }, children: "WEEKLY_PERFORMANCE" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: 160 }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResponsiveContainer, { width: "100%", height: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(BarChart, { data: perf, barSize: 18, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(XAxis, { dataKey: "t", tick: { fill: ax, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }, axisLine: false, tickLine: false }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(YAxis, { domain: [80, 100], tick: { fill: ax, fontSize: 9 }, axisLine: false, tickLine: false }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tooltip, { contentStyle: { background: cBg, border: `1px solid ${cBd}`, color: pc.focus, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }, cursor: { fill: "rgba(255,107,53,0.08)" } }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bar, { dataKey: "v", radius: [3, 3, 0, 0], children: perf.map((p, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cell, { fill: i === perf.length - 1 ? "#FF6B35" : "#CC5A25" }, i)) })
-            ] }) }) })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 12 }, children: "MARKET_COVERAGE" }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }, children: [
-              ag.markets.map((m, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 4 }, children: [
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: pc.sub }, children: m }),
-                  /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "#FF6B35" }, children: [
-                    70 + i * 12,
-                    "%"
-                  ] })
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: 6, borderRadius: 3, background: cBd, overflow: "hidden" }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: `${70 + i * 12}%`, height: "100%", background: "#FF6B35", borderRadius: 3 } }) })
-              ] }, m)),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { paddingTop: 12, borderTop: `1px solid ${cBd}`, marginTop: 4 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", color: pc.label, letterSpacing: "0.12em", marginBottom: 4 }, children: "SOURCE_CODE" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: pc.sub }, children: [
-                  ag.code.replace("-", "_"),
-                  "_V3"
-                ] })
-              ] })
-            ] })
-          ] })
-        ] }),
-        detailTab === "activitylog" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }, children: [
-            "LIVE_ACTIVITY_LOG",
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", display: "inline-block", animation: "qDotPulse 1s ease-in-out infinite" } })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { ref: logRef, style: { height: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }, children: [
-            agentLog.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.label, flexShrink: 0 }, children: l.ts }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: l.text.startsWith("[MATCH]") || l.text.startsWith("[ARBIT]") ? "#FF6B35" : pc.sub }, children: l.text })
-            ] }, i)),
-            agentLog.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }, children: "Initializing feed\u2026" })
-          ] })
-        ] }),
-        detailTab === "configuration" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 16 }, children: "AGENT_CONFIG" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "flex", flexDirection: "column", gap: 0 }, children: [{ k: "SCAN_INTERVAL", v: "450ms" }, { k: "MAX_LATENCY", v: "200ms" }, { k: "CONFIDENCE_THRESH", v: "0.82" }, { k: "AUTO_EXECUTE", v: "ENABLED" }, { k: "REGISTRY_TARGETS", v: ag.markets.join(", ") }, { k: "RISK_PROFILE", v: "CONSERVATIVE" }, { k: "BUDGET_CAP", v: "$500,000 / cycle" }].map(({ k: k2, v }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${cBd}` }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", color: pc.label }, children: k2 }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: pc.focus }, children: v })
-          ] }, k2)) })
-        ] })
-      ] });
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 overflow-y-auto p-5", style: { fontFamily: "'Inter',monospace" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }, children: STAT_ITEMS.map(({ key, val, unit: unit2 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 8 }, children: key }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "baseline", gap: 6 }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontWeight: 900, fontSize: 24, lineHeight: 1, color: "#FF6B35", fontFamily: "'JetBrains Mono', monospace" }, children: val }),
-          unit2 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { fontSize: 10, color: pc.label, fontFamily: "'JetBrains Mono', monospace" }, children: unit2 })
-        ] })
-      ] }, key)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", { style: { color: pc.focus, fontWeight: 700, fontSize: 22, letterSpacing: "-0.01em", marginBottom: 4, fontFamily: "'Inter',system-ui,sans-serif" }, children: "Agent Fleet" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { color: pc.sub, fontSize: 12, lineHeight: 1.6, maxWidth: 400 }, children: "Autonomous carbon liquidity scanners active across global registry protocols. Use the chat panel to deploy new agents." })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 6, background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.20)", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "#FF6B35" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", animation: "qDotPulse 1s ease-in-out infinite", display: "inline-block" } }),
-          agents.filter((a2) => a2.status === "ACTIVE").length,
-          " AGENTS LIVE"
-        ] })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 24 }, children: agents.map((ag) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "div",
+      return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto p-5", style: { fontFamily: "'Inter',monospace" } }, /* @__PURE__ */ import_react61.default.createElement(
+        "button",
         {
-          onClick: () => setSelectedAgent(ag.id),
-          style: { borderRadius: 8, cursor: "pointer", background: cBg2, border: `1px solid ${cBd}`, borderLeft: `3px solid ${ag.status === "ACTIVE" ? "#FF6B35" : "#2A2D38"}`, transition: "border-color 0.2s,box-shadow 0.2s" },
-          onMouseEnter: (e) => {
-            e.currentTarget.style.borderColor = "#FF6B35";
-            e.currentTarget.style.boxShadow = "0 2px 12px rgba(255,107,53,0.12)";
-          },
-          onMouseLeave: (e) => {
-            e.currentTarget.style.borderColor = cBd;
-            e.currentTarget.style.borderLeftColor = ag.status === "ACTIVE" ? "#FF6B35" : "#2A2D38";
-            e.currentTarget.style.boxShadow = "none";
-          },
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", alignItems: "center", gap: 16, padding: 16 }, children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 44, height: 44, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, background: cBg, border: `1px solid ${cBd}`, flexShrink: 0, position: "relative" }, children: [
-                ag.icon,
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { position: "absolute", top: 2, right: 2, width: 8, height: 8, borderRadius: "50%", background: ag.status === "ACTIVE" ? "#FF6B35" : "#3A3D4A", border: `2px solid ${cBg2}` } })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { width: 180, flexShrink: 0 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.focus, fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", marginBottom: 2 }, children: ag.id }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }, children: ag.code })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { flex: 1, minWidth: 0 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: {
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: "2px 8px",
-                  borderRadius: 3,
-                  width: "fit-content",
-                  marginBottom: 6,
-                  background: ag.status === "ACTIVE" ? "rgba(255,107,53,0.15)" : dark ? "rgba(42,45,56,0.8)" : "#F3F4F6",
-                  color: ag.status === "ACTIVE" ? "#FF6B35" : dark ? "rgba(248,250,252,0.45)" : "#64748B",
-                  border: ag.status === "ACTIVE" ? "1px solid rgba(255,107,53,0.30)" : dark ? "1px solid #3A3D4A" : "1px solid #CBD5E1",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  letterSpacing: "0.10em"
-                }, children: ag.status }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { style: { color: pc.sub, fontSize: 10, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }, children: ag.desc })
-              ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }, children: [
-                /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { style: { color: "#FF6B35", fontWeight: 800, fontSize: 14, fontFamily: "'JetBrains Mono', monospace" }, children: [
-                  ag.successRate,
-                  "%"
-                ] }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }, children: "SUCCESS" }),
-                /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", { onClick: (e) => {
-                  e.stopPropagation();
-                  toggleAgent(ag);
-                }, style: { marginTop: 4, padding: "4px 10px", borderRadius: 3, fontSize: 8, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.10em", background: ag.status === "ACTIVE" ? "rgba(204,90,37,0.15)" : "rgba(255,107,53,0.15)", color: ag.status === "ACTIVE" ? "#CC5A25" : "#FF6B35", border: `1px solid ${ag.status === "ACTIVE" ? "rgba(204,90,37,0.35)" : "rgba(255,107,53,0.35)"}` }, children: ag.status === "ACTIVE" ? "PAUSE" : "RESUME" })
-              ] })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { borderTop: `1px solid ${cBd}`, padding: "8px 16px", display: "flex", gap: 16 }, children: [["MARKETS", ag.markets.slice(0, 2).join(" \xB7 ")], ["EFFICIENCY", ag.efficiency + " XEF"], ["TREND", ag.trend === "up" ? "\u2191 BULLISH" : ag.trend === "down" ? "\u2193 BEARISH" : "\u2192 FLAT"]].map(([k2, v]) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.10em", color: pc.label, marginBottom: 2 }, children: k2 }),
-              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: pc.sub }, children: v })
-            ] }, k2)) })
-          ]
+          onClick: () => setSelectedAgent(null),
+          style: { display: "flex", alignItems: "center", gap: 8, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "#FF6B35", marginBottom: 20, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.12em", textTransform: "uppercase" }
         },
-        ag.id
-      )) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }, children: [
-          "SYSTEM_LOG",
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", display: "inline-block", animation: "qDotPulse 1s ease-in-out infinite" } })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, children: [
-          logLines.map((l, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { display: "flex", gap: 12, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }, children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: pc.label, flexShrink: 0 }, children: l.ts }),
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { color: i === logLines.length - 1 ? "#FF6B35" : pc.sub }, children: l.text })
-          ] }, i)),
-          logLines.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }, children: "Initializing system log\u2026" })
-        ] })
-      ] })
-    ] });
+        "\u2190 BACK_TO_FLEET"
+      ), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 56, height: 56, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, background: cBg2, border: `1px solid ${cBd}`, flexShrink: 0 } }, ag.icon), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 4 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.focus, fontWeight: 900, letterSpacing: "0.14em", fontSize: 17, fontFamily: "'JetBrains Mono', monospace" } }, ag.id), /* @__PURE__ */ import_react61.default.createElement("span", { style: {
+        fontSize: 9,
+        fontWeight: 700,
+        padding: "2px 8px",
+        borderRadius: 3,
+        letterSpacing: "0.12em",
+        fontFamily: "'JetBrains Mono', monospace",
+        background: ag.status === "ACTIVE" ? "rgba(255,107,53,0.18)" : dark ? "rgba(42,45,56,0.8)" : "#F3F4F6",
+        color: ag.status === "ACTIVE" ? "#FF6B35" : dark ? "rgba(248,250,252,0.45)" : "#64748B",
+        border: ag.status === "ACTIVE" ? "1px solid rgba(255,107,53,0.35)" : dark ? "1px solid #3A3D4A" : "1px solid #CBD5E1"
+      } }, ag.status), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" } }, "ID: ", ag.code)), /* @__PURE__ */ import_react61.default.createElement("p", { style: { color: pc.sub, fontSize: 12 } }, ag.desc)), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: () => toggleAgent(ag), style: { padding: "8px 16px", borderRadius: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", background: ag.status === "ACTIVE" ? "#CC5A25" : "#FF6B35", color: "#FDFDFD", border: "none" } }, ag.status === "ACTIVE" ? "PAUSE_AGENT" : "RESUME_AGENT")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 } }, [{ k: "SUCCESS_RATE", v: ag.successRate + "%" }, { k: "EFFICIENCY", v: ag.efficiency + " XEF" }, { k: "MARKET_SCOPE", v: ag.markets.join(" / ") }, { k: ag.uptime ? "UPTIME" : "LAST_ACTIVE", v: ag.uptime || ag.lastActive }].map(({ k: k2, v }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: k2, style: { borderRadius: 8, padding: 12, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 4 } }, k2), /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.focus, fontWeight: 900, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" } }, v)))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", gap: 0, marginBottom: 16, borderBottom: `1px solid ${cBd}` } }, ["OVERVIEW", "ACTIVITY_LOG", "CONFIGURATION"].map((tab) => /* @__PURE__ */ import_react61.default.createElement(
+        "button",
+        {
+          key: tab,
+          onClick: () => setDetailTab(tab.toLowerCase().replace("_", "")),
+          style: {
+            padding: "8px 16px",
+            fontSize: 10,
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.12em",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            borderBottom: `2px solid ${detailTab === tab.toLowerCase().replace("_", "") ? "#6B7F6B" : "transparent"}`,
+            color: detailTab === tab.toLowerCase().replace("_", "") ? "#6B7F6B" : pc.sub,
+            marginBottom: -1,
+            transition: "color 0.15s"
+          }
+        },
+        tab
+      ))), detailTab === "overview" && /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 12 } }, "WEEKLY_PERFORMANCE"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: 160 } }, /* @__PURE__ */ import_react61.default.createElement(ResponsiveContainer, { width: "100%", height: "100%" }, /* @__PURE__ */ import_react61.default.createElement(BarChart, { data: perf, barSize: 18 }, /* @__PURE__ */ import_react61.default.createElement(XAxis, { dataKey: "t", tick: { fill: ax, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }, axisLine: false, tickLine: false }), /* @__PURE__ */ import_react61.default.createElement(YAxis, { domain: [80, 100], tick: { fill: ax, fontSize: 9 }, axisLine: false, tickLine: false }), /* @__PURE__ */ import_react61.default.createElement(Tooltip, { contentStyle: { background: cBg, border: `1px solid ${cBd}`, color: pc.focus, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }, cursor: { fill: "rgba(255,107,53,0.08)" } }), /* @__PURE__ */ import_react61.default.createElement(Bar, { dataKey: "v", radius: [3, 3, 0, 0] }, perf.map((p, i) => /* @__PURE__ */ import_react61.default.createElement(Cell, { key: i, fill: i === perf.length - 1 ? "#FF6B35" : "#CC5A25" }))))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 12 } }, "MARKET_COVERAGE"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12, marginTop: 8 } }, ag.markets.map((m, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: m }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 4 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: pc.sub } }, m), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "#FF6B35" } }, 70 + i * 12, "%")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { height: 6, borderRadius: 3, background: cBd, overflow: "hidden" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: `${70 + i * 12}%`, height: "100%", background: "#FF6B35", borderRadius: 3 } })))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { paddingTop: 12, borderTop: `1px solid ${cBd}`, marginTop: 4 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", color: pc.label, letterSpacing: "0.12em", marginBottom: 4 } }, "SOURCE_CODE"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: pc.sub } }, ag.code.replace("-", "_"), "_V3"))))), detailTab === "activitylog" && /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 } }, "LIVE_ACTIVITY_LOG", /* @__PURE__ */ import_react61.default.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", display: "inline-block", animation: "qDotPulse 1s ease-in-out infinite" } })), /* @__PURE__ */ import_react61.default.createElement("div", { ref: logRef, style: { height: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 } }, agentLog.map((l, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: { display: "flex", gap: 12, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, flexShrink: 0 } }, l.ts), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: l.text.startsWith("[MATCH]") || l.text.startsWith("[ARBIT]") ? "#FF6B35" : pc.sub } }, l.text))), agentLog.length === 0 && /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" } }, "Initializing feed\u2026"))), detailTab === "configuration" && /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 16 } }, "AGENT_CONFIG"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 0 } }, [{ k: "SCAN_INTERVAL", v: "450ms" }, { k: "MAX_LATENCY", v: "200ms" }, { k: "CONFIDENCE_THRESH", v: "0.82" }, { k: "AUTO_EXECUTE", v: "ENABLED" }, { k: "REGISTRY_TARGETS", v: ag.markets.join(", ") }, { k: "RISK_PROFILE", v: "CONSERVATIVE" }, { k: "BUDGET_CAP", v: "$500,000 / cycle" }].map(({ k: k2, v }) => /* @__PURE__ */ import_react61.default.createElement("div", { key: k2, style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", color: pc.label } }, k2), /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: pc.focus } }, v))))));
+    }
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto p-5", style: { fontFamily: "'Inter',monospace" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 } }, STAT_ITEMS.map(({ key, val, unit: unit2 }) => /* @__PURE__ */ import_react61.default.createElement("div", { key, style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 8 } }, key), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 6 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontWeight: 900, fontSize: 24, lineHeight: 1, color: "#FF6B35", fontFamily: "'JetBrains Mono', monospace" } }, val), unit2 && /* @__PURE__ */ import_react61.default.createElement("span", { style: { fontSize: 10, color: pc.label, fontFamily: "'JetBrains Mono', monospace" } }, unit2))))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 } }, /* @__PURE__ */ import_react61.default.createElement("div", null, /* @__PURE__ */ import_react61.default.createElement("h2", { style: { color: pc.focus, fontWeight: 700, fontSize: 22, letterSpacing: "-0.01em", marginBottom: 4, fontFamily: "'Inter',system-ui,sans-serif" } }, "Agent Fleet"), /* @__PURE__ */ import_react61.default.createElement("p", { style: { color: pc.sub, fontSize: 12, lineHeight: 1.6, maxWidth: 400 } }, "Autonomous carbon liquidity scanners active across global registry protocols. Use the chat panel to deploy new agents.")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 6, background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.20)", fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "#FF6B35" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", animation: "qDotPulse 1s ease-in-out infinite", display: "inline-block" } }), agents.filter((a2) => a2.status === "ACTIVE").length, " AGENTS LIVE")), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 24 } }, agents.map((ag) => /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        key: ag.id,
+        onClick: () => setSelectedAgent(ag.id),
+        style: { borderRadius: 8, cursor: "pointer", background: cBg2, border: `1px solid ${cBd}`, borderLeft: `3px solid ${ag.status === "ACTIVE" ? "#FF6B35" : "#2A2D38"}`, transition: "border-color 0.2s,box-shadow 0.2s" },
+        onMouseEnter: (e) => {
+          e.currentTarget.style.borderColor = "#FF6B35";
+          e.currentTarget.style.boxShadow = "0 2px 12px rgba(255,107,53,0.12)";
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.borderColor = cBd;
+          e.currentTarget.style.borderLeftColor = ag.status === "ACTIVE" ? "#FF6B35" : "#2A2D38";
+          e.currentTarget.style.boxShadow = "none";
+        }
+      },
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", alignItems: "center", gap: 16, padding: 16 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 44, height: 44, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, background: cBg, border: `1px solid ${cBd}`, flexShrink: 0, position: "relative" } }, ag.icon, /* @__PURE__ */ import_react61.default.createElement("span", { style: { position: "absolute", top: 2, right: 2, width: 8, height: 8, borderRadius: "50%", background: ag.status === "ACTIVE" ? "#FF6B35" : "#3A3D4A", border: `2px solid ${cBg2}` } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: 180, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.focus, fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", marginBottom: 2 } }, ag.id), /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" } }, ag.code)), /* @__PURE__ */ import_react61.default.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: {
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "2px 8px",
+        borderRadius: 3,
+        width: "fit-content",
+        marginBottom: 6,
+        background: ag.status === "ACTIVE" ? "rgba(255,107,53,0.15)" : dark ? "rgba(42,45,56,0.8)" : "#F3F4F6",
+        color: ag.status === "ACTIVE" ? "#FF6B35" : dark ? "rgba(248,250,252,0.45)" : "#64748B",
+        border: ag.status === "ACTIVE" ? "1px solid rgba(255,107,53,0.30)" : dark ? "1px solid #3A3D4A" : "1px solid #CBD5E1",
+        fontFamily: "'JetBrains Mono', monospace",
+        letterSpacing: "0.10em"
+      } }, ag.status), /* @__PURE__ */ import_react61.default.createElement("p", { style: { color: pc.sub, fontSize: 10, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 } }, ag.desc)), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: "#FF6B35", fontWeight: 800, fontSize: 14, fontFamily: "'JetBrains Mono', monospace" } }, ag.successRate, "%"), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, fontSize: 9, fontFamily: "'JetBrains Mono', monospace" } }, "SUCCESS"), /* @__PURE__ */ import_react61.default.createElement("button", { onClick: (e) => {
+        e.stopPropagation();
+        toggleAgent(ag);
+      }, style: { marginTop: 4, padding: "4px 10px", borderRadius: 3, fontSize: 8, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.10em", background: ag.status === "ACTIVE" ? "rgba(204,90,37,0.15)" : "rgba(255,107,53,0.15)", color: ag.status === "ACTIVE" ? "#CC5A25" : "#FF6B35", border: `1px solid ${ag.status === "ACTIVE" ? "rgba(204,90,37,0.35)" : "rgba(255,107,53,0.35)"}` } }, ag.status === "ACTIVE" ? "PAUSE" : "RESUME"))),
+      /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderTop: `1px solid ${cBd}`, padding: "8px 16px", display: "flex", gap: 16 } }, [["MARKETS", ag.markets.slice(0, 2).join(" \xB7 ")], ["EFFICIENCY", ag.efficiency + " XEF"], ["TREND", ag.trend === "up" ? "\u2191 BULLISH" : ag.trend === "down" ? "\u2193 BEARISH" : "\u2192 FLAT"]].map(([k2, v]) => /* @__PURE__ */ import_react61.default.createElement("div", { key: k2 }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.10em", color: pc.label, marginBottom: 2 } }, k2), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: pc.sub } }, v))))
+    ))), /* @__PURE__ */ import_react61.default.createElement("div", { style: { borderRadius: 8, padding: 16, background: cBg2, border: `1px solid ${cBd}` } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "#FF6B35", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 } }, "SYSTEM_LOG", /* @__PURE__ */ import_react61.default.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", display: "inline-block", animation: "qDotPulse 1s ease-in-out infinite" } })), /* @__PURE__ */ import_react61.default.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 2 } }, logLines.map((l, i) => /* @__PURE__ */ import_react61.default.createElement("div", { key: i, style: { display: "flex", gap: 12, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" } }, /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: pc.label, flexShrink: 0 } }, l.ts), /* @__PURE__ */ import_react61.default.createElement("span", { style: { color: i === logLines.length - 1 ? "#FF6B35" : pc.sub } }, l.text))), logLines.length === 0 && /* @__PURE__ */ import_react61.default.createElement("div", { style: { color: pc.label, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" } }, "Initializing system log\u2026"))));
   }
   function App() {
     const [dark, setDark] = (0, import_react60.useState)(true);
@@ -56862,7 +54950,7 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     const [showNewCampaign, setShowNewCampaign] = (0, import_react60.useState)(false);
     const [campaignTemplate, setCampaignTemplate] = (0, import_react60.useState)(null);
     const [pipeline, setPipeline] = (0, import_react60.useState)(() => {
-      const engie = LEADS.find((l) => l.company === "Engie");
+      const engie = LEADS.find((l) => l.company === "Engenix Energy");
       return engie ? [{ ...engie, type: "demand", stage: "Client" }] : [];
     });
     const [toast, setToast] = (0, import_react60.useState)(null);
@@ -56947,8 +55035,7 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
       setAgents((prev) => [ag, ...prev]);
       notify(`${ag.id} deployed and live!`);
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: `flex h-screen overflow-hidden ${t.bg}`, style: { fontFamily: "'Inter', system-ui, sans-serif" }, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+    return /* @__PURE__ */ import_react61.default.createElement("div", { className: `flex h-screen overflow-hidden ${t.bg}`, style: { fontFamily: "'Inter', system-ui, sans-serif" } }, /* @__PURE__ */ import_react61.default.createElement("style", null, `
         /* Easing tokens */
         :root {
           --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -57113,20 +55200,16 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
 
         /* Universal smooth hover transition */
         button, a, [role="button"] { transition: opacity 0.15s var(--ease-out), transform 0.15s var(--ease-out), box-shadow 0.2s var(--ease-out), border-color 0.15s var(--ease-out); }
-      ` }),
-      toast && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
-        "div",
-        {
-          style: { animation: "toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both" },
-          className: `fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold
-            ${toast.type === "ok" ? "bg-[#FF6B35] text-white" : "bg-[#FF6B35] text-white"}`,
-          children: [
-            /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheckBig, { className: "w-4 h-4" }),
-            toast.msg
-          ]
-        }
-      ),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+      `), toast && /* @__PURE__ */ import_react61.default.createElement(
+      "div",
+      {
+        style: { animation: "toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both" },
+        className: `fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl text-sm font-semibold
+            ${toast.type === "ok" ? "bg-[#FF6B35] text-white" : "bg-[#FF6B35] text-white"}`
+      },
+      /* @__PURE__ */ import_react61.default.createElement(CircleCheckBig, { className: "w-4 h-4" }),
+      toast.msg
+    ), /* @__PURE__ */ import_react61.default.createElement("style", null, `
         @keyframes slideIn { from { transform: translateX(100%); opacity:0 } to { transform:translateX(0); opacity:1 } }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -57157,34 +55240,16 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
           --c-scan-bg:     ${dark ? "#0E1921" : "#EFF6F3"};
           --c-scan-border: ${dark ? "#1A3040" : "#BBD5C8"};
         }
-      ` }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sidebar, { t, page, setPage: setPage2, pipelineCount: pipeline.length, dark, setDark }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { width: chatWidth, minWidth: 400, maxWidth: 800 }, className: "shrink-0 h-full overflow-hidden flex flex-col", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChatPanel, { t, dark, messages, setMessages, setPage: setPage2, addLead, addProject, page, openNewCampaign: (tpl) => {
-        setCampaignTemplate(tpl || null);
-        setShowNewCampaign(true);
-      }, addAgent, onChatScanDone: () => {
-        setChatScanDone(true);
-        setDiscoveryScanDone(true);
-        setPage2("discovery");
-      }, chatInputRef }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ResizeHandle, { onMouseDown: () => {
-        chatResizing.current = true;
-      }, t }),
-      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 flex flex-col min-w-0 overflow-hidden", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Topbar, { t, page, dark, setDark, onInsight: () => setInsightOpen((o) => !o), insightOpen }),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", { className: "flex-1 overflow-hidden flex flex-col", children: [
-          page === "dashboard" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dashboard, { t, dark, pipeline, setPage: setPage2 }) }),
-          page === "dashboard2" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-hidden flex flex-col", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dashboard2, { t, dark, pipeline, setPage: setPage2 }) }),
-          page === "discovery" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AgentHub, { t, dark, pipeline, addLead, addProject, chatScanDone, onChatScanConsumed: () => setChatScanDone(false), setMessages, setPage: setPage2, initWithListings: discoveryScanDone }),
-          page === "campaigns" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CampaignsPage, { t, dark, showModal: showNewCampaign, setShowModal: setShowNewCampaign, campaignTemplate, setCampaignTemplate }),
-          page === "clients" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-hidden flex flex-col", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClientsPage, { t, dark, pipeline, setPage: setPage2 }) }),
-          page === "dataroom" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-y-auto", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DataRoomPage, { t, dark }) }),
-          page === "pipeline" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pipeline, { t, dark, pipeline, setPipeline }),
-          page === "terminal" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "flex-1 overflow-hidden flex flex-col", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AgentTerminalPage, { t, dark, agents, setAgents }) })
-        ] })
-      ] }),
-      insightOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(InsightPanel, { dark, setPage: setPage2, onClose: () => setInsightOpen(false) })
-    ] });
+      `), /* @__PURE__ */ import_react61.default.createElement(Sidebar, { t, page, setPage: setPage2, pipelineCount: pipeline.length, dark, setDark }), /* @__PURE__ */ import_react61.default.createElement("div", { style: { width: chatWidth, minWidth: 400, maxWidth: 800 }, className: "shrink-0 h-full overflow-hidden flex flex-col" }, /* @__PURE__ */ import_react61.default.createElement(ChatPanel, { t, dark, messages, setMessages, setPage: setPage2, addLead, addProject, page, openNewCampaign: (tpl) => {
+      setCampaignTemplate(tpl || null);
+      setShowNewCampaign(true);
+    }, addAgent, onChatScanDone: () => {
+      setChatScanDone(true);
+      setDiscoveryScanDone(true);
+      setPage2("discovery");
+    }, chatInputRef })), /* @__PURE__ */ import_react61.default.createElement(ResizeHandle, { onMouseDown: () => {
+      chatResizing.current = true;
+    }, t }), /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 flex flex-col min-w-0 overflow-hidden" }, /* @__PURE__ */ import_react61.default.createElement(Topbar, { t, page, dark, setDark, onInsight: () => setInsightOpen((o) => !o), insightOpen }), /* @__PURE__ */ import_react61.default.createElement("main", { className: "flex-1 overflow-hidden flex flex-col" }, page === "dashboard" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto" }, /* @__PURE__ */ import_react61.default.createElement(Dashboard, { t, dark, pipeline, setPage: setPage2 })), page === "dashboard2" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-hidden flex flex-col" }, /* @__PURE__ */ import_react61.default.createElement(Dashboard2, { t, dark, pipeline, setPage: setPage2 })), page === "discovery" && /* @__PURE__ */ import_react61.default.createElement(AgentHub, { t, dark, pipeline, addLead, addProject, chatScanDone, onChatScanConsumed: () => setChatScanDone(false), setMessages, setPage: setPage2, initWithListings: discoveryScanDone }), page === "campaigns" && /* @__PURE__ */ import_react61.default.createElement(CampaignsPage, { t, dark, showModal: showNewCampaign, setShowModal: setShowNewCampaign, campaignTemplate, setCampaignTemplate }), page === "clients" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-hidden flex flex-col" }, /* @__PURE__ */ import_react61.default.createElement(ClientsPage, { t, dark, pipeline, setPage: setPage2 })), page === "dataroom" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-y-auto" }, /* @__PURE__ */ import_react61.default.createElement(DataRoomPage, { t, dark })), page === "pipeline" && /* @__PURE__ */ import_react61.default.createElement(Pipeline, { t, dark, pipeline, setPipeline }), page === "terminal" && /* @__PURE__ */ import_react61.default.createElement("div", { className: "flex-1 overflow-hidden flex flex-col" }, /* @__PURE__ */ import_react61.default.createElement(AgentTerminalPage, { t, dark, agents, setAgents })))), insightOpen && /* @__PURE__ */ import_react61.default.createElement(InsightPanel, { dark, setPage: setPage2, onClose: () => setInsightOpen(false) }));
   }
   var ErrorBoundary = class extends import_react61.default.Component {
     constructor(props) {
@@ -57199,33 +55264,31 @@ This project is a strong candidate for buyers currently targeting Kalimantan-reg
     }
     render() {
       if (this.state.error) {
-        return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { style: { fontFamily: "'JetBrains Mono',monospace", padding: 32, background: "#121417", color: "#FF6B35", minHeight: "100vh" }, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 12, letterSpacing: "0.1em", marginBottom: 16, color: "rgba(248,250,252,0.5)" }, children: "QATALYST \xB7 RUNTIME ERROR" }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { fontSize: 16, fontWeight: 700, color: "#FF6B35", marginBottom: 12 }, children: this.state.error.message }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)("pre", { style: { fontSize: 11, color: "rgba(248,250,252,0.6)", lineHeight: 1.8, whiteSpace: "pre-wrap", maxWidth: 700 }, children: this.state.error.stack?.split("\n").slice(0, 10).join("\n") }),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-            "button",
-            {
-              onClick: () => this.setState({ error: null }),
-              style: { marginTop: 24, padding: "8px 18px", background: "#FF6B35", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "'JetBrains Mono',monospace" },
-              children: "RELOAD APP"
-            }
-          )
-        ] });
+        return /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontFamily: "'JetBrains Mono',monospace", padding: 32, background: "#121417", color: "#FF6B35", minHeight: "100vh" } }, /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 12, letterSpacing: "0.1em", marginBottom: 16, color: "rgba(248,250,252,0.5)" } }, "QATALYST \xB7 RUNTIME ERROR"), /* @__PURE__ */ import_react61.default.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: "#FF6B35", marginBottom: 12 } }, this.state.error.message), /* @__PURE__ */ import_react61.default.createElement("pre", { style: { fontSize: 11, color: "rgba(248,250,252,0.6)", lineHeight: 1.8, whiteSpace: "pre-wrap", maxWidth: 700 } }, this.state.error.stack?.split("\n").slice(0, 10).join("\n")), /* @__PURE__ */ import_react61.default.createElement(
+          "button",
+          {
+            onClick: () => this.setState({ error: null }),
+            style: { marginTop: 24, padding: "8px 18px", background: "#FF6B35", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "'JetBrains Mono',monospace" }
+          },
+          "RELOAD APP"
+        ));
       }
       return this.props.children;
     }
   };
   (0, import_client.createRoot)(document.getElementById("root")).render(
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(App, {}) })
+    /* @__PURE__ */ import_react61.default.createElement(ErrorBoundary, null, /* @__PURE__ */ import_react61.default.createElement(App, null))
   );
+
+  // entry.jsx
+  (0, import_client2.createRoot)(document.getElementById("root")).render(/* @__PURE__ */ React.createElement(App, null));
 })();
 /*! Bundled license information:
 
-react/cjs/react.development.js:
+scheduler/cjs/scheduler.development.js:
   (**
    * @license React
-   * react.development.js
+   * scheduler.development.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
@@ -57233,10 +55296,10 @@ react/cjs/react.development.js:
    * LICENSE file in the root directory of this source tree.
    *)
 
-scheduler/cjs/scheduler.development.js:
+react/cjs/react.development.js:
   (**
    * @license React
-   * scheduler.development.js
+   * react.development.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
@@ -57306,17 +55369,6 @@ react-is/cjs/react-is.development.js:
   (**
    * @license React
    * react-is.development.js
-   *
-   * Copyright (c) Meta Platforms, Inc. and affiliates.
-   *
-   * This source code is licensed under the MIT license found in the
-   * LICENSE file in the root directory of this source tree.
-   *)
-
-react/cjs/react-jsx-runtime.development.js:
-  (**
-   * @license React
-   * react-jsx-runtime.development.js
    *
    * Copyright (c) Meta Platforms, Inc. and affiliates.
    *
