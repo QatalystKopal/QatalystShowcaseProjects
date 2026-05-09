@@ -11,7 +11,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ project }: HeroSectionProps) {
   return (
-    <div className="relative w-full h-[160px] sm:h-[240px] md:h-[340px] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-[240px] sm:h-[240px] md:h-[340px] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center"
