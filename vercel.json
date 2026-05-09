@@ -1,0 +1,4 @@
+{
+  "outputDirectory": "QatalystShowcaseProjects/.next",
+  "buildCommand": "cd QatalystShowcaseProjects && npm run build"
+}
