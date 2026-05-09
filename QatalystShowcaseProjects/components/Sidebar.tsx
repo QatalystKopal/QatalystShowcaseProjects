@@ -65,21 +65,33 @@ const COLLAPSE_THRESHOLD = 108; // below this → icon-only mode
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
 
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const isDragging = useRef(false);
 
+  // Detect mobile screen size
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Load persisted width on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem("sidebar-width");
-      if (saved) {
+      if (saved && !isMobile) {
         const w = parseInt(saved, 10);
         if (w >= MIN_WIDTH && w <= MAX_WIDTH) setWidth(w);
       }
     } catch {}
-  }, []);
+  }, [isMobile]);
 
   // Persist width on change
   useEffect(() => {
@@ -110,12 +122,13 @@ export function Sidebar() {
   }, []);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
+    if (isMobile) return;
     e.preventDefault();
     dragRef.current = { startX: e.clientX, startWidth: width };
     isDragging.current = true;
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
-  }, [width]);
+  }, [width, isMobile]);
 
   // Extract project ID from route (e.g. /projects/south-barito-kapuas → "south-barito-kapuas")
   const projectIdMatch = pathname.match(/^\/projects\/([^/]+)/);
@@ -148,7 +161,8 @@ export function Sidebar() {
     pathname.startsWith("/projects")      ? "project"   :
     "full";
 
-  const collapsed = width < COLLAPSE_THRESHOLD;
+  // Force collapsed/icon-only mode on mobile
+  const collapsed = isMobile || width < COLLAPSE_THRESHOLD;
 
   // ── Reusable nav item renderer ────────────────────────────────────────────
   function NavLink({

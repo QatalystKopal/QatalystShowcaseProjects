@@ -30,17 +30,17 @@ export function VideoLibrary() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="flex h-screen bg-white overflow-hidden flex-col md:flex-row">
       <Sidebar />
 
       {/* Main content */}
       <motion.div
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -53,7 +53,7 @@ export function VideoLibrary() {
           </motion.div>
 
           {/* Videos Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
             {videos.map((video, idx) => (
               <motion.div
                 key={video.id}

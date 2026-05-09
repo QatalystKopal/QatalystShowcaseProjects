@@ -18,10 +18,10 @@ interface ProjectDetailsPageProps {
 
 export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="flex h-screen bg-white overflow-hidden flex-col md:flex-row">
       <Sidebar />
       <motion.div
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
