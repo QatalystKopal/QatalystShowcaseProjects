@@ -211,6 +211,7 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                     gap: columnGap,
                     background: '#cbd5e1',
                     padding: cellPadding,
+                    minWidth: isMobile ? '480px' : 'auto',
                   }}
                 >
                   <div style={{ background: '#f8fafc', padding: cellPadding, fontWeight: 'bold', color: '#0f172a' }}>
@@ -229,7 +230,7 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
               </div>
 
               {/* Scrollable Body */}
-              <div style={{ overflowY: 'scroll', height: 'calc(100% - 56px - 56px)' }}>
+              <div style={{ overflowY: 'scroll', overflowX: 'auto', height: 'calc(100% - 56px - 56px)' }}>
                 {vintageData.map((row, idx) => (
                   <div
                     key={idx}
@@ -239,6 +240,7 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                       gap: columnGap,
                       background: '#e2e8f0',
                       borderBottom: '1px solid #e2e8f0',
+                      minWidth: isMobile ? '480px' : 'auto',
                     }}
                   >
                     <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: cellPadding, fontWeight: '500', color: '#0f172a' }}>
@@ -274,6 +276,7 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                     gap: columnGap,
                     background: '#cbd5e1',
                     padding: cellPadding,
+                    minWidth: isMobile ? '480px' : 'auto',
                   }}
                 >
                   <div style={{ background: '#f1f5f9', padding: cellPadding, fontWeight: 'bold', color: '#0f172a' }}>
