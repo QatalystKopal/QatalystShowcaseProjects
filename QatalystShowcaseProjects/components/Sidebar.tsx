@@ -82,13 +82,17 @@ export function Sidebar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Load persisted width on mount
+  // Load persisted width on mount and handle mobile/desktop transitions
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("sidebar-width");
-      if (saved && !isMobile) {
-        const w = parseInt(saved, 10);
-        if (w >= MIN_WIDTH && w <= MAX_WIDTH) setWidth(w);
+      if (isMobile) {
+        setWidth(MIN_WIDTH);
+      } else {
+        const saved = localStorage.getItem("sidebar-width");
+        if (saved) {
+          const w = parseInt(saved, 10);
+          if (w >= MIN_WIDTH && w <= MAX_WIDTH) setWidth(w);
+        }
       }
     } catch {}
   }, [isMobile]);
