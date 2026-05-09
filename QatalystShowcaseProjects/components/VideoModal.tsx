@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Video {
   id: string;
@@ -16,6 +16,9 @@ interface VideoModalProps {
 }
 
 export function VideoModal({ video, onClose }: VideoModalProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -59,12 +62,37 @@ export function VideoModal({ video, onClose }: VideoModalProps) {
           </div>
 
           {/* Video Player */}
-          <div className="flex-1 bg-black flex items-center justify-center">
+          <div className="flex-1 bg-black flex items-center justify-center relative">
+            {isLoading && !hasError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <div className="text-white text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
+                  <p>Loading video...</p>
+                </div>
+              </div>
+            )}
+            {hasError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                <div className="text-white text-center">
+                  <p className="text-lg font-semibold mb-2">Error loading video</p>
+                  <p className="text-sm text-gray-400">The video could not be loaded. Please try again later.</p>
+                </div>
+              </div>
+            )}
             <video
               src={video.url}
               controls
               autoPlay
+              preload="auto"
+              crossOrigin="anonymous"
               className="w-full h-full max-h-[calc(90vh-60px)]"
+              onCanPlay={() => setIsLoading(false)}
+              onLoadedData={() => setIsLoading(false)}
+              onError={() => {
+                setIsLoading(false);
+                setHasError(true);
+              }}
+              onLoadStart={() => setIsLoading(true)}
             />
           </div>
         </motion.div>
