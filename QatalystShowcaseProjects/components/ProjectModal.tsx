@@ -467,9 +467,6 @@ export function ProjectModal({ project, onClose }: ProjectModalProps) {
                   </div>
                 ))}
               </div>
-
-                ))}
-              </div>
             </div>
 
             <SectionDivider />

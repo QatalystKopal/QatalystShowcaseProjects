@@ -62,7 +62,7 @@ export function MethodologySDGSection({ project }: MethodologySDGSectionProps) {
                       outerRadius={120}
                       paddingAngle={2}
                       dataKey="pct"
-                      label={({ label, pct }) => `${label} (${pct}%)`}
+                      label={({ label, pct }: { label: string; pct: number }) => `${label} (${pct}%)`}
                     >
                       {methodologyData.map((entry, idx) => (
                         <Cell key={`cell-${idx}`} fill={entry.color} opacity={0.9} />
