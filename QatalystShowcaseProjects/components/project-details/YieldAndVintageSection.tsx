@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Project } from '@/lib/projects';
 import { Card } from '@/components/ui/card';
 import {
@@ -85,9 +86,24 @@ const vintageData = [
 const chartData = vintageData.slice(0, 20);
 
 export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const totalReductions = 38648258;
   const totalRemovals = 28189917;
   const totalVCUs = 58817594;
+
+  const cellPadding = isMobile ? '8px' : '12px';
+  const columnGap = isMobile ? '0px' : '1px';
+  const textAlign = isMobile ? 'left' : 'right';
 
   return (
     <motion.section
@@ -192,21 +208,21 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 2fr 2fr 2fr',
-                    gap: '1px',
+                    gap: columnGap,
                     background: '#cbd5e1',
-                    padding: '12px',
+                    padding: cellPadding,
                   }}
                 >
-                  <div style={{ background: '#f8fafc', padding: '12px', fontWeight: 'bold', color: '#0f172a' }}>
+                  <div style={{ background: '#f8fafc', padding: cellPadding, fontWeight: 'bold', color: '#0f172a' }}>
                     Vintage Year
                   </div>
-                  <div style={{ background: '#f8fafc', padding: '12px', fontWeight: 'bold', color: '#0f172a', textAlign: 'right' }}>
+                  <div style={{ background: '#f8fafc', padding: cellPadding, fontWeight: 'bold', color: '#0f172a', textAlign }}>
                     Estimated Reduction VCUs (tCO2e)
                   </div>
-                  <div style={{ background: '#f8fafc', padding: '12px', fontWeight: 'bold', color: '#0f172a', textAlign: 'right' }}>
+                  <div style={{ background: '#f8fafc', padding: cellPadding, fontWeight: 'bold', color: '#0f172a', textAlign }}>
                     Estimated Removal VCUs (tCO2e)
                   </div>
-                  <div style={{ background: '#f8fafc', padding: '12px', fontWeight: 'bold', color: '#0f172a', textAlign: 'right' }}>
+                  <div style={{ background: '#f8fafc', padding: cellPadding, fontWeight: 'bold', color: '#0f172a', textAlign }}>
                     Estimated Total VCUs (tCO2e)
                   </div>
                 </div>
@@ -220,21 +236,21 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 2fr 2fr 2fr',
-                      gap: '1px',
+                      gap: columnGap,
                       background: '#e2e8f0',
                       borderBottom: '1px solid #e2e8f0',
                     }}
                   >
-                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: '12px', fontWeight: '500', color: '#0f172a' }}>
+                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: cellPadding, fontWeight: '500', color: '#0f172a' }}>
                       {row.vintage}
                     </div>
-                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: '12px', textAlign: 'right', color: '#374151', fontFamily: 'monospace' }}>
+                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: cellPadding, textAlign, color: '#374151', fontFamily: 'monospace' }}>
                       {row.reductions.toLocaleString()}
                     </div>
-                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: '12px', textAlign: 'right', color: '#374151', fontFamily: 'monospace' }}>
+                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: cellPadding, textAlign, color: '#374151', fontFamily: 'monospace' }}>
                       {row.removals.toLocaleString()}
                     </div>
-                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: '12px', textAlign: 'right', color: '#0D9488', fontWeight: '600', fontFamily: 'monospace' }}>
+                    <div style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', padding: cellPadding, textAlign, color: '#0D9488', fontWeight: '600', fontFamily: 'monospace' }}>
                       {row.total.toLocaleString()}
                     </div>
                   </div>
@@ -255,21 +271,21 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 2fr 2fr 2fr',
-                    gap: '1px',
+                    gap: columnGap,
                     background: '#cbd5e1',
-                    padding: '12px',
+                    padding: cellPadding,
                   }}
                 >
-                  <div style={{ background: '#f1f5f9', padding: '12px', fontWeight: 'bold', color: '#0f172a' }}>
+                  <div style={{ background: '#f1f5f9', padding: cellPadding, fontWeight: 'bold', color: '#0f172a' }}>
                     Total
                   </div>
-                  <div style={{ background: '#f1f5f9', padding: '12px', fontWeight: 'bold', color: '#0f172a', textAlign: 'right', fontFamily: 'monospace' }}>
+                  <div style={{ background: '#f1f5f9', padding: cellPadding, fontWeight: 'bold', color: '#0f172a', textAlign, fontFamily: 'monospace' }}>
                     {totalReductions.toLocaleString()}
                   </div>
-                  <div style={{ background: '#f1f5f9', padding: '12px', fontWeight: 'bold', color: '#0f172a', textAlign: 'right', fontFamily: 'monospace' }}>
+                  <div style={{ background: '#f1f5f9', padding: cellPadding, fontWeight: 'bold', color: '#0f172a', textAlign, fontFamily: 'monospace' }}>
                     {totalRemovals.toLocaleString()}
                   </div>
-                  <div style={{ background: '#f1f5f9', padding: '12px', fontWeight: 'bold', color: '#0D9488', textAlign: 'right', fontFamily: 'monospace' }}>
+                  <div style={{ background: '#f1f5f9', padding: cellPadding, fontWeight: 'bold', color: '#0D9488', textAlign, fontFamily: 'monospace' }}>
                     {totalVCUs.toLocaleString()}
                   </div>
                 </div>
