@@ -1,2 +1,8 @@
-// Root-level Next.js config that delegates to QatalystShowcaseProjects
-module.exports = require('./QatalystShowcaseProjects/next.config.ts');
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  turbopack: {
+    root: './QatalystShowcaseProjects',
+  },
+};
+
+module.exports = nextConfig;
