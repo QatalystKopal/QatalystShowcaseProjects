@@ -4,9 +4,8 @@
   "description": "Qatalyst Showcase Projects - Video Library and Project Details",
   "private": true,
   "scripts": {
-    "postinstall": "cd QatalystShowcaseProjects && npm install",
     "dev": "cd QatalystShowcaseProjects && npm run dev",
-    "build": "cd QatalystShowcaseProjects && npm run build",
+    "build": "cd QatalystShowcaseProjects && npm install && npm run build",
     "start": "cd QatalystShowcaseProjects && npm start",
     "lint": "cd QatalystShowcaseProjects && npm run lint"
   },
