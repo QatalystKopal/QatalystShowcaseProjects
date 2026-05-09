@@ -17,12 +17,12 @@ const videos: Video[] = [
   {
     id: '1',
     title: 'Climate Impact - English',
-    url: '/videos/Climate_ENG.mp4',
+    url: 'https://hai3k5tf4o77ziyv.public.blob.vercel-storage.com/SBK%20Videos/Climate_ENG.mp4',
   },
   {
     id: '2',
     title: 'Climate Impact - Japanese',
-    url: '/videos/Climate_JPN (1).mp4',
+    url: 'https://hai3k5tf4o77ziyv.public.blob.vercel-storage.com/SBK%20Videos/Climate_JPN%20%281%29.mp4',
   },
 ];
 
