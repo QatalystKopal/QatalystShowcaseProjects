@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd QatalystShowcaseProjects && npm run build",
-  "installCommand": "cd QatalystShowcaseProjects && npm ci",
-  "devCommand": "cd QatalystShowcaseProjects && npm run dev",
-  "root": "QatalystShowcaseProjects"
-}
