@@ -19,7 +19,9 @@ interface ProjectDetailsPageProps {
 export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
   return (
     <div className="flex h-screen bg-white overflow-hidden flex-col md:flex-row">
-      <Sidebar />
+      <div className="w-full md:w-auto">
+        <Sidebar />
+      </div>
       <motion.div
         className="flex-1 overflow-y-auto w-full"
         initial={{ opacity: 0 }}
