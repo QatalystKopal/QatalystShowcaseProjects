@@ -9,8 +9,8 @@ import { YieldAndVintageSection } from './project-details/YieldAndVintageSection
 import { MethodologySDGSection } from './project-details/MethodologySDGSection';
 import { ProjectNarrative } from './project-details/ProjectNarrative';
 import { DetailedReviewSection } from './project-details/DetailedReviewSection';
-import { ProjectTeam } from './project-details/ProjectTeam';
 import { ProjectGallery } from './project-details/ProjectGallery';
+import { ProjectTeam } from './project-details/ProjectTeam';
 
 interface ProjectDetailsPageProps {
   project: Project;
@@ -18,10 +18,8 @@ interface ProjectDetailsPageProps {
 
 export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
   return (
-    <div className="flex h-screen bg-white overflow-hidden flex-col md:flex-row">
-      <div className="w-full md:w-auto">
-        <Sidebar />
-      </div>
+    <div className="flex h-screen bg-white overflow-hidden">
+      <Sidebar />
       <motion.div
         className="flex-1 overflow-y-auto w-full"
         initial={{ opacity: 0 }}
