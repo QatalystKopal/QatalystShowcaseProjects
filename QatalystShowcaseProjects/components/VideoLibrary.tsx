@@ -30,7 +30,7 @@ export function VideoLibrary() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden flex-col md:flex-row">
+    <div className="flex h-screen bg-white overflow-hidden">
       <Sidebar />
 
       {/* Main content */}
