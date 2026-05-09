@@ -68,7 +68,7 @@ export function HeroSection({ project }: HeroSectionProps) {
         transition={{ duration: 0.8, delay: 0.8 }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-6">
             {/* BeZero Rating */}
             <div className="flex items-center gap-4">
               <div className="bg-gradient-to-br from-[#0D9488] to-[#006B63] rounded-full w-16 h-16 flex items-center justify-center">
