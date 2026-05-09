@@ -235,8 +235,8 @@ export function Sidebar() {
 
   return (
     <aside
-      className="relative shrink-0 flex flex-col overflow-y-auto overflow-x-hidden md:h-full z-40"
-      style={{ width, background: "#0e0e16", transition: isDragging.current ? "none" : "width 0ms", height: isMobile ? '80px' : '100%' }}
+      className="relative shrink-0 flex flex-col overflow-y-auto overflow-x-hidden h-full z-40"
+      style={{ width, background: "#0e0e16", transition: isDragging.current ? "none" : "width 0ms", height: '100%' }}
     >
       {/* ── Logo ── */}
       <div
