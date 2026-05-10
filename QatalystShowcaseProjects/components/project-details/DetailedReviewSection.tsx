@@ -12,6 +12,7 @@ interface DetailedReviewSectionProps {
 
 export function DetailedReviewSection({ project }: DetailedReviewSectionProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const isKuburaya = project.shortName === 'Kuburaya';
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
@@ -36,11 +37,17 @@ export function DetailedReviewSection({ project }: DetailedReviewSectionProps) {
         >
           <div className="p-4 sm:p-5 md:p-6 bg-gray-50 border border-gray-200 rounded-lg mb-4 sm:mb-5 md:mb-6">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-black">Additionality</h3>
-              <span className="px-2 sm:px-3 py-1 bg-[#0D9488] text-white text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap">AAA</span>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-black">
+                {isKuburaya ? 'Rare Mangrove Blue Carbon Conservation Project' : 'Additionality'}
+              </h3>
+              <span className="px-2 sm:px-3 py-1 bg-[#0D9488] text-white text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap">
+                {isKuburaya ? 'Premium' : 'AAA'}
+              </span>
             </div>
             <p className="text-xs sm:text-sm md:text-base text-gray-700 font-light leading-relaxed mt-2 sm:mt-3">
-              The project receives the highest additionality rating (AAA) due to the rarity of conserving production-zoned forest in Indonesia, strong evidence that industrial Acacia plantation development was the most plausible counterfactual, and clear financial dependence on carbon revenues.
+              {isKuburaya
+                ? 'Kuburaya Mangrove Project protects and restores mangrove ecosystems, one of the rarest and most carbon-dense blue carbon habitats globally. Mangroves sequester and store significantly more carbon per hectare than most terrestrial forests, particularly in long-lived soil carbon pools, making the climate impact both high-impact and durable. Unlike many ARR or generic forest conservation projects, mangrove conservation delivers simultaneous climate mitigation, coastal protection, and marine ecosystem benefits, placing this project in a scarce, premium segment of the carbon market.'
+                : 'The project receives the highest additionality rating (AAA) due to the rarity of conserving production-zoned forest in Indonesia, strong evidence that industrial Acacia plantation development was the most plausible counterfactual, and clear financial dependence on carbon revenues.'}
             </p>
             <Button
               variant="outline"
@@ -108,11 +115,17 @@ export function DetailedReviewSection({ project }: DetailedReviewSectionProps) {
         >
           <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-black">Carbon Accounting</h3>
-              <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">A</span>
+              <h3 className="text-xl font-bold text-black">
+                {isKuburaya ? 'Exceptional Biodiversity and Conservation Value' : 'Carbon Accounting'}
+              </h3>
+              <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">
+                {isKuburaya ? 'High' : 'A'}
+              </span>
             </div>
             <p className="text-sm text-gray-700 font-light leading-relaxed mt-3">
-              Carbon accounting is rated A, reflecting a high likelihood of accuracy with some moderate risks. The baseline uses a credible, plan-based deforestation scenario aligned with actual HTI proposals and stratified peat-depth mapping.
+              {isKuburaya
+                ? 'The Project Area supports high biodiversity, functioning as a critical habitat and nursery for: • Fish, crustaceans, and molluscs that underpin coastal and marine food webs • Migratory and resident bird species • Endemic and threatened flora and fauna adapted to intertidal ecosystems. Mangroves are globally recognised as disproportionately important for biodiversity relative to their area, yet among the most threatened ecosystems worldwide. Protecting intact mangrove systems delivers true conservation additionality, not just avoided damage.'
+                : 'Carbon accounting is rated A, reflecting a high likelihood of accuracy with some moderate risks. The baseline uses a credible, plan-based deforestation scenario aligned with actual HTI proposals and stratified peat-depth mapping.'}
             </p>
             <Button
               variant="outline"
@@ -177,11 +190,17 @@ export function DetailedReviewSection({ project }: DetailedReviewSectionProps) {
         >
           <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-black">Permanence</h3>
-              <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">BBB</span>
+              <h3 className="text-xl font-bold text-black">
+                {isKuburaya ? 'Protection of a Highly Threatened Ecosystem' : 'Permanence'}
+              </h3>
+              <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">
+                {isKuburaya ? 'Critical' : 'BBB'}
+              </span>
             </div>
             <p className="text-sm text-gray-700 font-light leading-relaxed mt-3">
-              Permanence is rated BBB, reflecting moderate long-term risk. The project benefits from intact hydrology, low current fire incidence, limited encroachment, and strong access control. However, long-term permanence depends on renewing the PBPH licence beyond its initial 30-year term to cover the 120-year commitment period.
+              {isKuburaya
+                ? 'Mangroves face intense pressure from coastal development and land conversion, unsustainable harvesting, aquaculture expansion, pollution and hydrological disruption. This project prevents irreversible ecosystem loss in an environment where natural recovery is slow or impossible without intervention. Buyers are supporting permanent ecosystem protection, not short-term restoration gains.'
+                : 'Permanence is rated BBB, reflecting moderate long-term risk. The project benefits from intact hydrology, low current fire incidence, limited encroachment, and strong access control. However, long-term permanence depends on renewing the PBPH licence beyond its initial 30-year term to cover the 120-year commitment period.'}
             </p>
             <Button
               variant="outline"
@@ -249,11 +268,17 @@ export function DetailedReviewSection({ project }: DetailedReviewSectionProps) {
         >
           <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-black">Project Execution Risks</h3>
-              <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">Very Low</span>
+              <h3 className="text-xl font-bold text-black">
+                {isKuburaya ? 'Community Livelihoods Tied Directly to Conservation' : 'Project Execution Risks'}
+              </h3>
+              <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">
+                {isKuburaya ? 'Strong' : 'Very Low'}
+              </span>
             </div>
             <p className="text-sm text-gray-700 font-light leading-relaxed mt-3">
-              Execution risk is rated Very Low, reflecting strong operational progress, regulatory clarity, and robust technical capacity. Core activities—rewetting, canal blocking, fire management, patrols, and monitoring—have been operational since 2022–2023. The PBPH licence provides a clear legal basis, and Indonesia's 2025 decree lifted the credit-export moratorium, reducing regulatory uncertainty.
+              {isKuburaya
+                ? 'Local communities depend on mangroves for fisheries and food security, coastal protection from storms and erosion, traditional livelihoods. The project creates direct incentives for conservation through sustainable livelihood alternatives, local employment in monitoring, restoration, and management, revenue sharing and community development programmes. This alignment ensures that biodiversity protection and social outcomes reinforce each other, reducing long-term risk and leakage.'
+                : 'Execution risk is rated Very Low, reflecting strong operational progress, regulatory clarity, and robust technical capacity. Core activities—rewetting, canal blocking, fire management, patrols, and monitoring—have been operational since 2022–2023. The PBPH licence provides a clear legal basis, and Indonesia\'s 2025 decree lifted the credit-export moratorium, reducing regulatory uncertainty.'}
             </p>
             <Button
               variant="outline"
@@ -322,6 +347,56 @@ export function DetailedReviewSection({ project }: DetailedReviewSectionProps) {
             </AnimatePresence>
           </div>
         </motion.div>
+
+        {/* Climate Adaptation and Resilience Benefits - Only for Kuburaya */}
+        {isKuburaya && (
+          <motion.div
+            className="mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg mb-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-black">High Climate Adaptation and Resilience Benefits</h3>
+                <span className="px-3 py-1 bg-[#0D9488] text-white text-sm font-semibold rounded-full">Exceptional</span>
+              </div>
+              <p className="text-sm text-gray-700 font-light leading-relaxed mt-3">
+                Beyond mitigation, mangroves provide natural climate adaptation infrastructure, including storm surge and flood protection, shoreline stabilization, reduced erosion and saltwater intrusion.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => toggleSection('adaptation')}
+                className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-100 group"
+              >
+                {expandedSections.adaptation ? 'Read Less' : 'Read More'}
+                <ChevronDown
+                  className={`w-4 h-4 ml-2 transition-transform duration-300 ${
+                    expandedSections.adaptation ? 'rotate-180' : ''
+                  }`}
+                />
+              </Button>
+              <AnimatePresence>
+                {expandedSections.adaptation && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="overflow-hidden mt-4"
+                  >
+                    <div className="space-y-4 border-t border-gray-200 pt-4">
+                      <p className="text-sm text-gray-700 font-light leading-relaxed">
+                        Mangrove protection delivers multiple co-benefits beyond carbon sequestration. These ecosystems act as natural buffers against climate impacts, providing critical adaptation services for vulnerable coastal communities.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
       </div>
     </motion.section>
   );
