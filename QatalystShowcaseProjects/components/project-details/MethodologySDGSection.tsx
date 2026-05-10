@@ -83,7 +83,6 @@ export function MethodologySDGSection({ project }: MethodologySDGSectionProps) {
                         <Cell key={`cell-${idx}`} fill={entry.color} opacity={0.9} />
                       ))}
                     </Pie>
-                    {!isKuburaya && <Tooltip formatter={(value) => `${value}%`} />}
                   </PieChart>
                 </ResponsiveContainer>
               ) : null}
