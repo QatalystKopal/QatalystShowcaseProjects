@@ -99,14 +99,14 @@ export function HeroSection({ project }: HeroSectionProps) {
 
               <div className="hidden sm:block w-px h-12 bg-gray-200" />
 
-              {/* VCS Version */}
+              {/* Methodology & Version */}
               <div className="flex items-center gap-3">
                 <Award className="w-6 h-6 text-[#F86501]" />
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Standard Version
+                    Methodology & Version
                   </p>
-                  <p className="text-sm font-bold text-black">{project.vcsVersion}</p>
+                  <p className="text-sm font-bold text-black">VM0007 v1.6</p>
                 </div>
               </div>
             </div>
@@ -142,13 +142,13 @@ export function HeroSection({ project }: HeroSectionProps) {
             </div>
           </div>
 
-          {/* Standard Version Card */}
+          {/* Methodology & Version Card */}
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center gap-3">
               <Award className="w-5 h-5 text-[#F86501] flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Version</p>
-                <p className="text-sm font-bold text-black">{project.vcsVersion}</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Methodology & Version</p>
+                <p className="text-sm font-bold text-black">VM0007 v1.6</p>
               </div>
             </div>
           </div>
