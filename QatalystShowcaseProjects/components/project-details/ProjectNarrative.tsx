@@ -10,11 +10,18 @@ interface ProjectNarrativeProps {
   project: Project;
 }
 
+const projectDescription = `The South Barito Kapuas (VCS4782) project covers 39,835 ha of peatland and dryland forest in Central Kalimantan, Indonesia, operating under a PBPH Jasa Lingkungan licence issued in 2023. The project aims to avoid deforestation and peat degradation through peatland rewetting, hydrological restoration, fire management, and community livelihood programs. Over its 60year crediting period, it is expected to generate ~66.8 million tCO₂e in avoided emissions from Wetland Restoration & Conservation (WRC) and Avoided Planned Deforestation (APD).
+The project area had been earmarked for industrial plantation development, and multiple competing PBPHHTI applications confirm strong commercial pressure for conversion. The project's activities began in 2022, with canal blocking completed in 2023, and monitoring systems, patrols, and community engagement already operational.
+The A.pre ex-ante rating reflects high additionality, strong carbon accounting integrity, and moderate permanence. The project demonstrates clear reductions in forest loss: pre project loss averaged 0.65% annually (2012–2021), falling to 0.18% after implementation (2022–2024). Surrounding landscapes continue to experience substantially higher loss, confirming project effectiveness.
+Hydrological restoration and access control reduce encroachment risk, while fire management systems mitigate one of the region's most material threats. The PBPH licence provides a strong legal basis for environmental service utilisation, though long term permanence depends on future licence renewal.
+The project's financial model shows full reliance on carbon revenues, with no alternative income streams. A multidisciplinary team—including Ata Marie, Neo Terra, and academic partners—supports technical execution, monitoring, and community engagement.
+Overall, the project is positioned as a high integrity peatland restoration initiative with strong governance foundations. "The ex-ante rating of 'A.pre' is driven by… highest additionality, high likelihood of accurate carbon accounting…"`;
+
 export function ProjectNarrative({ project }: ProjectNarrativeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const previewLength = 400;
-  const fullText = project.description;
+  const fullText = projectDescription;
   const isLongText = fullText.length > previewLength;
   const displayText = isExpanded ? fullText : fullText.substring(0, previewLength);
 
@@ -36,8 +43,8 @@ export function ProjectNarrative({ project }: ProjectNarrativeProps) {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl font-bold text-black mb-3">About This Project</h2>
-          <p className="text-lg text-gray-600">
-            Detailed overview of the conservation initiative and its impact
+          <p className="text-lg font-semibold text-gray-900 mb-4">
+            Exante rating = A.pre
           </p>
         </motion.div>
 
