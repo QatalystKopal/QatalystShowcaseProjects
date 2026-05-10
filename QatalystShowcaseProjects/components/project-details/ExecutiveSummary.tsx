@@ -46,7 +46,7 @@ export function ExecutiveSummary({ project }: ExecutiveSummaryProps) {
       label: 'BUFFER POOL',
     },
     {
-      value: 'REDD - IFM + CIW',
+      value: 'IFM + CIW',
       label: 'PRIMARY METHOD',
     },
   ];
