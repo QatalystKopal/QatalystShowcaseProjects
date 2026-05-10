@@ -19,7 +19,40 @@ interface YieldAndVintageSectionProps {
   project: Project;
 }
 
-const vintageData = [
+const kuburayaVintageData = [
+  { vintage: '2023', reductions: 815815.21, removals: 535.37, total: 816350.58 },
+  { vintage: '2024', reductions: 1028386.12, removals: 1137.11, total: 1029523.23 },
+  { vintage: '2025', reductions: 1006061.77, removals: 2988.12, total: 1009049.89 },
+  { vintage: '2026', reductions: 1304081.28, removals: 5472.45, total: 1309553.73 },
+  { vintage: '2027', reductions: 1188990.05, removals: 12528.45, total: 1201518.50 },
+  { vintage: '2028', reductions: 1273781.92, removals: 14142.04, total: 1287923.97 },
+  { vintage: '2029', reductions: 1392206.03, removals: 18799.83, total: 1411005.86 },
+  { vintage: '2030', reductions: 2467107.35, removals: 22940.91, total: 2490048.26 },
+  { vintage: '2031', reductions: 2398146.11, removals: 27120.54, total: 2425266.65 },
+  { vintage: '2032', reductions: 2030542.07, removals: 30746.54, total: 2061288.62 },
+  { vintage: '2033', reductions: 2162773.61, removals: 35554.00, total: 2198327.61 },
+  { vintage: '2034', reductions: 1987555.26, removals: 39734.64, total: 2027289.90 },
+  { vintage: '2035', reductions: 2113065.12, removals: 43918.13, total: 2156983.25 },
+  { vintage: '2036', reductions: 2390971.04, removals: 48133.44, total: 2439104.48 },
+  { vintage: '2037', reductions: 2481916.23, removals: 52324.64, total: 2534240.87 },
+  { vintage: '2038', reductions: 1990849.73, removals: 56271.95, total: 2047121.68 },
+  { vintage: '2039', reductions: 2039428.90, removals: 60694.52, total: 2100123.42 },
+  { vintage: '2040', reductions: 2471843.81, removals: 64858.73, total: 2536702.54 },
+  { vintage: '2041', reductions: 3650427.07, removals: 69042.22, total: 3719469.29 },
+  { vintage: '2042', reductions: 3110121.55, removals: 72620.02, total: 3182741.58 },
+  { vintage: '2043', reductions: 2334609.23, removals: 77427.48, total: 2412036.71 },
+  { vintage: '2044', reductions: 2028709.50, removals: 81608.12, total: 2110317.63 },
+  { vintage: '2045', reductions: 1802711.82, removals: 85791.62, total: 1888503.43 },
+  { vintage: '2046', reductions: 1959897.81, removals: 90006.92, total: 2049904.73 },
+  { vintage: '2047', reductions: 1782352.44, removals: 94198.12, total: 1876550.57 },
+  { vintage: '2048', reductions: 1773557.61, removals: 98145.43, total: 1871703.04 },
+  { vintage: '2049', reductions: 1910917.96, removals: 102568.00, total: 2013485.96 },
+  { vintage: '2050', reductions: 2868105.80, removals: 106732.21, total: 2974838.01 },
+  { vintage: '2051', reductions: 2730998.65, removals: 110915.70, total: 2841914.36 },
+  { vintage: '2052', reductions: 2299890.16, removals: 114493.50, total: 2414383.67 },
+];
+
+const sbkVintageData = [
   { vintage: '2022', reductions: 297069, removals: 6426, total: 267076 },
   { vintage: '2023', reductions: 1144420, removals: 140687, total: 1130894 },
   { vintage: '2024', reductions: 1431874, removals: 425860, total: 1634806 },
@@ -83,10 +116,9 @@ const vintageData = [
   { vintage: '2082', reductions: 270829, removals: 313084, total: 513843 },
 ];
 
-const chartData = vintageData.slice(0, 20);
-
 export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps) {
   const [isMobile, setIsMobile] = useState(false);
+  const isKuburaya = project.shortName === 'Kuburaya';
 
   useEffect(() => {
     const handleResize = () => {
@@ -97,9 +129,22 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const totalReductions = 38648258;
-  const totalRemovals = 28189917;
-  const totalVCUs = 58817594;
+  const vintageData = isKuburaya ? kuburayaVintageData : sbkVintageData;
+  const chartData = vintageData.slice(0, 20);
+
+  let totalReductions: number;
+  let totalRemovals: number;
+  let totalVCUs: number;
+
+  if (isKuburaya) {
+    totalReductions = 60795821.22;
+    totalRemovals = 1641450.78;
+    totalVCUs = 62437272.00;
+  } else {
+    totalReductions = 38648258;
+    totalRemovals = 28189917;
+    totalVCUs = 58817594;
+  }
 
   const cellPadding = isMobile ? '8px' : '12px';
   const columnGap = isMobile ? '0px' : '1px';
