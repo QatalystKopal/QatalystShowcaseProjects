@@ -12,8 +12,28 @@ interface ProjectGalleryProps {
 export function ProjectGallery({ project }: ProjectGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
+  const isKuburaya = project.shortName === 'Kuburaya';
 
-  const images = [
+  const kuburayaImages = [
+    {
+      url: '/Kandelia-1.jpg',
+      caption: 'Kandelia Forest - View 1'
+    },
+    {
+      url: '/Kandelia-3.jpg',
+      caption: 'Kandelia Forest - View 2'
+    },
+    {
+      url: '/Kandelia-3.jpg',
+      caption: 'Kandelia Forest - View 3'
+    },
+    {
+      url: '/Kandelia-4.jpg',
+      caption: 'Kandelia Forest - View 4'
+    },
+  ];
+
+  const sbkImages = [
     {
       url: '/04%20-%20Economic%20Initiatives%20(2).jpg',
       caption: 'Economic Initiatives & Community Development'
@@ -39,6 +59,13 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
       caption: 'Biodiversity - White-bearded Gibbon'
     },
   ];
+
+  const images = isKuburaya ? kuburayaImages : sbkImages;
+
+  // Reset index when images change (different project)
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [isKuburaya]);
 
   useEffect(() => {
     if (!autoPlay) return;
