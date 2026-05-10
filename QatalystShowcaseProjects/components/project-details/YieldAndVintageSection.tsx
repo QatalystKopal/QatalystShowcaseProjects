@@ -222,38 +222,14 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                   labelFormatter={(label) => `Year ${label}`}
                 />
                 <Legend />
-                {isKuburaya && (
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    stroke="#0D9488"
-                    fillOpacity={0.3}
-                    fill="url(#colorReductions)"
-                    name="Total VCUs"
-                  />
-                )}
-                {!isKuburaya && (
-                  <Area
-                    type="monotone"
-                    dataKey="reductions"
-                    stackId="1"
-                    stroke="#0D9488"
-                    fillOpacity={1}
-                    fill="url(#colorReductions)"
-                    name="Estimated Reductions"
-                  />
-                )}
-                {!isKuburaya && (
-                  <Area
-                    type="monotone"
-                    dataKey="removals"
-                    stackId="1"
-                    stroke="#F86501"
-                    fillOpacity={1}
-                    fill="url(#colorRemovals)"
-                    name="Estimated Removals"
-                  />
-                )}
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#0D9488"
+                  fillOpacity={0.3}
+                  fill="url(#colorReductions)"
+                  name="Total VCUs"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </Card>
