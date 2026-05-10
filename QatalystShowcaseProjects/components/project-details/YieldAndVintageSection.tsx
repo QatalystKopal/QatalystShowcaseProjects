@@ -197,14 +197,29 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="vintage" stroke="#64748b" />
-                <YAxis stroke="#64748b" label={{ value: 'VCUs (units)', angle: -90, position: 'insideLeft' }} />
+                <YAxis
+                  stroke="#64748b"
+                  label={{ value: 'VCUs (tCO₂e)', angle: -90, position: 'insideLeft' }}
+                  tickFormatter={(value: number) => {
+                    if (value >= 1000000) {
+                      return (value / 1000000).toFixed(1) + 'M';
+                    }
+                    return (value / 1000).toFixed(0) + 'K';
+                  }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#ffffff',
                     border: '1px solid #e2e8f0',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: any) => value.toLocaleString()}
+                  formatter={(value: any) => {
+                    if (typeof value === 'number') {
+                      return [value.toLocaleString() + ' tCO₂e', ''];
+                    }
+                    return value.toLocaleString();
+                  }}
+                  labelFormatter={(label) => `Year ${label}`}
                 />
                 <Legend />
                 <Area
