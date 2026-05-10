@@ -14,7 +14,44 @@ const itemVariants = {
 };
 
 export function ExecutiveSummary({ project }: ExecutiveSummaryProps) {
-  const metrics = [
+  const isKuburaya = project.shortName === 'Kuburaya';
+
+  const kuburayaMetrics = [
+    {
+      value: '62.4M',
+      label: 'TOTAL VCUs',
+    },
+    {
+      value: '2M',
+      label: 'ANNUAL AVG VCUs',
+    },
+    {
+      value: 'Q2-Q3 2026',
+      label: 'FIRST ISSUANCE',
+    },
+    {
+      value: '2023',
+      label: 'VINTAGE START YEAR',
+    },
+    {
+      value: '30 years',
+      label: 'LIFETIME',
+    },
+    {
+      value: '18,041.62',
+      label: 'PROJECT AREA (ha)',
+    },
+    {
+      value: '19%',
+      label: 'BUFFER POOL',
+    },
+    {
+      value: 'REDD - IFM + CIW',
+      label: 'PRIMARY METHOD',
+    },
+  ];
+
+  const sbkMetrics = [
     {
       value: '58.8 M',
       label: 'TOTAL VCUs',
@@ -48,6 +85,8 @@ export function ExecutiveSummary({ project }: ExecutiveSummaryProps) {
       label: 'PRIMARY METHOD',
     },
   ];
+
+  const metrics = isKuburaya ? kuburayaMetrics : sbkMetrics;
 
   return (
     <motion.section

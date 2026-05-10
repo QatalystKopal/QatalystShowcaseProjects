@@ -87,7 +87,6 @@ const chartData = vintageData.slice(0, 20);
 
 export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps) {
   const [isMobile, setIsMobile] = useState(false);
-  const isKuburaya = project.shortName === 'Kuburaya';
 
   useEffect(() => {
     const handleResize = () => {
@@ -101,17 +100,6 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
   const totalReductions = 38648258;
   const totalRemovals = 28189917;
   const totalVCUs = 58817594;
-
-  const kuburayaMetrics = [
-    { label: 'Total VCUs', value: '62.4M', unit: 'tCO₂e' },
-    { label: 'Annual Avg VCUs', value: '2M', unit: 'tCO₂e' },
-    { label: 'First Issuance', value: 'Q2-Q3 2026', unit: '' },
-    { label: 'Vintage Start Year', value: '2023', unit: '' },
-    { label: 'Lifetime', value: '30 years', unit: '' },
-    { label: 'Project Area', value: '18,041.62', unit: 'ha' },
-    { label: 'Buffer Pool', value: '19%', unit: 'non permanence' },
-    { label: 'Primary Method', value: 'REDD - IFM + CIW', unit: '' },
-  ];
 
   const cellPadding = isMobile ? '8px' : '12px';
   const columnGap = isMobile ? '0px' : '1px';
@@ -139,36 +127,6 @@ export function YieldAndVintageSection({ project }: YieldAndVintageSectionProps)
             Projected VCU issuance and detailed vintage breakdown for full project lifetime (2022–2082)
           </p>
         </motion.div>
-
-        {/* Kuburaya Project Metrics */}
-        {isKuburaya && (
-          <motion.div
-            className="mb-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            {kuburayaMetrics.map((metric, idx) => (
-              <motion.div
-                key={idx}
-                className="p-4 bg-white border border-gray-200 rounded-lg"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                viewport={{ once: true }}
-              >
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  {metric.label}
-                </p>
-                <p className="text-xl font-bold text-black mb-1">{metric.value}</p>
-                {metric.unit && (
-                  <p className="text-xs text-gray-500">{metric.unit}</p>
-                )}
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
 
         {/* Chart Card */}
         <motion.div
