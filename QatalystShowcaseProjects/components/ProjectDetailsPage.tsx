@@ -11,6 +11,7 @@ import { ProjectNarrative } from './project-details/ProjectNarrative';
 import { DetailedReviewSection } from './project-details/DetailedReviewSection';
 import { ProjectGallery } from './project-details/ProjectGallery';
 import { ProjectTeam } from './project-details/ProjectTeam';
+import { MapSection } from './project-details/MapSection';
 
 interface ProjectDetailsPageProps {
   project: Project;
@@ -27,6 +28,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
         transition={{ duration: 0.3 }}
       >
         <HeroSection project={project} />
+        <MapSection />
         <ExecutiveSummary project={project} />
         <YieldAndVintageSection project={project} />
         <MethodologySDGSection project={project} />
