@@ -7,7 +7,7 @@ interface ProjectNarrativeProps {
   project: Project;
 }
 
-const paragraphs = [
+const sbkParagraphs = [
   'The South Barito Kapuas (VCS4782) project covers 39,835 ha of peatland and dryland forest in Central Kalimantan, Indonesia, operating under a PBPH Jasa Lingkungan licence issued in 2023. The project aims to avoid deforestation and peat degradation through peatland rewetting, hydrological restoration, fire management, and community livelihood programs. Over its 60year crediting period, it is expected to generate ~66.8 million tCO₂e in avoided emissions from Wetland Restoration & Conservation (WRC) and Avoided Planned Deforestation (APD).',
   'The project area had been earmarked for industrial plantation development, and multiple competing PBPHHTI applications confirm strong commercial pressure for conversion. The project\'s activities began in 2022, with canal blocking completed in 2023, and monitoring systems, patrols, and community engagement already operational.',
   'The A.pre ex-ante rating reflects high additionality, strong carbon accounting integrity, and moderate permanence. The project demonstrates clear reductions in forest loss: pre project loss averaged 0.65% annually (2012–2021), falling to 0.18% after implementation (2022–2024). Surrounding landscapes continue to experience substantially higher loss, confirming project effectiveness.',
@@ -16,7 +16,20 @@ const paragraphs = [
   'Overall, the project is positioned as a high integrity peatland restoration initiative with strong governance foundations. "The ex-ante rating of \'A.pre\' is driven by… highest additionality, high likelihood of accurate carbon accounting…"'
 ];
 
+const kuburayaParagraphs = [
+  'This VCS project is designed to be a combination of three types of conservation and eco-system restoration activities or components:',
+  '1. "Improved Forest Management (IFM)": for areas within the concession boundary where timber harvesting activities are discontinued.',
+  '2. "Reducing Emissions from Deforestation and Forest Degradation (REDD)": for areas within the concession boundary where illegal logging will be prevented by physical and socio-economic interventions.',
+  '3. "Afforestation, Reforestation and Revegetation (ARR)": for areas within the concession boundary where replanting activities will be implemented.',
+  'The three project components with associated project activities, namely, IFM, REDD and ARR are aimed to be simultaneously implemented to assist with stopping harvesting of timber from planned (under concession license) and unplanned deforestation and degradation (from illegal logging), and both complemented with re-planting in areas that are already degraded.',
+  'These activities are interventions to prevent loss of both "Above-Ground Biomass (AGB)" and "Below-Ground Biomass (BGB)" and "Soil Organic Carbon (SOC)".'
+];
+
 export function ProjectNarrative({ project }: ProjectNarrativeProps) {
+  const isKuburaya = project.shortName === 'Kuburaya';
+  const paragraphs = isKuburaya ? kuburayaParagraphs : sbkParagraphs;
+  const subheading = isKuburaya ? 'Project Components & Activities' : 'Exante rating = A.pre';
+
   return (
     <motion.section
       className="py-16 px-2 sm:px-3 lg:px-4 bg-white border-t border-gray-200"
@@ -36,7 +49,7 @@ export function ProjectNarrative({ project }: ProjectNarrativeProps) {
         >
           <h2 className="text-4xl font-bold text-black mb-3">About This Project</h2>
           <p className="text-lg font-semibold text-gray-900 mb-4">
-            Exante rating = A.pre
+            {subheading}
           </p>
         </motion.div>
 
