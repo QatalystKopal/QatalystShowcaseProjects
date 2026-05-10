@@ -28,7 +28,7 @@ export function ProjectDetailsPage({ project }: ProjectDetailsPageProps) {
         transition={{ duration: 0.3 }}
       >
         <HeroSection project={project} />
-        <MapSection />
+        <MapSection project={project} />
         <ExecutiveSummary project={project} />
         <YieldAndVintageSection project={project} />
         <MethodologySDGSection project={project} />
