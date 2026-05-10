@@ -1,22 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Project } from '@/lib/projects';
-import { Button } from '@/components/ui/button';
-import { ChevronDown } from 'lucide-react';
 
 interface ProjectNarrativeProps {
   project: Project;
 }
 
-export function ProjectNarrative({ project }: ProjectNarrativeProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+const sbkParagraphs = [
+  'The South Barito Kapuas (VCS4782) project covers 39,835 ha of peatland and dryland forest in Central Kalimantan, Indonesia, operating under a PBPH Jasa Lingkungan licence issued in 2023. The project aims to avoid deforestation and peat degradation through peatland rewetting, hydrological restoration, fire management, and community livelihood programs. Over its 60year crediting period, it is expected to generate ~66.8 million tCO₂e in avoided emissions from Wetland Restoration & Conservation (WRC) and Avoided Planned Deforestation (APD).',
+  'The project area had been earmarked for industrial plantation development, and multiple competing PBPHHTI applications confirm strong commercial pressure for conversion. The project\'s activities began in 2022, with canal blocking completed in 2023, and monitoring systems, patrols, and community engagement already operational.',
+  'The A.pre ex-ante rating reflects high additionality, strong carbon accounting integrity, and moderate permanence. The project demonstrates clear reductions in forest loss: pre project loss averaged 0.65% annually (2012–2021), falling to 0.18% after implementation (2022–2024). Surrounding landscapes continue to experience substantially higher loss, confirming project effectiveness.',
+  'Hydrological restoration and access control reduce encroachment risk, while fire management systems mitigate one of the region\'s most material threats. The PBPH licence provides a strong legal basis for environmental service utilisation, though long term permanence depends on future licence renewal.',
+  'The project\'s financial model shows full reliance on carbon revenues, with no alternative income streams. A multidisciplinary team—including Ata Marie, Neo Terra, and academic partners—supports technical execution, monitoring, and community engagement.',
+  'Overall, the project is positioned as a high integrity peatland restoration initiative with strong governance foundations. "The ex-ante rating of \'A.pre\' is driven by… highest additionality, high likelihood of accurate carbon accounting…"'
+];
 
-  const previewLength = 400;
-  const fullText = project.description;
-  const isLongText = fullText.length > previewLength;
-  const displayText = isExpanded ? fullText : fullText.substring(0, previewLength);
+const kuburayaParagraphs = [
+  'This VCS project is designed to be a combination of three types of conservation and eco-system restoration activities or components:',
+  '1. "Improved Forest Management (IFM)": for areas within the concession boundary where timber harvesting activities are discontinued.',
+  '2. "Reducing Emissions from Deforestation and Forest Degradation (REDD)": for areas within the concession boundary where illegal logging will be prevented by physical and socio-economic interventions.',
+  '3. "Afforestation, Reforestation and Revegetation (ARR)": for areas within the concession boundary where replanting activities will be implemented.',
+  'The three project components with associated project activities, namely, IFM, REDD and ARR are aimed to be simultaneously implemented to assist with stopping harvesting of timber from planned (under concession license) and unplanned deforestation and degradation (from illegal logging), and both complemented with re-planting in areas that are already degraded.',
+  'These activities are interventions to prevent loss of both "Above-Ground Biomass (AGB)" and "Below-Ground Biomass (BGB)" and "Soil Organic Carbon (SOC)".'
+];
+
+export function ProjectNarrative({ project }: ProjectNarrativeProps) {
+  const isKuburaya = project.shortName === 'Kuburaya';
+  const paragraphs = isKuburaya ? kuburayaParagraphs : sbkParagraphs;
+  const subheading = isKuburaya ? 'Project Components & Activities' : 'Exante rating = A.pre';
 
   return (
     <motion.section
@@ -36,8 +48,8 @@ export function ProjectNarrative({ project }: ProjectNarrativeProps) {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl font-bold text-black mb-3">About This Project</h2>
-          <p className="text-lg text-gray-600">
-            Detailed overview of the conservation initiative and its impact
+          <p className="text-lg font-semibold text-gray-900 mb-4">
+            {subheading}
           </p>
         </motion.div>
 
@@ -48,41 +60,19 @@ export function ProjectNarrative({ project }: ProjectNarrativeProps) {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">
-            <p className="text-lg font-light text-gray-700 mb-6">
-              {displayText}
-            </p>
-
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="overflow-hidden"
-                >
-                  <p className="text-lg font-light text-gray-700 mb-6">
-                    {fullText.substring(previewLength)}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {isLongText && (
-              <Button
-                variant="outline"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-8 border-gray-300 text-gray-700 hover:bg-gray-50 group"
+          <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-6">
+            {paragraphs.map((para, idx) => (
+              <motion.p
+                key={idx}
+                className="text-base font-light text-gray-700 leading-relaxed"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                viewport={{ once: true }}
               >
-                {isExpanded ? 'Read Less' : 'Read More'}
-                <ChevronDown
-                  className={`w-4 h-4 ml-2 transition-transform duration-300 ${
-                    isExpanded ? 'rotate-180' : ''
-                  }`}
-                />
-              </Button>
-            )}
+                {para}
+              </motion.p>
+            ))}
           </div>
         </motion.div>
 
