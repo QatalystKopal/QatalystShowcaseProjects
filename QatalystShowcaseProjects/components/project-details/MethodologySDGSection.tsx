@@ -15,7 +15,22 @@ const itemVariants = {
 };
 
 export function MethodologySDGSection({ project }: MethodologySDGSectionProps) {
+  const isKuburaya = project.shortName === 'Kuburaya';
   const methodologyData = project.methodologyBreakdown || [];
+
+  const kuburayaSDGs = [
+    { number: 1, label: 'No Poverty', image: '/E-WEB-Goal-01.png' },
+    { number: 2, label: 'Zero Hunger', image: '/E-WEB-Goal-02.png' },
+    { number: 5, label: 'Gender Equality', image: '/E-WEB-Goal-05.png' },
+    { number: 6, label: 'Clean Water & Sanitation', image: '/E-WEB-Goal-06.png' },
+    { number: 8, label: 'Decent Work & Economic Growth', image: '/E-WEB-Goal-08.png' },
+    { number: 12, label: 'Responsible Consumption', image: '/E-WEB-Goal-12.png' },
+    { number: 13, label: 'Climate Action', image: '/E-WEB-Goal-13.png' },
+    { number: 14, label: 'Life Below Water', image: '/E-WEB-Goal-14.png' },
+    { number: 15, label: 'Life on Land', image: '/E-WEB-Goal-15.png' },
+  ];
+
+  const sdgs = isKuburaya ? kuburayaSDGs : project.sdgs;
 
   return (
     <motion.section
@@ -108,11 +123,11 @@ export function MethodologySDGSection({ project }: MethodologySDGSectionProps) {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <Card className="p-8 border-gray-200 h-full">
-              <h3 className="text-xl font-bold text-black mb-8">SDG Alignment ({project.sdgs.length} Goals)</h3>
+            <Card className="p-6 sm:p-8 border-gray-200 h-full">
+              <h3 className="text-lg sm:text-xl font-bold text-black mb-6 sm:mb-8">SDG Alignment ({sdgs.length} Goals)</h3>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {project.sdgs.map((sdg, idx) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                {sdgs.map((sdg, idx) => (
                   <motion.div
                     key={idx}
                     className="flex flex-col items-center text-center group"
@@ -125,13 +140,13 @@ export function MethodologySDGSection({ project }: MethodologySDGSectionProps) {
                       <img
                         src={sdg.image}
                         alt={`SDG ${sdg.number}: ${sdg.label}`}
-                        className="w-24 h-24 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300 mb-3"
+                        className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300 mb-2 sm:mb-3"
                       />
                     )}
-                    <span className="text-xs font-bold text-gray-700 leading-tight">
+                    <span className="text-xs sm:text-sm font-bold text-gray-700 leading-tight">
                       SDG {sdg.number}
                     </span>
-                    <p className="text-[10px] text-gray-600 mt-1 line-clamp-2">{sdg.label}</p>
+                    <p className="text-[9px] sm:text-[10px] text-gray-600 mt-1 line-clamp-2">{sdg.label}</p>
                   </motion.div>
                 ))}
               </div>
