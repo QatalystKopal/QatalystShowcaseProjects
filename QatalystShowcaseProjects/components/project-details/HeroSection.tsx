@@ -10,6 +10,8 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ project }: HeroSectionProps) {
+  const isKuburaya = project.shortName === 'Kuburaya';
+
   return (
     <>
       <div className="relative w-full h-[280px] sm:h-[320px] md:h-[400px] flex items-center justify-center overflow-hidden">
@@ -70,17 +72,17 @@ export function HeroSection({ project }: HeroSectionProps) {
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-6">
-              {/* BeZero Rating */}
+              {/* Rating Section */}
               <div className="flex items-center gap-4">
                 <div className="bg-gradient-to-br from-[#0D9488] to-[#006B63] rounded-full w-16 h-16 flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">A</span>
+                  <span className="text-white font-bold text-2xl">{isKuburaya ? '✓' : 'A'}</span>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    BeZero Carbon Rating
+                    {isKuburaya ? 'CCB Gold Rating' : 'BeZero Carbon Rating'}
                   </p>
-                  <p className="text-lg font-bold text-black">Grade A</p>
-                  <p className="text-xs text-[#0D9488] font-semibold">Highest Additionality (AAA)</p>
+                  <p className="text-lg font-bold text-black">{isKuburaya ? 'Gold' : 'Grade A'}</p>
+                  <p className="text-xs text-[#0D9488] font-semibold">{isKuburaya ? 'Climate, Community & Biodiversity' : 'Highest Additionality (AAA)'}</p>
                 </div>
               </div>
 
@@ -93,7 +95,7 @@ export function HeroSection({ project }: HeroSectionProps) {
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                     Verification Status
                   </p>
-                  <p className="text-sm font-bold text-black">Registration Requested</p>
+                  <p className="text-sm font-bold text-black">{isKuburaya ? 'Under Validation' : 'Registration Requested'}</p>
                 </div>
               </div>
 
@@ -104,9 +106,16 @@ export function HeroSection({ project }: HeroSectionProps) {
                 <Award className="w-6 h-6 text-[#F86501]" />
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Methodology & Version
+                    {isKuburaya ? 'Methodology & Version' : 'Methodology & Version'}
                   </p>
-                  <p className="text-sm font-bold text-black">VM0007 v1.6</p>
+                  {isKuburaya ? (
+                    <div className="text-xs text-black font-light leading-tight">
+                      <p className="font-semibold">Verra Verified Carbon Standard (VCS) v4.4</p>
+                      <p>VM0011 IFM v1.0 | VM0007 REDD+ v1.6</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-bold text-black">VM0007 v1.6</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -117,16 +126,16 @@ export function HeroSection({ project }: HeroSectionProps) {
       {/* Mobile-only Trust Cards - shown below hero on mobile */}
       <div className="sm:hidden bg-gray-50 px-4 py-6">
         <div className="grid grid-cols-1 gap-4">
-          {/* BeZero Rating Card */}
+          {/* Rating Card */}
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-[#0D9488] to-[#006B63] rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-lg">A</span>
+                <span className="text-white font-bold text-lg">{isKuburaya ? '✓' : 'A'}</span>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">BeZero Rating</p>
-                <p className="text-sm font-bold text-black">Grade A</p>
-                <p className="text-xs text-[#0D9488] font-semibold">Highest Additionality</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{isKuburaya ? 'CCB Gold' : 'BeZero Rating'}</p>
+                <p className="text-sm font-bold text-black">{isKuburaya ? 'Gold' : 'Grade A'}</p>
+                <p className="text-xs text-[#0D9488] font-semibold">{isKuburaya ? 'Climate, Community & Biodiversity' : 'Highest Additionality'}</p>
               </div>
             </div>
           </div>
@@ -137,7 +146,7 @@ export function HeroSection({ project }: HeroSectionProps) {
               <CheckCircle2 className="w-5 h-5 text-[#0D9488] flex-shrink-0" />
               <div>
                 <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
-                <p className="text-sm font-bold text-black">Registration Requested</p>
+                <p className="text-sm font-bold text-black">{isKuburaya ? 'Under Validation' : 'Registration Requested'}</p>
               </div>
             </div>
           </div>
@@ -148,7 +157,14 @@ export function HeroSection({ project }: HeroSectionProps) {
               <Award className="w-5 h-5 text-[#F86501] flex-shrink-0" />
               <div>
                 <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Methodology & Version</p>
-                <p className="text-sm font-bold text-black">VM0007 v1.6</p>
+                {isKuburaya ? (
+                  <div className="text-xs text-black font-light leading-tight">
+                    <p className="font-semibold">VCS v4.4</p>
+                    <p>VM0011 IFM v1.0 | VM0007 REDD+ v1.6</p>
+                  </div>
+                ) : (
+                  <p className="text-sm font-bold text-black">VM0007 v1.6</p>
+                )}
               </div>
             </div>
           </div>
