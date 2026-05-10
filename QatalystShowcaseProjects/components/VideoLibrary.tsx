@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 import { VideoModal } from './VideoModal';
@@ -13,7 +14,7 @@ interface Video {
   thumbnail?: string;
 }
 
-const videos: Video[] = [
+const sbkVideos: Video[] = [
   {
     id: '1',
     title: 'Climate Impact - English',
@@ -27,6 +28,11 @@ const videos: Video[] = [
 ];
 
 export function VideoLibrary() {
+  const params = useParams();
+  const projectId = params?.id as string | undefined;
+  const isKuburaya = projectId === 'kuburaya';
+
+  const videos = isKuburaya ? [] : sbkVideos;
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   return (
@@ -53,38 +59,49 @@ export function VideoLibrary() {
           </motion.div>
 
           {/* Videos Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-            {videos.map((video, idx) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                onClick={() => setSelectedVideo(video)}
-                className="cursor-pointer group"
-              >
-                <div className="relative bg-slate-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center hover:shadow-xl transition-shadow">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="flex items-center justify-center"
-                  >
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center z-10">
-                      <motion.button
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-16 h-16 bg-[#0D9488] rounded-full flex items-center justify-center text-white shadow-lg"
-                      >
-                        <Play className="w-8 h-8 fill-current" />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-slate-900">
-                  {video.title}
-                </h3>
-              </motion.div>
-            ))}
-          </div>
+          {videos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+              {videos.map((video, idx) => (
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  onClick={() => setSelectedVideo(video)}
+                  className="cursor-pointer group"
+                >
+                  <div className="relative bg-slate-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center hover:shadow-xl transition-shadow">
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className="flex items-center justify-center"
+                    >
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center z-10">
+                        <motion.button
+                          whileHover={{ scale: 1.2 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="w-16 h-16 bg-[#0D9488] rounded-full flex items-center justify-center text-white shadow-lg"
+                        >
+                          <Play className="w-8 h-8 fill-current" />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold text-slate-900">
+                    {video.title}
+                  </h3>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="text-center py-12"
+            >
+              <p className="text-lg text-slate-600">No videos available for this project</p>
+            </motion.div>
+          )}
         </div>
 
         <div className="h-20" />
